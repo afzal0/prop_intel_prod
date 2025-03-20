@@ -134,3 +134,1332 @@
 2025-03-20 22:13:11,547 - INFO - 127.0.0.1 - - [20/Mar/2025 22:13:11] "GET /property/11 HTTP/1.1" 200 -
 2025-03-20 22:13:25,385 - INFO - Using database configuration from db_config.ini
 2025-03-20 22:13:25,805 - INFO - 127.0.0.1 - - [20/Mar/2025 22:13:25] "GET / HTTP/1.1" 200 -
+2025-03-20 22:19:49,916 - INFO - Using database configuration from db_config.ini
+2025-03-20 22:19:49,932 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2025-03-20 22:19:49,932 - INFO - [33mPress CTRL+C to quit[0m
+2025-03-20 22:19:49,949 - INFO -  * Restarting with watchdog (fsevents)
+2025-03-20 22:19:50,494 - INFO - Using database configuration from db_config.ini
+2025-03-20 22:19:50,499 - WARNING -  * Debugger is active!
+2025-03-20 22:19:50,511 - INFO -  * Debugger PIN: 276-612-969
+2025-03-20 22:20:00,830 - INFO - Using database configuration from db_config.ini
+2025-03-20 22:20:01,471 - INFO - 127.0.0.1 - - [20/Mar/2025 22:20:01] "GET / HTTP/1.1" 200 -
+2025-03-20 22:20:02,034 - INFO - 127.0.0.1 - - [20/Mar/2025 22:20:02] "GET /upload HTTP/1.1" 200 -
+2025-03-20 22:20:10,782 - INFO - Starting extraction process from file: uploads/Master_Sheet.xlsx
+2025-03-20 22:20:11,009 - INFO - Connected to PostgreSQL database
+2025-03-20 22:20:11,105 - INFO - Schema and base tables created or already exist
+2025-03-20 22:20:11,244 - INFO - Loading Excel file: uploads/Master_Sheet.xlsx
+2025-03-20 22:20:11,578 - INFO - Found 38 sheets in the Excel file
+2025-03-20 22:20:11,578 - INFO - Skipping empty sheet: Sheet1
+2025-03-20 22:20:11,579 - INFO - Processing sheet: Sheet1 (2)
+2025-03-20 22:20:11,579 - INFO - Found property address: 2 Mareeba Cres, Bayswater
+2025-03-20 22:20:11,621 - INFO - Found existing property ID 1 for address: 2 Mareeba Cres, Bayswater
+2025-03-20 22:20:11,750 - INFO - Updated existing work record 1 for property 1
+2025-03-20 22:20:11,908 - INFO - Updated existing work record 2 for property 1
+2025-03-20 22:20:12,073 - INFO - Updated existing work record 3 for property 1
+2025-03-20 22:20:12,229 - INFO - Updated existing work record 4 for property 1
+2025-03-20 22:20:12,383 - INFO - Updated existing work record 5 for property 1
+2025-03-20 22:20:12,533 - INFO - Updated existing work record 6 for property 1
+2025-03-20 22:20:12,693 - INFO - Updated existing work record 7 for property 1
+2025-03-20 22:20:12,853 - INFO - Updated existing work record 8 for property 1
+2025-03-20 22:20:13,011 - INFO - Updated existing work record 9 for property 1
+2025-03-20 22:20:13,175 - INFO - Updated existing work record 10 for property 1
+2025-03-20 22:20:13,337 - INFO - Updated existing work record 11 for property 1
+2025-03-20 22:20:13,503 - INFO - Updated existing work record 12 for property 1
+2025-03-20 22:20:13,663 - INFO - Updated existing work record 13 for property 1
+2025-03-20 22:20:13,825 - INFO - Updated existing work record 14 for property 1
+2025-03-20 22:20:13,987 - INFO - Updated existing work record 15 for property 1
+2025-03-20 22:20:14,149 - INFO - Updated existing work record 16 for property 1
+2025-03-20 22:20:14,309 - INFO - Updated existing work record 17 for property 1
+2025-03-20 22:20:14,471 - INFO - Updated existing work record 18 for property 1
+2025-03-20 22:20:14,638 - INFO - Updated existing work record 19 for property 1
+2025-03-20 22:20:14,805 - INFO - Updated existing work record 20 for property 1
+2025-03-20 22:20:14,971 - INFO - Updated existing work record 21 for property 1
+2025-03-20 22:20:15,137 - INFO - Updated existing work record 22 for property 1
+2025-03-20 22:20:15,300 - INFO - Updated existing work record 23 for property 1
+2025-03-20 22:20:15,463 - INFO - Updated existing work record 24 for property 1
+2025-03-20 22:20:15,626 - INFO - Updated existing work record 25 for property 1
+2025-03-20 22:20:15,790 - INFO - Updated existing work record 26 for property 1
+2025-03-20 22:20:15,952 - INFO - Updated existing work record 27 for property 1
+2025-03-20 22:20:16,110 - INFO - Updated existing work record 28 for property 1
+2025-03-20 22:20:16,274 - INFO - Updated existing work record 29 for property 1
+2025-03-20 22:20:16,438 - INFO - Updated existing work record 30 for property 1
+2025-03-20 22:20:16,605 - INFO - Updated existing work record 31 for property 1
+2025-03-20 22:20:16,774 - INFO - Updated existing work record 32 for property 1
+2025-03-20 22:20:16,932 - INFO - Updated existing work record 33 for property 1
+2025-03-20 22:20:17,096 - INFO - Updated existing work record 34 for property 1
+2025-03-20 22:20:17,258 - INFO - Updated existing work record 35 for property 1
+2025-03-20 22:20:17,414 - INFO - Updated existing work record 36 for property 1
+2025-03-20 22:20:17,580 - INFO - Updated existing work record 37 for property 1
+2025-03-20 22:20:17,738 - INFO - Updated existing work record 38 for property 1
+2025-03-20 22:20:17,903 - INFO - Updated existing work record 39 for property 1
+2025-03-20 22:20:18,061 - INFO - Updated existing work record 40 for property 1
+2025-03-20 22:20:18,221 - INFO - Updated existing work record 41 for property 1
+2025-03-20 22:20:18,379 - INFO - Updated existing work record 42 for property 1
+2025-03-20 22:20:18,539 - INFO - Updated existing work record 43 for property 1
+2025-03-20 22:20:18,699 - INFO - Updated existing work record 44 for property 1
+2025-03-20 22:20:18,865 - INFO - Updated existing work record 45 for property 1
+2025-03-20 22:20:19,023 - INFO - Updated existing work record 46 for property 1
+2025-03-20 22:20:19,187 - INFO - Updated existing work record 47 for property 1
+2025-03-20 22:20:19,345 - INFO - Updated existing work record 48 for property 1
+2025-03-20 22:20:19,507 - INFO - Updated existing work record 49 for property 1
+2025-03-20 22:20:19,668 - INFO - Updated existing work record 50 for property 1
+2025-03-20 22:20:19,834 - INFO - Updated existing work record 51 for property 1
+2025-03-20 22:20:19,996 - INFO - Updated existing work record 52 for property 1
+2025-03-20 22:20:20,156 - INFO - Updated existing work record 53 for property 1
+2025-03-20 22:20:20,320 - INFO - Updated existing work record 54 for property 1
+2025-03-20 22:20:20,476 - INFO - Updated existing work record 55 for property 1
+2025-03-20 22:20:20,642 - INFO - Updated existing work record 56 for property 1
+2025-03-20 22:20:20,807 - INFO - Updated existing work record 57 for property 1
+2025-03-20 22:20:20,974 - INFO - Updated existing work record 58 for property 1
+2025-03-20 22:20:21,144 - INFO - Updated existing work record 59 for property 1
+2025-03-20 22:20:21,300 - INFO - Updated existing work record 60 for property 1
+2025-03-20 22:20:21,460 - INFO - Updated existing work record 61 for property 1
+2025-03-20 22:20:21,615 - INFO - Updated existing work record 62 for property 1
+2025-03-20 22:20:21,779 - INFO - Updated existing work record 63 for property 1
+2025-03-20 22:20:21,936 - INFO - Updated existing work record 64 for property 1
+2025-03-20 22:20:22,097 - INFO - Updated existing work record 65 for property 1
+2025-03-20 22:20:22,251 - INFO - Updated existing work record 66 for property 1
+2025-03-20 22:20:22,415 - INFO - Updated existing work record 67 for property 1
+2025-03-20 22:20:22,574 - INFO - Updated existing work record 68 for property 1
+2025-03-20 22:20:22,733 - INFO - Updated existing work record 69 for property 1
+2025-03-20 22:20:22,893 - INFO - Updated existing work record 70 for property 1
+2025-03-20 22:20:23,053 - INFO - Updated existing work record 71 for property 1
+2025-03-20 22:20:23,215 - INFO - Updated existing work record 72 for property 1
+2025-03-20 22:20:23,369 - INFO - Updated existing work record 73 for property 1
+2025-03-20 22:20:23,530 - INFO - Updated existing work record 74 for property 1
+2025-03-20 22:20:23,694 - INFO - Updated existing work record 75 for property 1
+2025-03-20 22:20:23,856 - INFO - Updated existing work record 76 for property 1
+2025-03-20 22:20:24,016 - INFO - Updated existing work record 77 for property 1
+2025-03-20 22:20:24,186 - INFO - Updated existing work record 78 for property 1
+2025-03-20 22:20:24,346 - INFO - Updated existing work record 79 for property 1
+2025-03-20 22:20:24,518 - INFO - Updated existing work record 80 for property 1
+2025-03-20 22:20:24,676 - INFO - Updated existing work record 81 for property 1
+2025-03-20 22:20:24,840 - INFO - Updated existing work record 82 for property 1
+2025-03-20 22:20:25,002 - INFO - Updated existing work record 83 for property 1
+2025-03-20 22:20:25,167 - INFO - Updated existing work record 84 for property 1
+2025-03-20 22:20:25,327 - INFO - Updated existing work record 85 for property 1
+2025-03-20 22:20:25,495 - INFO - Updated existing work record 86 for property 1
+2025-03-20 22:20:25,657 - INFO - Updated existing work record 87 for property 1
+2025-03-20 22:20:25,813 - INFO - Updated existing work record 88 for property 1
+2025-03-20 22:20:25,977 - INFO - Updated existing work record 89 for property 1
+2025-03-20 22:20:26,139 - INFO - Updated existing work record 90 for property 1
+2025-03-20 22:20:26,298 - INFO - Updated existing work record 91 for property 1
+2025-03-20 22:20:26,458 - INFO - Updated existing work record 92 for property 1
+2025-03-20 22:20:26,623 - INFO - Updated existing work record 93 for property 1
+2025-03-20 22:20:26,784 - INFO - Updated existing work record 94 for property 1
+2025-03-20 22:20:26,934 - INFO - Updated existing work record 95 for property 1
+2025-03-20 22:20:27,096 - INFO - Updated existing work record 96 for property 1
+2025-03-20 22:20:27,264 - INFO - Updated existing work record 97 for property 1
+2025-03-20 22:20:27,428 - INFO - Updated existing work record 98 for property 1
+2025-03-20 22:20:27,594 - INFO - Updated existing work record 99 for property 1
+2025-03-20 22:20:27,760 - INFO - Updated existing work record 100 for property 1
+2025-03-20 22:20:27,919 - INFO - Updated existing work record 101 for property 1
+2025-03-20 22:20:28,085 - INFO - Updated existing work record 102 for property 1
+2025-03-20 22:20:28,247 - INFO - Updated existing work record 103 for property 1
+2025-03-20 22:20:28,401 - INFO - Updated existing work record 104 for property 1
+2025-03-20 22:20:28,561 - INFO - Updated existing work record 105 for property 1
+2025-03-20 22:20:28,723 - INFO - Updated existing work record 106 for property 1
+2025-03-20 22:20:28,885 - INFO - Updated existing work record 107 for property 1
+2025-03-20 22:20:29,046 - INFO - Updated existing work record 108 for property 1
+2025-03-20 22:20:29,197 - INFO - Updated existing work record 109 for property 1
+2025-03-20 22:20:29,394 - INFO - Updated existing work record 110 for property 1
+2025-03-20 22:20:29,560 - INFO - Updated existing work record 111 for property 1
+2025-03-20 22:20:29,720 - INFO - Updated existing work record 112 for property 1
+2025-03-20 22:20:29,886 - INFO - Updated existing work record 113 for property 1
+2025-03-20 22:20:30,046 - INFO - Updated existing work record 114 for property 1
+2025-03-20 22:20:30,208 - INFO - Updated existing work record 115 for property 1
+2025-03-20 22:20:30,374 - INFO - Updated existing work record 116 for property 1
+2025-03-20 22:20:30,545 - INFO - Updated existing work record 117 for property 1
+2025-03-20 22:20:30,712 - INFO - Updated existing work record 118 for property 1
+2025-03-20 22:20:30,877 - INFO - Updated existing work record 119 for property 1
+2025-03-20 22:20:31,042 - INFO - Updated existing work record 120 for property 1
+2025-03-20 22:20:31,191 - INFO - Updated existing work record 121 for property 1
+2025-03-20 22:20:31,349 - INFO - Updated existing work record 122 for property 1
+2025-03-20 22:20:31,515 - INFO - Updated existing work record 123 for property 1
+2025-03-20 22:20:31,691 - INFO - Updated existing work record 124 for property 1
+2025-03-20 22:20:31,855 - INFO - Updated existing work record 125 for property 1
+2025-03-20 22:20:32,010 - INFO - Updated existing work record 126 for property 1
+2025-03-20 22:20:32,171 - INFO - Updated existing work record 127 for property 1
+2025-03-20 22:20:32,334 - INFO - Updated existing work record 128 for property 1
+2025-03-20 22:20:32,490 - INFO - Updated existing work record 129 for property 1
+2025-03-20 22:20:32,648 - INFO - Updated existing work record 130 for property 1
+2025-03-20 22:20:32,804 - INFO - Updated existing work record 131 for property 1
+2025-03-20 22:20:32,964 - INFO - Updated existing work record 132 for property 1
+2025-03-20 22:20:33,127 - INFO - Updated existing work record 133 for property 1
+2025-03-20 22:20:33,297 - INFO - Updated existing work record 134 for property 1
+2025-03-20 22:20:33,449 - INFO - Updated existing work record 135 for property 1
+2025-03-20 22:20:33,611 - INFO - Updated existing work record 136 for property 1
+2025-03-20 22:20:33,771 - INFO - Updated existing work record 137 for property 1
+2025-03-20 22:20:33,933 - INFO - Updated existing work record 138 for property 1
+2025-03-20 22:20:34,089 - INFO - Updated existing work record 139 for property 1
+2025-03-20 22:20:34,247 - INFO - Updated existing work record 140 for property 1
+2025-03-20 22:20:34,411 - INFO - Updated existing work record 141 for property 1
+2025-03-20 22:20:34,574 - INFO - Updated existing work record 142 for property 1
+2025-03-20 22:20:34,730 - INFO - Updated existing work record 143 for property 1
+2025-03-20 22:20:34,896 - INFO - Updated existing work record 144 for property 1
+2025-03-20 22:20:35,050 - INFO - Updated existing work record 145 for property 1
+2025-03-20 22:20:35,206 - INFO - Updated existing work record 146 for property 1
+2025-03-20 22:20:35,378 - INFO - Updated existing work record 147 for property 1
+2025-03-20 22:20:35,545 - INFO - Updated existing work record 148 for property 1
+2025-03-20 22:20:35,691 - INFO - Updated existing work record 149 for property 1
+2025-03-20 22:20:35,853 - INFO - Updated existing work record 150 for property 1
+2025-03-20 22:20:36,003 - INFO - Updated existing work record 151 for property 1
+2025-03-20 22:20:36,163 - INFO - Updated existing work record 152 for property 1
+2025-03-20 22:20:36,319 - INFO - Updated existing work record 153 for property 1
+2025-03-20 22:20:36,477 - INFO - Updated existing work record 154 for property 1
+2025-03-20 22:20:36,635 - INFO - Updated existing work record 155 for property 1
+2025-03-20 22:20:36,789 - INFO - Updated existing work record 156 for property 1
+2025-03-20 22:20:36,949 - INFO - Updated existing work record 157 for property 1
+2025-03-20 22:20:37,106 - INFO - Updated existing work record 158 for property 1
+2025-03-20 22:20:37,108 - INFO - Processed 166 rows for property: 2 Mareeba Cres, Bayswater
+2025-03-20 22:20:37,108 - INFO - Inserted/updated 158 records, skipped 8 rows
+2025-03-20 22:20:37,108 - INFO - Processed sheet 1/38: Sheet1 (2)
+2025-03-20 22:20:37,109 - INFO - Processing sheet: Sheet1 (3)
+2025-03-20 22:20:37,109 - INFO - Found property address: 4 Dianella St, Doncaster
+2025-03-20 22:20:37,168 - INFO - Found existing property ID 2 for address: 4 Dianella St, Doncaster
+2025-03-20 22:20:37,294 - INFO - Updated existing work record 163 for property 2
+2025-03-20 22:20:37,452 - INFO - Updated existing work record 164 for property 2
+2025-03-20 22:20:37,612 - INFO - Updated existing work record 165 for property 2
+2025-03-20 22:20:37,766 - INFO - Updated existing work record 166 for property 2
+2025-03-20 22:20:37,920 - INFO - Updated existing work record 167 for property 2
+2025-03-20 22:20:38,086 - INFO - Updated existing work record 168 for property 2
+2025-03-20 22:20:38,249 - INFO - Updated existing work record 169 for property 2
+2025-03-20 22:20:38,406 - INFO - Updated existing work record 170 for property 2
+2025-03-20 22:20:38,565 - INFO - Updated existing work record 171 for property 2
+2025-03-20 22:20:38,729 - INFO - Updated existing work record 172 for property 2
+2025-03-20 22:20:38,889 - INFO - Updated existing work record 173 for property 2
+2025-03-20 22:20:38,891 - INFO - Processed 16 rows for property: 4 Dianella St, Doncaster
+2025-03-20 22:20:38,891 - INFO - Inserted/updated 11 records, skipped 5 rows
+2025-03-20 22:20:38,891 - INFO - Processed sheet 2/38: Sheet1 (3)
+2025-03-20 22:20:38,892 - INFO - Processing sheet: Sheet1 (4)
+2025-03-20 22:20:38,892 - INFO - Found property address: The Templestowe House - 4 Wensley Ct
+2025-03-20 22:20:38,949 - INFO - Found existing property ID 3 for address: The Templestowe House - 4 Wensley Ct
+2025-03-20 22:20:39,079 - INFO - Updated existing money in record 2 for property 3
+2025-03-20 22:20:39,237 - INFO - Updated existing work record 176 for property 3
+2025-03-20 22:20:39,406 - INFO - Updated existing money in record 3 for property 3
+2025-03-20 22:20:39,564 - INFO - Updated existing money in record 4 for property 3
+2025-03-20 22:20:39,726 - INFO - Updated existing work record 177 for property 3
+2025-03-20 22:20:39,888 - INFO - Updated existing work record 178 for property 3
+2025-03-20 22:20:40,052 - INFO - Updated existing work record 179 for property 3
+2025-03-20 22:20:40,214 - INFO - Updated existing work record 180 for property 3
+2025-03-20 22:20:40,376 - INFO - Updated existing work record 181 for property 3
+2025-03-20 22:20:40,540 - INFO - Updated existing work record 182 for property 3
+2025-03-20 22:20:40,699 - INFO - Updated existing work record 183 for property 3
+2025-03-20 22:20:40,853 - INFO - Updated existing work record 184 for property 3
+2025-03-20 22:20:41,015 - INFO - Updated existing work record 185 for property 3
+2025-03-20 22:20:41,175 - INFO - Updated existing work record 186 for property 3
+2025-03-20 22:20:41,337 - INFO - Updated existing work record 187 for property 3
+2025-03-20 22:20:41,497 - INFO - Updated existing work record 188 for property 3
+2025-03-20 22:20:41,659 - INFO - Updated existing work record 189 for property 3
+2025-03-20 22:20:41,822 - INFO - Updated existing work record 190 for property 3
+2025-03-20 22:20:41,982 - INFO - Updated existing work record 191 for property 3
+2025-03-20 22:20:42,172 - INFO - Updated existing work record 192 for property 3
+2025-03-20 22:20:42,332 - INFO - Updated existing work record 193 for property 3
+2025-03-20 22:20:42,492 - INFO - Updated existing work record 194 for property 3
+2025-03-20 22:20:42,659 - INFO - Updated existing work record 195 for property 3
+2025-03-20 22:20:42,821 - INFO - Updated existing work record 196 for property 3
+2025-03-20 22:20:42,985 - INFO - Updated existing work record 197 for property 3
+2025-03-20 22:20:43,149 - INFO - Updated existing work record 198 for property 3
+2025-03-20 22:20:43,307 - INFO - Updated existing money in record 5 for property 3
+2025-03-20 22:20:43,461 - INFO - Updated existing work record 199 for property 3
+2025-03-20 22:20:43,623 - INFO - Updated existing work record 200 for property 3
+2025-03-20 22:20:43,785 - INFO - Updated existing work record 201 for property 3
+2025-03-20 22:20:43,944 - INFO - Updated existing work record 202 for property 3
+2025-03-20 22:20:44,108 - INFO - Updated existing work record 203 for property 3
+2025-03-20 22:20:44,270 - INFO - Updated existing work record 204 for property 3
+2025-03-20 22:20:44,429 - INFO - Updated existing work record 205 for property 3
+2025-03-20 22:20:44,590 - INFO - Updated existing work record 206 for property 3
+2025-03-20 22:20:44,748 - INFO - Updated existing work record 207 for property 3
+2025-03-20 22:20:44,911 - INFO - Updated existing work record 208 for property 3
+2025-03-20 22:20:45,073 - INFO - Updated existing work record 209 for property 3
+2025-03-20 22:20:45,241 - INFO - Updated existing work record 210 for property 3
+2025-03-20 22:20:45,403 - INFO - Updated existing work record 211 for property 3
+2025-03-20 22:20:45,563 - INFO - Updated existing work record 212 for property 3
+2025-03-20 22:20:45,725 - INFO - Updated existing work record 213 for property 3
+2025-03-20 22:20:45,887 - INFO - Updated existing work record 214 for property 3
+2025-03-20 22:20:46,047 - INFO - Updated existing work record 215 for property 3
+2025-03-20 22:20:46,209 - INFO - Updated existing work record 216 for property 3
+2025-03-20 22:20:46,370 - INFO - Updated existing work record 217 for property 3
+2025-03-20 22:20:46,528 - INFO - Updated existing work record 218 for property 3
+2025-03-20 22:20:46,694 - INFO - Updated existing work record 219 for property 3
+2025-03-20 22:20:46,854 - INFO - Updated existing work record 220 for property 3
+2025-03-20 22:20:47,008 - INFO - Updated existing work record 221 for property 3
+2025-03-20 22:20:47,166 - INFO - Updated existing work record 222 for property 3
+2025-03-20 22:20:47,327 - INFO - Updated existing work record 223 for property 3
+2025-03-20 22:20:47,491 - INFO - Updated existing work record 224 for property 3
+2025-03-20 22:20:47,653 - INFO - Updated existing work record 225 for property 3
+2025-03-20 22:20:47,819 - INFO - Updated existing work record 226 for property 3
+2025-03-20 22:20:47,981 - INFO - Updated existing work record 227 for property 3
+2025-03-20 22:20:48,141 - INFO - Updated existing work record 228 for property 3
+2025-03-20 22:20:48,305 - INFO - Updated existing work record 229 for property 3
+2025-03-20 22:20:48,460 - INFO - Updated existing work record 230 for property 3
+2025-03-20 22:20:48,626 - INFO - Updated existing work record 231 for property 3
+2025-03-20 22:20:48,792 - INFO - Updated existing work record 232 for property 3
+2025-03-20 22:20:48,950 - INFO - Updated existing work record 233 for property 3
+2025-03-20 22:20:49,111 - INFO - Updated existing work record 234 for property 3
+2025-03-20 22:20:49,274 - INFO - Updated existing work record 235 for property 3
+2025-03-20 22:20:49,435 - INFO - Updated existing work record 236 for property 3
+2025-03-20 22:20:49,595 - INFO - Updated existing work record 237 for property 3
+2025-03-20 22:20:49,759 - INFO - Updated existing work record 238 for property 3
+2025-03-20 22:20:49,921 - INFO - Updated existing work record 239 for property 3
+2025-03-20 22:20:50,084 - INFO - Updated existing work record 240 for property 3
+2025-03-20 22:20:50,252 - INFO - Updated existing work record 241 for property 3
+2025-03-20 22:20:50,409 - INFO - Updated existing work record 242 for property 3
+2025-03-20 22:20:50,565 - INFO - Updated existing work record 243 for property 3
+2025-03-20 22:20:50,726 - INFO - Updated existing work record 244 for property 3
+2025-03-20 22:20:50,890 - INFO - Updated existing work record 245 for property 3
+2025-03-20 22:20:51,054 - INFO - Updated existing work record 246 for property 3
+2025-03-20 22:20:51,224 - INFO - Updated existing work record 247 for property 3
+2025-03-20 22:20:51,386 - INFO - Updated existing work record 248 for property 3
+2025-03-20 22:20:51,550 - INFO - Updated existing work record 249 for property 3
+2025-03-20 22:20:51,711 - INFO - Updated existing work record 250 for property 3
+2025-03-20 22:20:51,873 - INFO - Updated existing work record 251 for property 3
+2025-03-20 22:20:52,029 - INFO - Updated existing work record 252 for property 3
+2025-03-20 22:20:52,193 - INFO - Updated existing work record 253 for property 3
+2025-03-20 22:20:52,351 - INFO - Updated existing work record 254 for property 3
+2025-03-20 22:20:52,507 - INFO - Updated existing work record 255 for property 3
+2025-03-20 22:20:52,668 - INFO - Updated existing work record 256 for property 3
+2025-03-20 22:20:52,828 - INFO - Updated existing work record 257 for property 3
+2025-03-20 22:20:52,992 - INFO - Updated existing work record 258 for property 3
+2025-03-20 22:20:53,152 - INFO - Updated existing work record 259 for property 3
+2025-03-20 22:20:53,316 - INFO - Updated existing work record 260 for property 3
+2025-03-20 22:20:53,474 - INFO - Updated existing work record 261 for property 3
+2025-03-20 22:20:53,642 - INFO - Updated existing work record 262 for property 3
+2025-03-20 22:20:53,803 - INFO - Updated existing work record 263 for property 3
+2025-03-20 22:20:53,955 - INFO - Updated existing work record 264 for property 3
+2025-03-20 22:20:54,121 - INFO - Updated existing work record 265 for property 3
+2025-03-20 22:20:54,283 - INFO - Updated existing work record 266 for property 3
+2025-03-20 22:20:54,447 - INFO - Updated existing work record 267 for property 3
+2025-03-20 22:20:54,613 - INFO - Updated existing work record 268 for property 3
+2025-03-20 22:20:54,771 - INFO - Updated existing work record 269 for property 3
+2025-03-20 22:20:54,932 - INFO - Updated existing work record 270 for property 3
+2025-03-20 22:20:55,082 - INFO - Updated existing work record 271 for property 3
+2025-03-20 22:20:55,242 - INFO - Updated existing work record 272 for property 3
+2025-03-20 22:20:55,408 - INFO - Updated existing work record 273 for property 3
+2025-03-20 22:20:55,572 - INFO - Updated existing work record 274 for property 3
+2025-03-20 22:20:55,726 - INFO - Updated existing work record 275 for property 3
+2025-03-20 22:20:55,893 - INFO - Updated existing work record 276 for property 3
+2025-03-20 22:20:56,051 - INFO - Updated existing work record 277 for property 3
+2025-03-20 22:20:56,217 - INFO - Updated existing work record 278 for property 3
+2025-03-20 22:20:56,375 - INFO - Updated existing work record 279 for property 3
+2025-03-20 22:20:56,539 - INFO - Updated existing work record 280 for property 3
+2025-03-20 22:20:56,707 - INFO - Updated existing work record 281 for property 3
+2025-03-20 22:20:56,870 - INFO - Updated existing work record 282 for property 3
+2025-03-20 22:20:57,034 - INFO - Updated existing work record 283 for property 3
+2025-03-20 22:20:57,195 - INFO - Updated existing work record 284 for property 3
+2025-03-20 22:20:57,356 - INFO - Updated existing work record 285 for property 3
+2025-03-20 22:20:57,516 - INFO - Updated existing work record 286 for property 3
+2025-03-20 22:20:57,681 - INFO - Updated existing work record 287 for property 3
+2025-03-20 22:20:57,842 - INFO - Updated existing work record 288 for property 3
+2025-03-20 22:20:58,005 - INFO - Updated existing work record 289 for property 3
+2025-03-20 22:20:58,169 - INFO - Updated existing work record 290 for property 3
+2025-03-20 22:20:58,327 - INFO - Updated existing work record 291 for property 3
+2025-03-20 22:20:58,493 - INFO - Updated existing work record 292 for property 3
+2025-03-20 22:20:58,657 - INFO - Updated existing work record 293 for property 3
+2025-03-20 22:20:58,830 - INFO - Updated existing work record 294 for property 3
+2025-03-20 22:20:58,994 - INFO - Updated existing work record 295 for property 3
+2025-03-20 22:20:59,158 - INFO - Updated existing work record 296 for property 3
+2025-03-20 22:20:59,322 - INFO - Updated existing work record 297 for property 3
+2025-03-20 22:20:59,482 - INFO - Updated existing work record 298 for property 3
+2025-03-20 22:20:59,654 - INFO - Updated existing work record 299 for property 3
+2025-03-20 22:20:59,815 - INFO - Updated existing work record 300 for property 3
+2025-03-20 22:20:59,979 - INFO - Updated existing work record 301 for property 3
+2025-03-20 22:21:00,136 - INFO - Updated existing work record 302 for property 3
+2025-03-20 22:21:00,309 - INFO - Updated existing work record 303 for property 3
+2025-03-20 22:21:00,473 - INFO - Updated existing work record 304 for property 3
+2025-03-20 22:21:00,637 - INFO - Updated existing work record 305 for property 3
+2025-03-20 22:21:00,801 - INFO - Updated existing work record 306 for property 3
+2025-03-20 22:21:00,964 - INFO - Updated existing work record 307 for property 3
+2025-03-20 22:21:01,133 - INFO - Updated existing work record 308 for property 3
+2025-03-20 22:21:01,288 - INFO - Updated existing work record 309 for property 3
+2025-03-20 22:21:01,448 - INFO - Updated existing work record 310 for property 3
+2025-03-20 22:21:01,617 - INFO - Updated existing work record 311 for property 3
+2025-03-20 22:21:01,781 - INFO - Updated existing work record 312 for property 3
+2025-03-20 22:21:01,940 - INFO - Updated existing work record 313 for property 3
+2025-03-20 22:21:02,101 - INFO - Updated existing work record 314 for property 3
+2025-03-20 22:21:02,258 - INFO - Updated existing work record 315 for property 3
+2025-03-20 22:21:02,421 - INFO - Updated existing work record 316 for property 3
+2025-03-20 22:21:02,577 - INFO - Updated existing work record 317 for property 3
+2025-03-20 22:21:02,744 - INFO - Updated existing work record 318 for property 3
+2025-03-20 22:21:02,906 - INFO - Updated existing work record 319 for property 3
+2025-03-20 22:21:03,069 - INFO - Updated existing work record 320 for property 3
+2025-03-20 22:21:03,234 - INFO - Updated existing work record 321 for property 3
+2025-03-20 22:21:03,390 - INFO - Updated existing work record 322 for property 3
+2025-03-20 22:21:03,556 - INFO - Updated existing work record 323 for property 3
+2025-03-20 22:21:03,720 - INFO - Updated existing work record 324 for property 3
+2025-03-20 22:21:03,882 - INFO - Updated existing work record 325 for property 3
+2025-03-20 22:21:04,042 - INFO - Updated existing work record 326 for property 3
+2025-03-20 22:21:04,209 - INFO - Updated existing work record 327 for property 3
+2025-03-20 22:21:04,364 - INFO - Updated existing work record 328 for property 3
+2025-03-20 22:21:04,521 - INFO - Updated existing work record 329 for property 3
+2025-03-20 22:21:04,685 - INFO - Updated existing work record 330 for property 3
+2025-03-20 22:21:04,859 - INFO - Updated existing work record 331 for property 3
+2025-03-20 22:21:05,023 - INFO - Updated existing work record 332 for property 3
+2025-03-20 22:21:05,177 - INFO - Updated existing work record 333 for property 3
+2025-03-20 22:21:05,336 - INFO - Updated existing work record 334 for property 3
+2025-03-20 22:21:05,488 - INFO - Updated existing work record 335 for property 3
+2025-03-20 22:21:05,650 - INFO - Updated existing work record 336 for property 3
+2025-03-20 22:21:05,804 - INFO - Updated existing work record 337 for property 3
+2025-03-20 22:21:05,970 - INFO - Updated existing work record 338 for property 3
+2025-03-20 22:21:06,124 - INFO - Updated existing work record 339 for property 3
+2025-03-20 22:21:06,277 - INFO - Updated existing work record 340 for property 3
+2025-03-20 22:21:06,435 - INFO - Updated existing work record 341 for property 3
+2025-03-20 22:21:06,593 - INFO - Updated existing work record 342 for property 3
+2025-03-20 22:21:06,753 - INFO - Updated existing work record 343 for property 3
+2025-03-20 22:21:06,923 - INFO - Updated existing work record 344 for property 3
+2025-03-20 22:21:07,085 - INFO - Updated existing work record 345 for property 3
+2025-03-20 22:21:07,243 - INFO - Updated existing work record 346 for property 3
+2025-03-20 22:21:07,408 - INFO - Updated existing work record 347 for property 3
+2025-03-20 22:21:07,572 - INFO - Updated existing work record 348 for property 3
+2025-03-20 22:21:07,732 - INFO - Updated existing work record 349 for property 3
+2025-03-20 22:21:07,892 - INFO - Updated existing work record 350 for property 3
+2025-03-20 22:21:08,052 - INFO - Updated existing work record 351 for property 3
+2025-03-20 22:21:08,222 - INFO - Updated existing work record 352 for property 3
+2025-03-20 22:21:08,383 - INFO - Updated existing work record 353 for property 3
+2025-03-20 22:21:08,547 - INFO - Updated existing work record 354 for property 3
+2025-03-20 22:21:08,713 - INFO - Updated existing work record 355 for property 3
+2025-03-20 22:21:08,877 - INFO - Updated existing work record 356 for property 3
+2025-03-20 22:21:09,039 - INFO - Updated existing work record 357 for property 3
+2025-03-20 22:21:09,209 - INFO - Updated existing work record 358 for property 3
+2025-03-20 22:21:09,368 - INFO - Updated existing work record 359 for property 3
+2025-03-20 22:21:09,531 - INFO - Updated existing work record 360 for property 3
+2025-03-20 22:21:09,707 - INFO - Updated existing work record 361 for property 3
+2025-03-20 22:21:09,868 - INFO - Updated existing work record 362 for property 3
+2025-03-20 22:21:10,038 - INFO - Updated existing work record 363 for property 3
+2025-03-20 22:21:10,198 - INFO - Updated existing work record 364 for property 3
+2025-03-20 22:21:10,364 - INFO - Updated existing work record 365 for property 3
+2025-03-20 22:21:10,520 - INFO - Updated existing work record 366 for property 3
+2025-03-20 22:21:10,679 - INFO - Updated existing work record 367 for property 3
+2025-03-20 22:21:10,845 - INFO - Updated existing work record 368 for property 3
+2025-03-20 22:21:11,001 - INFO - Updated existing work record 369 for property 3
+2025-03-20 22:21:11,161 - INFO - Updated existing work record 370 for property 3
+2025-03-20 22:21:11,327 - INFO - Updated existing work record 371 for property 3
+2025-03-20 22:21:11,491 - INFO - Updated existing work record 372 for property 3
+2025-03-20 22:21:11,659 - INFO - Updated existing work record 373 for property 3
+2025-03-20 22:21:11,822 - INFO - Updated existing work record 374 for property 3
+2025-03-20 22:21:11,974 - INFO - Updated existing work record 375 for property 3
+2025-03-20 22:21:12,132 - INFO - Updated existing work record 376 for property 3
+2025-03-20 22:21:12,296 - INFO - Updated existing work record 377 for property 3
+2025-03-20 22:21:12,456 - INFO - Updated existing work record 378 for property 3
+2025-03-20 22:21:12,623 - INFO - Updated existing work record 379 for property 3
+2025-03-20 22:21:12,781 - INFO - Updated existing work record 380 for property 3
+2025-03-20 22:21:12,943 - INFO - Updated existing work record 381 for property 3
+2025-03-20 22:21:13,109 - INFO - Updated existing work record 382 for property 3
+2025-03-20 22:21:13,272 - INFO - Updated existing work record 383 for property 3
+2025-03-20 22:21:13,432 - INFO - Updated existing work record 384 for property 3
+2025-03-20 22:21:13,584 - INFO - Updated existing work record 385 for property 3
+2025-03-20 22:21:13,748 - INFO - Updated existing work record 386 for property 3
+2025-03-20 22:21:13,910 - INFO - Updated existing work record 387 for property 3
+2025-03-20 22:21:14,074 - INFO - Updated existing work record 388 for property 3
+2025-03-20 22:21:14,242 - INFO - Updated existing work record 389 for property 3
+2025-03-20 22:21:14,402 - INFO - Updated existing work record 390 for property 3
+2025-03-20 22:21:14,558 - INFO - Updated existing work record 391 for property 3
+2025-03-20 22:21:14,725 - INFO - Updated existing work record 392 for property 3
+2025-03-20 22:21:15,193 - INFO - Updated existing work record 393 for property 3
+2025-03-20 22:21:15,357 - INFO - Updated existing work record 394 for property 3
+2025-03-20 22:21:15,519 - INFO - Updated existing work record 395 for property 3
+2025-03-20 22:21:15,684 - INFO - Updated existing work record 396 for property 3
+2025-03-20 22:21:15,848 - INFO - Updated existing work record 397 for property 3
+2025-03-20 22:21:16,014 - INFO - Updated existing work record 398 for property 3
+2025-03-20 22:21:16,182 - INFO - Updated existing work record 399 for property 3
+2025-03-20 22:21:16,346 - INFO - Updated existing work record 400 for property 3
+2025-03-20 22:21:16,508 - INFO - Updated existing work record 401 for property 3
+2025-03-20 22:21:16,666 - INFO - Updated existing work record 402 for property 3
+2025-03-20 22:21:16,833 - INFO - Updated existing work record 403 for property 3
+2025-03-20 22:21:16,985 - INFO - Updated existing work record 404 for property 3
+2025-03-20 22:21:17,143 - INFO - Updated existing work record 405 for property 3
+2025-03-20 22:21:17,311 - INFO - Updated existing work record 406 for property 3
+2025-03-20 22:21:17,467 - INFO - Updated existing work record 407 for property 3
+2025-03-20 22:21:17,638 - INFO - Updated existing work record 408 for property 3
+2025-03-20 22:21:17,801 - INFO - Updated existing work record 409 for property 3
+2025-03-20 22:21:17,968 - INFO - Updated existing work record 410 for property 3
+2025-03-20 22:21:18,136 - INFO - Updated existing work record 411 for property 3
+2025-03-20 22:21:18,304 - INFO - Updated existing work record 412 for property 3
+2025-03-20 22:21:18,476 - INFO - Updated existing work record 413 for property 3
+2025-03-20 22:21:18,633 - INFO - Updated existing work record 414 for property 3
+2025-03-20 22:21:18,795 - INFO - Updated existing work record 415 for property 3
+2025-03-20 22:21:18,953 - INFO - Updated existing work record 416 for property 3
+2025-03-20 22:21:19,105 - INFO - Updated existing work record 417 for property 3
+2025-03-20 22:21:19,263 - INFO - Updated existing work record 418 for property 3
+2025-03-20 22:21:19,425 - INFO - Updated existing work record 419 for property 3
+2025-03-20 22:21:19,589 - INFO - Updated existing work record 420 for property 3
+2025-03-20 22:21:19,755 - INFO - Updated existing work record 421 for property 3
+2025-03-20 22:21:19,918 - INFO - Updated existing work record 422 for property 3
+2025-03-20 22:21:20,074 - INFO - Updated existing work record 423 for property 3
+2025-03-20 22:21:20,232 - INFO - Updated existing work record 424 for property 3
+2025-03-20 22:21:20,390 - INFO - Updated existing work record 425 for property 3
+2025-03-20 22:21:20,550 - INFO - Updated existing work record 426 for property 3
+2025-03-20 22:21:20,716 - INFO - Updated existing work record 427 for property 3
+2025-03-20 22:21:20,880 - INFO - Updated existing work record 428 for property 3
+2025-03-20 22:21:21,041 - INFO - Updated existing work record 429 for property 3
+2025-03-20 22:21:21,199 - INFO - Updated existing work record 430 for property 3
+2025-03-20 22:21:21,357 - INFO - Updated existing work record 431 for property 3
+2025-03-20 22:21:21,517 - INFO - Updated existing work record 432 for property 3
+2025-03-20 22:21:21,681 - INFO - Updated existing work record 433 for property 3
+2025-03-20 22:21:21,845 - INFO - Updated existing work record 434 for property 3
+2025-03-20 22:21:21,991 - INFO - Updated existing work record 435 for property 3
+2025-03-20 22:21:21,992 - INFO - Processed 283 rows for property: The Templestowe House - 4 Wensley Ct
+2025-03-20 22:21:21,992 - INFO - Inserted/updated 264 records, skipped 19 rows
+2025-03-20 22:21:21,992 - INFO - Processed sheet 3/38: Sheet1 (4)
+2025-03-20 22:21:21,994 - INFO - Processing sheet: Balcony Balustrade
+2025-03-20 22:21:21,994 - INFO - Found property address: 5 Valcluse Crt Donvale
+2025-03-20 22:21:22,056 - INFO - Found existing property ID 4 for address: 5 Valcluse Crt Donvale
+2025-03-20 22:21:22,201 - INFO - Updated existing work record 438 for property 4
+2025-03-20 22:21:22,366 - INFO - Updated existing work record 439 for property 4
+2025-03-20 22:21:23,089 - INFO - Processed 6 rows for property: 5 Valcluse Crt Donvale
+2025-03-20 22:21:23,089 - INFO - Inserted/updated 2 records, skipped 4 rows
+2025-03-20 22:21:23,089 - INFO - Processed sheet 4/38: Balcony Balustrade
+2025-03-20 22:21:23,089 - INFO - Processing sheet: Backyard Deck
+2025-03-20 22:21:23,089 - INFO - Found property address: 5 Valcluse Crt Donvale
+2025-03-20 22:21:23,153 - INFO - Found existing property ID 4 for address: 5 Valcluse Crt Donvale
+2025-03-20 22:21:23,277 - INFO - Updated existing work record 440 for property 4
+2025-03-20 22:21:23,447 - INFO - Updated existing work record 441 for property 4
+2025-03-20 22:21:23,448 - INFO - Processed 6 rows for property: 5 Valcluse Crt Donvale
+2025-03-20 22:21:23,448 - INFO - Inserted/updated 2 records, skipped 4 rows
+2025-03-20 22:21:23,448 - INFO - Processed sheet 5/38: Backyard Deck
+2025-03-20 22:21:23,448 - INFO - Processing sheet: Patch & Paint
+2025-03-20 22:21:23,448 - INFO - Found property address: 5 Valcluse Crt Donvale
+2025-03-20 22:21:23,509 - INFO - Found existing property ID 4 for address: 5 Valcluse Crt Donvale
+2025-03-20 22:21:23,643 - INFO - Updated existing work record 442 for property 4
+2025-03-20 22:21:23,644 - INFO - Processed 5 rows for property: 5 Valcluse Crt Donvale
+2025-03-20 22:21:23,644 - INFO - Inserted/updated 1 records, skipped 4 rows
+2025-03-20 22:21:23,644 - INFO - Processed sheet 6/38: Patch & Paint
+2025-03-20 22:21:23,645 - INFO - Processing sheet: Patch & Paint PT.2
+2025-03-20 22:21:23,645 - INFO - Found property address: 5 Valcluse Crt Donvale
+2025-03-20 22:21:23,709 - INFO - Found existing property ID 4 for address: 5 Valcluse Crt Donvale
+2025-03-20 22:21:23,840 - INFO - Updated existing work record 443 for property 4
+2025-03-20 22:21:23,841 - INFO - Processed 5 rows for property: 5 Valcluse Crt Donvale
+2025-03-20 22:21:23,841 - INFO - Inserted/updated 1 records, skipped 4 rows
+2025-03-20 22:21:23,841 - INFO - Processed sheet 7/38: Patch & Paint PT.2
+2025-03-20 22:21:23,841 - INFO - Processing sheet: Sheet1 (5)
+2025-03-20 22:21:23,841 - INFO - Found property address: 6 Apple Gum Grove Doncaster East
+2025-03-20 22:21:23,906 - INFO - Found existing property ID 5 for address: 6 Apple Gum Grove Doncaster East
+2025-03-20 22:21:24,034 - INFO - Updated existing work record 444 for property 5
+2025-03-20 22:21:24,182 - INFO - Updated existing work record 445 for property 5
+2025-03-20 22:21:24,338 - INFO - Updated existing work record 446 for property 5
+2025-03-20 22:21:24,494 - INFO - Updated existing work record 447 for property 5
+2025-03-20 22:21:24,657 - INFO - Updated existing work record 448 for property 5
+2025-03-20 22:21:25,130 - INFO - Updated existing work record 449 for property 5
+2025-03-20 22:21:25,288 - INFO - Updated existing work record 450 for property 5
+2025-03-20 22:21:25,288 - INFO - Processed 10 rows for property: 6 Apple Gum Grove Doncaster East
+2025-03-20 22:21:25,288 - INFO - Inserted/updated 7 records, skipped 3 rows
+2025-03-20 22:21:25,288 - INFO - Processed sheet 8/38: Sheet1 (5)
+2025-03-20 22:21:25,289 - INFO - Processing sheet: Sheet1 (6)
+2025-03-20 22:21:25,289 - INFO - Found property address: 6 Dianella Expenses
+2025-03-20 22:21:25,347 - INFO - Found existing property ID 6 for address: 6 Dianella Expenses
+2025-03-20 22:21:25,475 - INFO - Updated existing work record 453 for property 6
+2025-03-20 22:21:25,647 - INFO - Updated existing work record 454 for property 6
+2025-03-20 22:21:25,808 - INFO - Updated existing work record 455 for property 6
+2025-03-20 22:21:25,970 - INFO - Updated existing work record 456 for property 6
+2025-03-20 22:21:26,140 - INFO - Updated existing work record 457 for property 6
+2025-03-20 22:21:26,304 - INFO - Updated existing work record 458 for property 6
+2025-03-20 22:21:26,458 - INFO - Updated existing work record 459 for property 6
+2025-03-20 22:21:26,622 - INFO - Updated existing work record 460 for property 6
+2025-03-20 22:21:26,779 - INFO - Updated existing work record 461 for property 6
+2025-03-20 22:21:26,936 - INFO - Updated existing work record 462 for property 6
+2025-03-20 22:21:26,937 - INFO - Processed 12 rows for property: 6 Dianella Expenses
+2025-03-20 22:21:26,937 - INFO - Inserted/updated 10 records, skipped 2 rows
+2025-03-20 22:21:26,937 - INFO - Processed sheet 9/38: Sheet1 (6)
+2025-03-20 22:21:26,937 - INFO - Processing sheet: Sheet1 (7)
+2025-03-20 22:21:26,937 - INFO - Found property address: 8 Archer Grove, Doncaster
+2025-03-20 22:21:26,998 - INFO - Found existing property ID 7 for address: 8 Archer Grove, Doncaster
+2025-03-20 22:21:27,134 - INFO - Updated existing work record 464 for property 7
+2025-03-20 22:21:27,297 - INFO - Updated existing work record 465 for property 7
+2025-03-20 22:21:27,462 - INFO - Updated existing work record 466 for property 7
+2025-03-20 22:21:27,622 - INFO - Updated existing work record 467 for property 7
+2025-03-20 22:21:27,781 - INFO - Updated existing work record 468 for property 7
+2025-03-20 22:21:27,946 - INFO - Updated existing work record 469 for property 7
+2025-03-20 22:21:28,116 - INFO - Updated existing work record 470 for property 7
+2025-03-20 22:21:28,264 - INFO - Updated existing work record 471 for property 7
+2025-03-20 22:21:28,426 - INFO - Updated existing work record 472 for property 7
+2025-03-20 22:21:28,584 - INFO - Updated existing work record 473 for property 7
+2025-03-20 22:21:28,736 - INFO - Updated existing work record 474 for property 7
+2025-03-20 22:21:28,895 - INFO - Updated existing work record 475 for property 7
+2025-03-20 22:21:29,057 - INFO - Updated existing work record 476 for property 7
+2025-03-20 22:21:29,223 - INFO - Updated existing work record 477 for property 7
+2025-03-20 22:21:29,385 - INFO - Updated existing work record 478 for property 7
+2025-03-20 22:21:29,547 - INFO - Updated existing work record 479 for property 7
+2025-03-20 22:21:29,708 - INFO - Updated existing work record 480 for property 7
+2025-03-20 22:21:29,867 - INFO - Updated existing work record 481 for property 7
+2025-03-20 22:21:30,022 - INFO - Updated existing work record 482 for property 7
+2025-03-20 22:21:30,180 - INFO - Updated existing work record 483 for property 7
+2025-03-20 22:21:30,342 - INFO - Updated existing work record 484 for property 7
+2025-03-20 22:21:30,586 - INFO - Updated existing work record 485 for property 7
+2025-03-20 22:21:30,760 - INFO - Updated existing work record 486 for property 7
+2025-03-20 22:21:30,916 - INFO - Updated existing work record 487 for property 7
+2025-03-20 22:21:31,072 - INFO - Updated existing work record 488 for property 7
+2025-03-20 22:21:31,231 - INFO - Updated existing work record 489 for property 7
+2025-03-20 22:21:31,389 - INFO - Updated existing work record 490 for property 7
+2025-03-20 22:21:31,551 - INFO - Updated existing work record 491 for property 7
+2025-03-20 22:21:31,713 - INFO - Updated existing work record 492 for property 7
+2025-03-20 22:21:31,873 - INFO - Updated existing work record 493 for property 7
+2025-03-20 22:21:32,033 - INFO - Updated existing work record 494 for property 7
+2025-03-20 22:21:32,200 - INFO - Updated existing work record 495 for property 7
+2025-03-20 22:21:32,352 - INFO - Updated existing work record 496 for property 7
+2025-03-20 22:21:32,508 - INFO - Updated existing work record 497 for property 7
+2025-03-20 22:21:32,670 - INFO - Updated existing work record 498 for property 7
+2025-03-20 22:21:32,836 - INFO - Updated existing work record 499 for property 7
+2025-03-20 22:21:32,996 - INFO - Updated existing work record 500 for property 7
+2025-03-20 22:21:33,161 - INFO - Updated existing work record 501 for property 7
+2025-03-20 22:21:33,327 - INFO - Updated existing work record 502 for property 7
+2025-03-20 22:21:33,481 - INFO - Updated existing work record 503 for property 7
+2025-03-20 22:21:33,653 - INFO - Updated existing work record 504 for property 7
+2025-03-20 22:21:33,824 - INFO - Updated existing work record 505 for property 7
+2025-03-20 22:21:33,982 - INFO - Updated existing work record 506 for property 7
+2025-03-20 22:21:34,148 - INFO - Updated existing work record 507 for property 7
+2025-03-20 22:21:34,316 - INFO - Updated existing work record 508 for property 7
+2025-03-20 22:21:34,480 - INFO - Updated existing work record 509 for property 7
+2025-03-20 22:21:34,644 - INFO - Updated existing work record 509 for property 7
+2025-03-20 22:21:34,800 - INFO - Updated existing work record 511 for property 7
+2025-03-20 22:21:34,956 - INFO - Updated existing work record 512 for property 7
+2025-03-20 22:21:35,128 - INFO - Updated existing work record 513 for property 7
+2025-03-20 22:21:35,297 - INFO - Updated existing work record 514 for property 7
+2025-03-20 22:21:35,455 - INFO - Updated existing work record 515 for property 7
+2025-03-20 22:21:35,607 - INFO - Updated existing work record 516 for property 7
+2025-03-20 22:21:35,772 - INFO - Updated existing work record 517 for property 7
+2025-03-20 22:21:35,775 - INFO - Processed 56 rows for property: 8 Archer Grove, Doncaster
+2025-03-20 22:21:35,775 - INFO - Inserted/updated 54 records, skipped 2 rows
+2025-03-20 22:21:35,775 - INFO - Processed sheet 10/38: Sheet1 (7)
+2025-03-20 22:21:35,776 - INFO - Processing sheet: Sheet1 (8)
+2025-03-20 22:21:35,776 - INFO - Found property address: 26 Smith St Richmond
+2025-03-20 22:21:35,833 - INFO - Found existing property ID 8 for address: 26 Smith St Richmond
+2025-03-20 22:21:35,966 - INFO - Updated existing work record 520 for property 8
+2025-03-20 22:21:36,123 - INFO - Updated existing work record 521 for property 8
+2025-03-20 22:21:36,285 - INFO - Updated existing work record 522 for property 8
+2025-03-20 22:21:36,443 - INFO - Updated existing work record 523 for property 8
+2025-03-20 22:21:36,600 - INFO - Updated existing work record 524 for property 8
+2025-03-20 22:21:36,758 - INFO - Updated existing work record 525 for property 8
+2025-03-20 22:21:36,918 - INFO - Updated existing work record 526 for property 8
+2025-03-20 22:21:37,070 - INFO - Updated existing work record 527 for property 8
+2025-03-20 22:21:37,232 - INFO - Updated existing work record 528 for property 8
+2025-03-20 22:21:37,395 - INFO - Updated existing work record 529 for property 8
+2025-03-20 22:21:37,557 - INFO - Updated existing work record 530 for property 8
+2025-03-20 22:21:37,725 - INFO - Updated existing work record 531 for property 8
+2025-03-20 22:21:37,885 - INFO - Updated existing work record 532 for property 8
+2025-03-20 22:21:38,049 - INFO - Updated existing work record 533 for property 8
+2025-03-20 22:21:38,206 - INFO - Updated existing work record 534 for property 8
+2025-03-20 22:21:38,368 - INFO - Updated existing work record 535 for property 8
+2025-03-20 22:21:38,534 - INFO - Updated existing work record 536 for property 8
+2025-03-20 22:21:38,700 - INFO - Updated existing work record 537 for property 8
+2025-03-20 22:21:38,860 - INFO - Updated existing work record 538 for property 8
+2025-03-20 22:21:39,026 - INFO - Updated existing work record 539 for property 8
+2025-03-20 22:21:39,187 - INFO - Updated existing work record 540 for property 8
+2025-03-20 22:21:39,345 - INFO - Updated existing work record 541 for property 8
+2025-03-20 22:21:39,501 - INFO - Updated existing work record 542 for property 8
+2025-03-20 22:21:39,663 - INFO - Updated existing work record 543 for property 8
+2025-03-20 22:21:39,827 - INFO - Updated existing work record 544 for property 8
+2025-03-20 22:21:39,985 - INFO - Updated existing work record 545 for property 8
+2025-03-20 22:21:40,149 - INFO - Updated existing work record 546 for property 8
+2025-03-20 22:21:40,309 - INFO - Updated existing work record 547 for property 8
+2025-03-20 22:21:40,465 - INFO - Updated existing work record 548 for property 8
+2025-03-20 22:21:40,622 - INFO - Updated existing work record 549 for property 8
+2025-03-20 22:21:40,784 - INFO - Updated existing work record 550 for property 8
+2025-03-20 22:21:40,946 - INFO - Updated existing work record 551 for property 8
+2025-03-20 22:21:41,098 - INFO - Updated existing work record 552 for property 8
+2025-03-20 22:21:41,100 - INFO - Processed 36 rows for property: 26 Smith St Richmond
+2025-03-20 22:21:41,100 - INFO - Inserted/updated 33 records, skipped 3 rows
+2025-03-20 22:21:41,100 - INFO - Processed sheet 11/38: Sheet1 (8)
+2025-03-20 22:21:41,101 - INFO - Processing sheet: Sheet1 (9)
+2025-03-20 22:21:41,101 - INFO - Found property address: 29 Grandview Rd Box Hill South
+2025-03-20 22:21:41,157 - INFO - Found existing property ID 9 for address: 29 Grandview Rd Box Hill South
+2025-03-20 22:21:41,285 - INFO - Updated existing work record 554 for property 9
+2025-03-20 22:21:41,451 - INFO - Updated existing work record 555 for property 9
+2025-03-20 22:21:41,617 - INFO - Updated existing work record 556 for property 9
+2025-03-20 22:21:41,783 - INFO - Updated existing work record 557 for property 9
+2025-03-20 22:21:41,945 - INFO - Updated existing work record 558 for property 9
+2025-03-20 22:21:42,101 - INFO - Updated existing work record 559 for property 9
+2025-03-20 22:21:42,261 - INFO - Updated existing work record 560 for property 9
+2025-03-20 22:21:42,426 - INFO - Updated existing work record 561 for property 9
+2025-03-20 22:21:42,586 - INFO - Updated existing work record 562 for property 9
+2025-03-20 22:21:42,746 - INFO - Updated existing work record 563 for property 9
+2025-03-20 22:21:42,904 - INFO - Updated existing work record 564 for property 9
+2025-03-20 22:21:43,066 - INFO - Updated existing work record 565 for property 9
+2025-03-20 22:21:43,232 - INFO - Updated existing work record 566 for property 9
+2025-03-20 22:21:43,394 - INFO - Updated existing work record 567 for property 9
+2025-03-20 22:21:43,561 - INFO - Updated existing work record 568 for property 9
+2025-03-20 22:21:43,721 - INFO - Updated existing work record 569 for property 9
+2025-03-20 22:21:43,885 - INFO - Updated existing work record 570 for property 9
+2025-03-20 22:21:44,047 - INFO - Updated existing work record 571 for property 9
+2025-03-20 22:21:44,207 - INFO - Updated existing work record 572 for property 9
+2025-03-20 22:21:44,370 - INFO - Updated existing work record 573 for property 9
+2025-03-20 22:21:44,534 - INFO - Updated existing work record 574 for property 9
+2025-03-20 22:21:44,699 - INFO - Updated existing work record 575 for property 9
+2025-03-20 22:21:44,860 - INFO - Updated existing work record 576 for property 9
+2025-03-20 22:21:45,026 - INFO - Updated existing work record 577 for property 9
+2025-03-20 22:21:45,184 - INFO - Updated existing work record 578 for property 9
+2025-03-20 22:21:45,347 - INFO - Updated existing work record 579 for property 9
+2025-03-20 22:21:45,501 - INFO - Updated existing work record 580 for property 9
+2025-03-20 22:21:45,657 - INFO - Updated existing work record 581 for property 9
+2025-03-20 22:21:45,819 - INFO - Updated existing work record 582 for property 9
+2025-03-20 22:21:45,975 - INFO - Updated existing work record 583 for property 9
+2025-03-20 22:21:46,136 - INFO - Updated existing work record 584 for property 9
+2025-03-20 22:21:46,303 - INFO - Updated existing work record 585 for property 9
+2025-03-20 22:21:46,466 - INFO - Updated existing work record 586 for property 9
+2025-03-20 22:21:46,624 - INFO - Updated existing work record 587 for property 9
+2025-03-20 22:21:46,784 - INFO - Updated existing work record 588 for property 9
+2025-03-20 22:21:46,946 - INFO - Updated existing work record 589 for property 9
+2025-03-20 22:21:47,098 - INFO - Updated existing work record 590 for property 9
+2025-03-20 22:21:47,099 - INFO - Processed 40 rows for property: 29 Grandview Rd Box Hill South
+2025-03-20 22:21:47,099 - INFO - Inserted/updated 37 records, skipped 3 rows
+2025-03-20 22:21:47,099 - INFO - Processed sheet 12/38: Sheet1 (9)
+2025-03-20 22:21:47,100 - INFO - Processing sheet: Installing bathroom fittings
+2025-03-20 22:21:47,100 - INFO - Found property address: 39 Fortuna Ave, Balwyn North
+2025-03-20 22:21:47,163 - INFO - Found existing property ID 10 for address: 39 Fortuna Ave, Balwyn North
+2025-03-20 22:21:47,294 - INFO - Updated existing work record 591 for property 10
+2025-03-20 22:21:47,455 - INFO - Updated existing work record 592 for property 10
+2025-03-20 22:21:47,456 - INFO - Processed 3 rows for property: 39 Fortuna Ave, Balwyn North
+2025-03-20 22:21:47,456 - INFO - Inserted/updated 2 records, skipped 1 rows
+2025-03-20 22:21:47,456 - INFO - Processed sheet 13/38: Installing bathroom fittings
+2025-03-20 22:21:47,457 - INFO - Processing sheet: Balustrade
+2025-03-20 22:21:47,457 - INFO - Found property address: 39 Fortuna Ave, Balwyn North
+2025-03-20 22:21:47,519 - INFO - Found existing property ID 10 for address: 39 Fortuna Ave, Balwyn North
+2025-03-20 22:21:47,651 - INFO - Updated existing work record 593 for property 10
+2025-03-20 22:21:47,809 - INFO - Updated existing work record 594 for property 10
+2025-03-20 22:21:47,973 - INFO - Updated existing work record 595 for property 10
+2025-03-20 22:21:48,132 - INFO - Updated existing work record 596 for property 10
+2025-03-20 22:21:48,315 - INFO - Updated existing work record 597 for property 10
+2025-03-20 22:21:48,474 - INFO - Updated existing work record 598 for property 10
+2025-03-20 22:21:48,638 - INFO - Updated existing work record 599 for property 10
+2025-03-20 22:21:48,798 - INFO - Updated existing work record 600 for property 10
+2025-03-20 22:21:48,799 - INFO - Processed 10 rows for property: 39 Fortuna Ave, Balwyn North
+2025-03-20 22:21:48,799 - INFO - Inserted/updated 8 records, skipped 2 rows
+2025-03-20 22:21:48,799 - INFO - Processed sheet 14/38: Balustrade
+2025-03-20 22:21:48,800 - INFO - Processing sheet: Sheet1 (10)
+2025-03-20 22:21:48,800 - INFO - Found property address: 74 Alexandra Pde Fitzroy
+2025-03-20 22:21:48,860 - INFO - Found existing property ID 11 for address: 74 Alexandra Pde Fitzroy
+2025-03-20 22:21:48,994 - INFO - Updated existing work record 602 for property 11
+2025-03-20 22:21:49,156 - INFO - Updated existing work record 603 for property 11
+2025-03-20 22:21:49,314 - INFO - Updated existing work record 604 for property 11
+2025-03-20 22:21:49,477 - INFO - Updated existing work record 605 for property 11
+2025-03-20 22:21:49,642 - INFO - Updated existing work record 606 for property 11
+2025-03-20 22:21:49,810 - INFO - Updated existing work record 607 for property 11
+2025-03-20 22:21:49,973 - INFO - Updated existing work record 608 for property 11
+2025-03-20 22:21:50,154 - INFO - Updated existing work record 609 for property 11
+2025-03-20 22:21:50,307 - INFO - Updated existing work record 610 for property 11
+2025-03-20 22:21:50,472 - INFO - Updated existing work record 611 for property 11
+2025-03-20 22:21:50,628 - INFO - Updated existing work record 612 for property 11
+2025-03-20 22:21:50,788 - INFO - Updated existing work record 613 for property 11
+2025-03-20 22:21:50,944 - INFO - Updated existing work record 614 for property 11
+2025-03-20 22:21:51,110 - INFO - Updated existing work record 615 for property 11
+2025-03-20 22:21:51,302 - INFO - Updated existing work record 616 for property 11
+2025-03-20 22:21:51,461 - INFO - Updated existing work record 617 for property 11
+2025-03-20 22:21:51,627 - INFO - Updated existing work record 618 for property 11
+2025-03-20 22:21:51,789 - INFO - Updated existing work record 619 for property 11
+2025-03-20 22:21:51,943 - INFO - Updated existing work record 620 for property 11
+2025-03-20 22:21:52,097 - INFO - Updated existing work record 621 for property 11
+2025-03-20 22:21:52,257 - INFO - Updated existing work record 622 for property 11
+2025-03-20 22:21:52,420 - INFO - Updated existing work record 623 for property 11
+2025-03-20 22:21:52,584 - INFO - Updated existing work record 624 for property 11
+2025-03-20 22:21:52,746 - INFO - Updated existing work record 625 for property 11
+2025-03-20 22:21:52,906 - INFO - Updated existing work record 626 for property 11
+2025-03-20 22:21:53,072 - INFO - Updated existing work record 627 for property 11
+2025-03-20 22:21:53,234 - INFO - Updated existing work record 628 for property 11
+2025-03-20 22:21:53,395 - INFO - Updated existing work record 629 for property 11
+2025-03-20 22:21:53,552 - INFO - Updated existing work record 630 for property 11
+2025-03-20 22:21:53,713 - INFO - Updated existing work record 631 for property 11
+2025-03-20 22:21:53,874 - INFO - Updated existing work record 632 for property 11
+2025-03-20 22:21:54,035 - INFO - Updated existing work record 633 for property 11
+2025-03-20 22:21:54,204 - INFO - Updated existing work record 634 for property 11
+2025-03-20 22:21:54,367 - INFO - Updated existing work record 635 for property 11
+2025-03-20 22:21:54,531 - INFO - Updated existing work record 636 for property 11
+2025-03-20 22:21:54,688 - INFO - Updated existing work record 637 for property 11
+2025-03-20 22:21:54,852 - INFO - Updated existing work record 638 for property 11
+2025-03-20 22:21:55,009 - INFO - Updated existing work record 639 for property 11
+2025-03-20 22:21:55,157 - INFO - Updated existing work record 640 for property 11
+2025-03-20 22:21:55,158 - INFO - Processed 43 rows for property: 74 Alexandra Pde Fitzroy
+2025-03-20 22:21:55,159 - INFO - Inserted/updated 39 records, skipped 4 rows
+2025-03-20 22:21:55,159 - INFO - Processed sheet 15/38: Sheet1 (10)
+2025-03-20 22:21:55,159 - INFO - Processing sheet: Sheet1 (11)
+2025-03-20 22:21:55,159 - INFO - Found property address: Cupcake Central - 79 Sunshine Rd, West Footscray
+2025-03-20 22:21:55,221 - INFO - Found existing property ID 12 for address: Cupcake Central - 79 Sunshine Rd, West Footscray
+2025-03-20 22:21:55,344 - INFO - Updated existing work record 641 for property 12
+2025-03-20 22:21:55,499 - INFO - Updated existing work record 642 for property 12
+2025-03-20 22:21:55,502 - INFO - Processed 6 rows for property: Cupcake Central - 79 Sunshine Rd, West Footscray
+2025-03-20 22:21:55,502 - INFO - Inserted/updated 2 records, skipped 4 rows
+2025-03-20 22:21:55,502 - INFO - Processed sheet 16/38: Sheet1 (11)
+2025-03-20 22:21:55,503 - INFO - Processing sheet: Sheet1 (12)
+2025-03-20 22:21:55,503 - INFO - Found property address: 84 Gladstone St Kew (Cost + Project)
+2025-03-20 22:21:55,561 - INFO - Found existing property ID 13 for address: 84 Gladstone St Kew (Cost + Project)
+2025-03-20 22:21:55,697 - INFO - Updated existing work record 644 for property 13
+2025-03-20 22:21:55,863 - INFO - Updated existing work record 645 for property 13
+2025-03-20 22:21:56,032 - INFO - Updated existing money in record 9 for property 13
+2025-03-20 22:21:56,201 - INFO - Updated existing money in record 10 for property 13
+2025-03-20 22:21:56,355 - INFO - Updated existing work record 646 for property 13
+2025-03-20 22:21:56,516 - INFO - Updated existing work record 647 for property 13
+2025-03-20 22:21:56,678 - INFO - Updated existing work record 648 for property 13
+2025-03-20 22:21:56,843 - INFO - Updated existing work record 649 for property 13
+2025-03-20 22:21:57,000 - INFO - Updated existing work record 650 for property 13
+2025-03-20 22:21:57,160 - INFO - Updated existing work record 651 for property 13
+2025-03-20 22:21:57,316 - INFO - Updated existing work record 652 for property 13
+2025-03-20 22:21:57,485 - INFO - Updated existing work record 653 for property 13
+2025-03-20 22:21:57,649 - INFO - Updated existing work record 654 for property 13
+2025-03-20 22:21:57,807 - INFO - Updated existing work record 655 for property 13
+2025-03-20 22:21:57,971 - INFO - Updated existing work record 656 for property 13
+2025-03-20 22:21:58,133 - INFO - Updated existing work record 657 for property 13
+2025-03-20 22:21:58,298 - INFO - Updated existing work record 658 for property 13
+2025-03-20 22:21:58,459 - INFO - Updated existing work record 659 for property 13
+2025-03-20 22:21:58,622 - INFO - Updated existing work record 660 for property 13
+2025-03-20 22:21:58,784 - INFO - Updated existing work record 661 for property 13
+2025-03-20 22:21:58,946 - INFO - Updated existing work record 662 for property 13
+2025-03-20 22:21:59,108 - INFO - Updated existing work record 663 for property 13
+2025-03-20 22:21:59,283 - INFO - Updated existing work record 664 for property 13
+2025-03-20 22:21:59,448 - INFO - Updated existing work record 665 for property 13
+2025-03-20 22:21:59,599 - INFO - Updated existing work record 666 for property 13
+2025-03-20 22:21:59,769 - INFO - Updated existing work record 667 for property 13
+2025-03-20 22:21:59,925 - INFO - Updated existing work record 668 for property 13
+2025-03-20 22:22:00,087 - INFO - Updated existing work record 669 for property 13
+2025-03-20 22:22:00,251 - INFO - Updated existing work record 670 for property 13
+2025-03-20 22:22:00,413 - INFO - Updated existing work record 671 for property 13
+2025-03-20 22:22:00,576 - INFO - Updated existing work record 672 for property 13
+2025-03-20 22:22:00,740 - INFO - Updated existing work record 673 for property 13
+2025-03-20 22:22:00,898 - INFO - Updated existing work record 674 for property 13
+2025-03-20 22:22:01,060 - INFO - Updated existing work record 675 for property 13
+2025-03-20 22:22:01,222 - INFO - Updated existing work record 676 for property 13
+2025-03-20 22:22:01,384 - INFO - Updated existing work record 677 for property 13
+2025-03-20 22:22:01,551 - INFO - Updated existing work record 678 for property 13
+2025-03-20 22:22:01,713 - INFO - Updated existing work record 679 for property 13
+2025-03-20 22:22:01,869 - INFO - Updated existing work record 680 for property 13
+2025-03-20 22:22:02,019 - INFO - Updated existing work record 681 for property 13
+2025-03-20 22:22:02,185 - INFO - Updated existing work record 682 for property 13
+2025-03-20 22:22:02,343 - INFO - Updated existing work record 683 for property 13
+2025-03-20 22:22:02,497 - INFO - Updated existing work record 684 for property 13
+2025-03-20 22:22:02,662 - INFO - Updated existing work record 685 for property 13
+2025-03-20 22:22:02,828 - INFO - Updated existing work record 686 for property 13
+2025-03-20 22:22:02,993 - INFO - Updated existing work record 687 for property 13
+2025-03-20 22:22:03,154 - INFO - Updated existing work record 688 for property 13
+2025-03-20 22:22:03,312 - INFO - Updated existing work record 689 for property 13
+2025-03-20 22:22:03,470 - INFO - Updated existing work record 690 for property 13
+2025-03-20 22:22:03,635 - INFO - Updated existing work record 691 for property 13
+2025-03-20 22:22:03,807 - INFO - Updated existing work record 692 for property 13
+2025-03-20 22:22:03,971 - INFO - Updated existing work record 693 for property 13
+2025-03-20 22:22:04,137 - INFO - Updated existing work record 694 for property 13
+2025-03-20 22:22:04,307 - INFO - Updated existing work record 695 for property 13
+2025-03-20 22:22:04,470 - INFO - Updated existing work record 696 for property 13
+2025-03-20 22:22:04,626 - INFO - Updated existing work record 697 for property 13
+2025-03-20 22:22:04,790 - INFO - Updated existing work record 698 for property 13
+2025-03-20 22:22:04,790 - INFO - Processed 60 rows for property: 84 Gladstone St Kew (Cost + Project)
+2025-03-20 22:22:04,790 - INFO - Inserted/updated 57 records, skipped 3 rows
+2025-03-20 22:22:04,791 - INFO - Processed sheet 17/38: Sheet1 (12)
+2025-03-20 22:22:04,791 - INFO - Processing sheet: Sheet1 (13)
+2025-03-20 22:22:04,792 - INFO - Found property address: 140 Gipps St Collingwood
+2025-03-20 22:22:04,854 - INFO - Found existing property ID 14 for address: 140 Gipps St Collingwood
+2025-03-20 22:22:04,986 - INFO - Updated existing work record 700 for property 14
+2025-03-20 22:22:05,146 - INFO - Updated existing work record 701 for property 14
+2025-03-20 22:22:05,304 - INFO - Updated existing work record 703 for property 14
+2025-03-20 22:22:05,465 - INFO - Updated existing work record 704 for property 14
+2025-03-20 22:22:05,623 - INFO - Updated existing work record 705 for property 14
+2025-03-20 22:22:05,789 - INFO - Updated existing work record 706 for property 14
+2025-03-20 22:22:05,955 - INFO - Updated existing work record 707 for property 14
+2025-03-20 22:22:05,956 - INFO - Processed 10 rows for property: 140 Gipps St Collingwood
+2025-03-20 22:22:05,957 - INFO - Inserted/updated 7 records, skipped 3 rows
+2025-03-20 22:22:05,957 - INFO - Processed sheet 18/38: Sheet1 (13)
+2025-03-20 22:22:05,957 - INFO - Processing sheet: Sheet1 (14)
+2025-03-20 22:22:05,958 - INFO - Found property address: Banksia
+2025-03-20 22:22:06,019 - INFO - Found existing property ID 15 for address: Banksia
+2025-03-20 22:22:06,021 - WARNING - Could not convert to date: 22/11/2024, Error: unconverted data remains: 24
+2025-03-20 22:22:06,022 - WARNING - Skipping work record with invalid date for property 15
+2025-03-20 22:22:06,022 - WARNING - Could not convert to date: 13/02/2025, Error: unconverted data remains: 25
+2025-03-20 22:22:06,022 - WARNING - Skipping work record with invalid date for property 15
+2025-03-20 22:22:06,030 - INFO - Processed 4 rows for property: Banksia
+2025-03-20 22:22:06,030 - INFO - Inserted/updated 0 records, skipped 4 rows
+2025-03-20 22:22:06,030 - INFO - Processed sheet 19/38: Sheet1 (14)
+2025-03-20 22:22:06,031 - INFO - Processing sheet: Sheet1 (15)
+2025-03-20 22:22:06,031 - INFO - Found property address: BTS - Emporium
+2025-03-20 22:22:06,063 - INFO - Found existing property ID 16 for address: BTS - Emporium
+2025-03-20 22:22:06,195 - INFO - Updated existing work record 712 for property 16
+2025-03-20 22:22:06,358 - INFO - Updated existing work record 713 for property 16
+2025-03-20 22:22:06,521 - INFO - Updated existing work record 714 for property 16
+2025-03-20 22:22:06,686 - INFO - Updated existing work record 715 for property 16
+2025-03-20 22:22:06,852 - INFO - Updated existing work record 716 for property 16
+2025-03-20 22:22:07,008 - INFO - Updated existing work record 717 for property 16
+2025-03-20 22:22:07,170 - INFO - Updated existing work record 718 for property 16
+2025-03-20 22:22:07,330 - INFO - Updated existing work record 719 for property 16
+2025-03-20 22:22:07,494 - INFO - Updated existing work record 720 for property 16
+2025-03-20 22:22:07,654 - INFO - Updated existing work record 721 for property 16
+2025-03-20 22:22:07,811 - INFO - Updated existing work record 722 for property 16
+2025-03-20 22:22:07,987 - INFO - Updated existing work record 723 for property 16
+2025-03-20 22:22:07,988 - WARNING - Could not convert to date: 13/11/2023, Error: unconverted data remains: 23
+2025-03-20 22:22:07,988 - WARNING - Skipping work record with invalid date for property 16
+2025-03-20 22:22:07,988 - WARNING - Could not convert to date: 13/11/2023, Error: unconverted data remains: 23
+2025-03-20 22:22:07,988 - WARNING - Skipping work record with invalid date for property 16
+2025-03-20 22:22:07,989 - WARNING - Could not convert to date: 13/11/2023, Error: unconverted data remains: 23
+2025-03-20 22:22:07,989 - WARNING - Skipping work record with invalid date for property 16
+2025-03-20 22:22:07,989 - WARNING - Could not convert to date: 13/11/2023, Error: unconverted data remains: 23
+2025-03-20 22:22:07,989 - WARNING - Skipping work record with invalid date for property 16
+2025-03-20 22:22:07,989 - WARNING - Could not convert to date: 14/11/2023, Error: unconverted data remains: 23
+2025-03-20 22:22:07,989 - WARNING - Skipping work record with invalid date for property 16
+2025-03-20 22:22:07,989 - WARNING - Could not convert to date: 15/11/2023, Error: unconverted data remains: 23
+2025-03-20 22:22:07,989 - WARNING - Skipping work record with invalid date for property 16
+2025-03-20 22:22:07,989 - WARNING - Could not convert to date: 16/11/2023, Error: unconverted data remains: 23
+2025-03-20 22:22:07,990 - WARNING - Skipping work record with invalid date for property 16
+2025-03-20 22:22:07,990 - WARNING - Could not convert to date: 16/11/2023, Error: unconverted data remains: 23
+2025-03-20 22:22:07,990 - WARNING - Skipping work record with invalid date for property 16
+2025-03-20 22:22:07,990 - WARNING - Could not convert to date: 16/11/2023, Error: unconverted data remains: 23
+2025-03-20 22:22:07,990 - WARNING - Skipping work record with invalid date for property 16
+2025-03-20 22:22:07,990 - WARNING - Could not convert to date: 17/11/2023, Error: unconverted data remains: 23
+2025-03-20 22:22:07,990 - WARNING - Skipping work record with invalid date for property 16
+2025-03-20 22:22:07,990 - WARNING - Could not convert to date: 18/11/2023, Error: unconverted data remains: 23
+2025-03-20 22:22:07,990 - WARNING - Skipping work record with invalid date for property 16
+2025-03-20 22:22:07,990 - WARNING - Could not convert to date: 24/11/2023, Error: unconverted data remains: 23
+2025-03-20 22:22:07,990 - WARNING - Skipping work record with invalid date for property 16
+2025-03-20 22:22:07,991 - WARNING - Could not convert to date: 27/11/2023, Error: unconverted data remains: 23
+2025-03-20 22:22:07,991 - WARNING - Skipping work record with invalid date for property 16
+2025-03-20 22:22:07,991 - WARNING - Could not convert to date: 13/12/2023, Error: unconverted data remains: 23
+2025-03-20 22:22:07,991 - WARNING - Skipping work record with invalid date for property 16
+2025-03-20 22:22:07,991 - INFO - Processed 13 rows for property: BTS - Emporium
+2025-03-20 22:22:07,991 - INFO - Inserted/updated 12 records, skipped 1 rows
+2025-03-20 22:22:07,991 - INFO - Processed sheet 20/38: Sheet1 (15)
+2025-03-20 22:22:07,991 - INFO - Processing sheet: Q002
+2025-03-20 22:22:07,991 - INFO - Found property address: Suite 203, Level 2/517 Flinders Lane
+2025-03-20 22:22:08,047 - INFO - Found existing property ID 17 for address: Suite 203, Level 2/517 Flinders Lane
+2025-03-20 22:22:08,176 - INFO - Updated existing work record 738 for property 17
+2025-03-20 22:22:08,337 - INFO - Updated existing work record 739 for property 17
+2025-03-20 22:22:08,503 - INFO - Updated existing work record 740 for property 17
+2025-03-20 22:22:08,657 - INFO - Updated existing work record 741 for property 17
+2025-03-20 22:22:08,820 - INFO - Updated existing work record 742 for property 17
+2025-03-20 22:22:08,980 - INFO - Updated existing work record 743 for property 17
+2025-03-20 22:22:09,140 - INFO - Updated existing work record 744 for property 17
+2025-03-20 22:22:09,304 - INFO - Updated existing work record 745 for property 17
+2025-03-20 22:22:09,465 - INFO - Updated existing work record 746 for property 17
+2025-03-20 22:22:09,629 - INFO - Updated existing work record 747 for property 17
+2025-03-20 22:22:09,793 - INFO - Updated existing work record 748 for property 17
+2025-03-20 22:22:09,956 - INFO - Updated existing work record 749 for property 17
+2025-03-20 22:22:10,115 - INFO - Updated existing work record 750 for property 17
+2025-03-20 22:22:10,275 - INFO - Updated existing work record 751 for property 17
+2025-03-20 22:22:10,431 - INFO - Updated existing work record 752 for property 17
+2025-03-20 22:22:10,585 - INFO - Updated existing work record 753 for property 17
+2025-03-20 22:22:10,748 - INFO - Updated existing work record 754 for property 17
+2025-03-20 22:22:10,912 - INFO - Updated existing work record 755 for property 17
+2025-03-20 22:22:11,071 - INFO - Updated existing work record 756 for property 17
+2025-03-20 22:22:11,232 - INFO - Updated existing work record 757 for property 17
+2025-03-20 22:22:11,392 - INFO - Updated existing work record 758 for property 17
+2025-03-20 22:22:11,552 - INFO - Updated existing work record 759 for property 17
+2025-03-20 22:22:11,715 - INFO - Updated existing work record 760 for property 17
+2025-03-20 22:22:11,716 - INFO - Processed 24 rows for property: Suite 203, Level 2/517 Flinders Lane
+2025-03-20 22:22:11,716 - INFO - Inserted/updated 23 records, skipped 1 rows
+2025-03-20 22:22:11,716 - INFO - Processed sheet 21/38: Q002
+2025-03-20 22:22:11,716 - INFO - Processing sheet: Q004
+2025-03-20 22:22:11,716 - INFO - Found property address: Suite 203, Level 2/517 Flinders Lane
+2025-03-20 22:22:11,778 - INFO - Found existing property ID 17 for address: Suite 203, Level 2/517 Flinders Lane
+2025-03-20 22:22:11,911 - INFO - Updated existing work record 762 for property 17
+2025-03-20 22:22:12,065 - INFO - Updated existing work record 763 for property 17
+2025-03-20 22:22:12,253 - INFO - Updated existing work record 764 for property 17
+2025-03-20 22:22:12,505 - INFO - Updated existing work record 765 for property 17
+2025-03-20 22:22:12,745 - INFO - Updated existing work record 766 for property 17
+2025-03-20 22:22:12,746 - INFO - Processed 9 rows for property: Suite 203, Level 2/517 Flinders Lane
+2025-03-20 22:22:12,746 - INFO - Inserted/updated 5 records, skipped 4 rows
+2025-03-20 22:22:12,746 - INFO - Processed sheet 22/38: Q004
+2025-03-20 22:22:12,746 - INFO - Processing sheet: TVs Install Maintenance
+2025-03-20 22:22:12,746 - INFO - Found property address: FITNESS NATION Expenses - INV005
+2025-03-20 22:22:12,803 - INFO - Found existing property ID 18 for address: FITNESS NATION Expenses - INV005
+2025-03-20 22:22:13,000 - INFO - Updated existing work record 768 for property 18
+2025-03-20 22:22:13,250 - INFO - Updated existing work record 769 for property 18
+2025-03-20 22:22:13,526 - INFO - Updated existing work record 770 for property 18
+2025-03-20 22:22:13,747 - INFO - Updated existing work record 771 for property 18
+2025-03-20 22:22:13,907 - INFO - Updated existing work record 772 for property 18
+2025-03-20 22:22:14,237 - INFO - Updated existing work record 773 for property 18
+2025-03-20 22:22:14,415 - INFO - Updated existing work record 774 for property 18
+2025-03-20 22:22:14,730 - INFO - Updated existing work record 775 for property 18
+2025-03-20 22:22:14,885 - INFO - Updated existing work record 776 for property 18
+2025-03-20 22:22:14,885 - INFO - Processed 13 rows for property: FITNESS NATION Expenses - INV005
+2025-03-20 22:22:14,886 - INFO - Inserted/updated 9 records, skipped 4 rows
+2025-03-20 22:22:14,886 - INFO - Processed sheet 23/38: TVs Install Maintenance
+2025-03-20 22:22:14,886 - INFO - Processing sheet: INV006
+2025-03-20 22:22:14,886 - INFO - Found property address: FITNESS NATION Expenses - INV006
+2025-03-20 22:22:14,948 - INFO - Found existing property ID 19 for address: FITNESS NATION Expenses - INV006
+2025-03-20 22:22:15,146 - INFO - Updated existing work record 778 for property 19
+2025-03-20 22:22:15,304 - INFO - Updated existing work record 779 for property 19
+2025-03-20 22:22:15,305 - INFO - Processed 4 rows for property: FITNESS NATION Expenses - INV006
+2025-03-20 22:22:15,305 - INFO - Inserted/updated 2 records, skipped 2 rows
+2025-03-20 22:22:15,305 - INFO - Processed sheet 24/38: INV006
+2025-03-20 22:22:15,306 - INFO - Processing sheet: PILATES MIRRORS
+2025-03-20 22:22:15,306 - INFO - Found property address: FITNESS NATION
+2025-03-20 22:22:15,364 - INFO - Found existing property ID 20 for address: FITNESS NATION
+2025-03-20 22:22:15,491 - INFO - Updated existing money in record 13 for property 20
+2025-03-20 22:22:15,669 - INFO - Updated existing work record 780 for property 20
+2025-03-20 22:22:15,835 - INFO - Updated existing work record 781 for property 20
+2025-03-20 22:22:15,980 - INFO - Updated existing work record 782 for property 20
+2025-03-20 22:22:16,145 - INFO - Updated existing work record 783 for property 20
+2025-03-20 22:22:16,311 - INFO - Updated existing work record 784 for property 20
+2025-03-20 22:22:16,477 - INFO - Updated existing work record 785 for property 20
+2025-03-20 22:22:16,644 - INFO - Updated existing work record 786 for property 20
+2025-03-20 22:22:16,807 - INFO - Updated existing work record 787 for property 20
+2025-03-20 22:22:16,965 - INFO - Updated existing work record 788 for property 20
+2025-03-20 22:22:16,966 - INFO - Processed 14 rows for property: FITNESS NATION
+2025-03-20 22:22:16,966 - INFO - Inserted/updated 10 records, skipped 4 rows
+2025-03-20 22:22:16,966 - INFO - Processed sheet 25/38: PILATES MIRRORS
+2025-03-20 22:22:16,966 - INFO - Processing sheet: 21524 Maintenance
+2025-03-20 22:22:16,966 - INFO - Found property address: FITNESS NATION
+2025-03-20 22:22:17,028 - INFO - Found existing property ID 20 for address: FITNESS NATION
+2025-03-20 22:22:17,159 - INFO - Updated existing work record 791 for property 20
+2025-03-20 22:22:17,319 - INFO - Updated existing work record 792 for property 20
+2025-03-20 22:22:17,480 - INFO - Updated existing work record 793 for property 20
+2025-03-20 22:22:17,651 - INFO - Updated existing work record 794 for property 20
+2025-03-20 22:22:17,652 - INFO - Processed 7 rows for property: FITNESS NATION
+2025-03-20 22:22:17,653 - INFO - Inserted/updated 4 records, skipped 3 rows
+2025-03-20 22:22:17,653 - INFO - Processed sheet 26/38: 21524 Maintenance
+2025-03-20 22:22:17,653 - INFO - Processing sheet: Equipment Hire
+2025-03-20 22:22:17,653 - INFO - Found property address: FITNESS NATION
+2025-03-20 22:22:17,715 - INFO - Found existing property ID 20 for address: FITNESS NATION
+2025-03-20 22:22:17,852 - INFO - Updated existing work record 796 for property 20
+2025-03-20 22:22:17,853 - INFO - Processed 3 rows for property: FITNESS NATION
+2025-03-20 22:22:17,853 - INFO - Inserted/updated 1 records, skipped 2 rows
+2025-03-20 22:22:17,853 - INFO - Processed sheet 27/38: Equipment Hire
+2025-03-20 22:22:17,853 - INFO - Processing sheet: 120824 Maintenance
+2025-03-20 22:22:17,853 - INFO - Found property address: FITNESS NATION
+2025-03-20 22:22:17,915 - INFO - Found existing property ID 20 for address: FITNESS NATION
+2025-03-20 22:22:18,045 - INFO - Updated existing work record 797 for property 20
+2025-03-20 22:22:18,046 - INFO - Processed 3 rows for property: FITNESS NATION
+2025-03-20 22:22:18,046 - INFO - Inserted/updated 1 records, skipped 2 rows
+2025-03-20 22:22:18,046 - INFO - Processed sheet 28/38: 120824 Maintenance
+2025-03-20 22:22:18,046 - INFO - Processing sheet: Studio1 Wall & Maintenance List
+2025-03-20 22:22:18,046 - INFO - Found property address: FITNESS NATION Expenses - INV004
+2025-03-20 22:22:18,109 - INFO - Found existing property ID 21 for address: FITNESS NATION Expenses - INV004
+2025-03-20 22:22:18,237 - INFO - Updated existing work record 798 for property 21
+2025-03-20 22:22:18,396 - INFO - Updated existing work record 799 for property 21
+2025-03-20 22:22:18,563 - INFO - Updated existing work record 800 for property 21
+2025-03-20 22:22:18,720 - INFO - Updated existing work record 801 for property 21
+2025-03-20 22:22:18,876 - INFO - Updated existing work record 802 for property 21
+2025-03-20 22:22:19,038 - INFO - Updated existing work record 803 for property 21
+2025-03-20 22:22:19,212 - INFO - Updated existing work record 804 for property 21
+2025-03-20 22:22:19,374 - INFO - Updated existing work record 805 for property 21
+2025-03-20 22:22:19,538 - INFO - Updated existing work record 806 for property 21
+2025-03-20 22:22:19,705 - INFO - Updated existing work record 807 for property 21
+2025-03-20 22:22:19,871 - INFO - Updated existing work record 808 for property 21
+2025-03-20 22:22:20,031 - INFO - Updated existing work record 809 for property 21
+2025-03-20 22:22:20,191 - INFO - Updated existing work record 810 for property 21
+2025-03-20 22:22:20,355 - INFO - Updated existing work record 811 for property 21
+2025-03-20 22:22:20,513 - INFO - Updated existing work record 812 for property 21
+2025-03-20 22:22:20,675 - INFO - Updated existing work record 813 for property 21
+2025-03-20 22:22:20,840 - INFO - Updated existing work record 814 for property 21
+2025-03-20 22:22:21,002 - INFO - Updated existing work record 815 for property 21
+2025-03-20 22:22:21,178 - INFO - Updated existing work record 816 for property 21
+2025-03-20 22:22:21,338 - INFO - Updated existing work record 817 for property 21
+2025-03-20 22:22:21,492 - INFO - Updated existing work record 818 for property 21
+2025-03-20 22:22:21,656 - INFO - Updated existing work record 819 for property 21
+2025-03-20 22:22:21,819 - INFO - Updated existing work record 820 for property 21
+2025-03-20 22:22:21,976 - INFO - Updated existing work record 821 for property 21
+2025-03-20 22:22:21,977 - INFO - Processed 26 rows for property: FITNESS NATION Expenses - INV004
+2025-03-20 22:22:21,977 - INFO - Inserted/updated 24 records, skipped 2 rows
+2025-03-20 22:22:21,977 - INFO - Processed sheet 29/38: Studio1 Wall & Maintenance List
+2025-03-20 22:22:21,977 - INFO - Processing sheet: Sheet1 (16)
+2025-03-20 22:22:21,977 - INFO - Found property address: KL - Westfield Doncaster
+2025-03-20 22:22:22,035 - INFO - Found existing property ID 22 for address: KL - Westfield Doncaster
+2025-03-20 22:22:22,161 - INFO - Updated existing work record 823 for property 22
+2025-03-20 22:22:22,327 - INFO - Updated existing work record 824 for property 22
+2025-03-20 22:22:22,493 - INFO - Updated existing work record 825 for property 22
+2025-03-20 22:22:22,657 - INFO - Updated existing work record 826 for property 22
+2025-03-20 22:22:22,822 - INFO - Updated existing work record 827 for property 22
+2025-03-20 22:22:22,978 - INFO - Updated existing work record 828 for property 22
+2025-03-20 22:22:23,140 - INFO - Updated existing work record 829 for property 22
+2025-03-20 22:22:23,302 - INFO - Updated existing work record 830 for property 22
+2025-03-20 22:22:23,458 - INFO - Updated existing work record 831 for property 22
+2025-03-20 22:22:23,622 - INFO - Updated existing work record 832 for property 22
+2025-03-20 22:22:23,787 - INFO - Updated existing work record 833 for property 22
+2025-03-20 22:22:23,947 - INFO - Updated existing work record 834 for property 22
+2025-03-20 22:22:24,109 - INFO - Updated existing work record 835 for property 22
+2025-03-20 22:22:24,265 - INFO - Updated existing work record 836 for property 22
+2025-03-20 22:22:24,415 - INFO - Updated existing work record 837 for property 22
+2025-03-20 22:22:24,565 - INFO - Updated existing work record 838 for property 22
+2025-03-20 22:22:24,729 - INFO - Updated existing work record 839 for property 22
+2025-03-20 22:22:24,891 - INFO - Updated existing work record 840 for property 22
+2025-03-20 22:22:25,048 - INFO - Updated existing work record 841 for property 22
+2025-03-20 22:22:25,208 - INFO - Updated existing work record 842 for property 22
+2025-03-20 22:22:25,212 - INFO - Processed 22 rows for property: KL - Westfield Doncaster
+2025-03-20 22:22:25,212 - INFO - Inserted/updated 20 records, skipped 2 rows
+2025-03-20 22:22:25,213 - INFO - Processed sheet 30/38: Sheet1 (16)
+2025-03-20 22:22:25,213 - INFO - Processing sheet: Sheet2
+2025-03-20 22:22:25,213 - INFO - Found property address: KL - Westfield Doncaster
+2025-03-20 22:22:25,278 - INFO - Found existing property ID 22 for address: KL - Westfield Doncaster
+2025-03-20 22:22:25,410 - INFO - Updated existing work record 823 for property 22
+2025-03-20 22:22:25,576 - INFO - Updated existing work record 824 for property 22
+2025-03-20 22:22:25,732 - INFO - Updated existing work record 825 for property 22
+2025-03-20 22:22:25,899 - INFO - Updated existing work record 826 for property 22
+2025-03-20 22:22:26,063 - INFO - Updated existing work record 827 for property 22
+2025-03-20 22:22:26,221 - INFO - Updated existing work record 828 for property 22
+2025-03-20 22:22:26,379 - INFO - Updated existing work record 829 for property 22
+2025-03-20 22:22:26,534 - INFO - Updated existing work record 830 for property 22
+2025-03-20 22:22:26,697 - INFO - Updated existing work record 831 for property 22
+2025-03-20 22:22:26,857 - INFO - Updated existing work record 832 for property 22
+2025-03-20 22:22:27,013 - INFO - Updated existing work record 833 for property 22
+2025-03-20 22:22:27,170 - INFO - Updated existing work record 834 for property 22
+2025-03-20 22:22:27,325 - INFO - Updated existing work record 835 for property 22
+2025-03-20 22:22:27,484 - INFO - Updated existing work record 836 for property 22
+2025-03-20 22:22:27,650 - INFO - Updated existing work record 837 for property 22
+2025-03-20 22:22:27,816 - INFO - Updated existing work record 838 for property 22
+2025-03-20 22:22:27,985 - INFO - Updated existing work record 839 for property 22
+2025-03-20 22:22:28,147 - INFO - Updated existing work record 840 for property 22
+2025-03-20 22:22:28,299 - INFO - Updated existing work record 841 for property 22
+2025-03-20 22:22:28,455 - INFO - Updated existing work record 842 for property 22
+2025-03-20 22:22:28,460 - INFO - Processed 23 rows for property: KL - Westfield Doncaster
+2025-03-20 22:22:28,460 - INFO - Inserted/updated 20 records, skipped 3 rows
+2025-03-20 22:22:28,460 - INFO - Processed sheet 31/38: Sheet2
+2025-03-20 22:22:28,467 - INFO - Processing sheet: Sheet1 (17)
+2025-03-20 22:22:28,468 - INFO - Found property address: LE SSERAFIM - Emporium
+2025-03-20 22:22:28,529 - INFO - Found existing property ID 23 for address: LE SSERAFIM - Emporium
+2025-03-20 22:22:28,671 - INFO - Updated existing work record 865 for property 23
+2025-03-20 22:22:28,831 - INFO - Updated existing work record 866 for property 23
+2025-03-20 22:22:28,995 - INFO - Updated existing work record 867 for property 23
+2025-03-20 22:22:29,729 - INFO - Processed 5 rows for property: LE SSERAFIM - Emporium
+2025-03-20 22:22:29,729 - INFO - Inserted/updated 3 records, skipped 2 rows
+2025-03-20 22:22:29,729 - INFO - Processed sheet 32/38: Sheet1 (17)
+2025-03-20 22:22:29,729 - INFO - Processing sheet: Sheet1 (18)
+2025-03-20 22:22:29,729 - INFO - Found property address: Planet Shakers - 20 Cecil St Southbank
+2025-03-20 22:22:29,791 - INFO - Found existing property ID 24 for address: Planet Shakers - 20 Cecil St Southbank
+2025-03-20 22:22:29,909 - INFO - Updated existing work record 868 for property 24
+2025-03-20 22:22:30,075 - INFO - Updated existing work record 869 for property 24
+2025-03-20 22:22:30,237 - INFO - Updated existing work record 870 for property 24
+2025-03-20 22:22:30,397 - INFO - Updated existing work record 871 for property 24
+2025-03-20 22:22:30,561 - INFO - Updated existing work record 872 for property 24
+2025-03-20 22:22:30,721 - INFO - Updated existing work record 873 for property 24
+2025-03-20 22:22:30,879 - INFO - Updated existing work record 874 for property 24
+2025-03-20 22:22:31,041 - INFO - Updated existing work record 875 for property 24
+2025-03-20 22:22:31,200 - INFO - Updated existing work record 876 for property 24
+2025-03-20 22:22:31,364 - INFO - Updated existing work record 877 for property 24
+2025-03-20 22:22:31,524 - INFO - Updated existing work record 878 for property 24
+2025-03-20 22:22:31,687 - INFO - Updated existing work record 879 for property 24
+2025-03-20 22:22:31,846 - INFO - Updated existing work record 880 for property 24
+2025-03-20 22:22:32,005 - INFO - Updated existing work record 881 for property 24
+2025-03-20 22:22:32,163 - INFO - Updated existing work record 881 for property 24
+2025-03-20 22:22:32,325 - INFO - Updated existing work record 883 for property 24
+2025-03-20 22:22:32,489 - INFO - Updated existing work record 884 for property 24
+2025-03-20 22:22:32,655 - INFO - Updated existing work record 885 for property 24
+2025-03-20 22:22:32,815 - INFO - Updated existing work record 886 for property 24
+2025-03-20 22:22:32,959 - INFO - Updated existing work record 887 for property 24
+2025-03-20 22:22:33,134 - INFO - Updated existing work record 888 for property 24
+2025-03-20 22:22:33,298 - INFO - Updated existing work record 889 for property 24
+2025-03-20 22:22:33,456 - INFO - Updated existing work record 890 for property 24
+2025-03-20 22:22:33,616 - INFO - Updated existing work record 891 for property 24
+2025-03-20 22:22:33,783 - INFO - Updated existing work record 892 for property 24
+2025-03-20 22:22:33,947 - INFO - Updated existing work record 893 for property 24
+2025-03-20 22:22:34,111 - INFO - Updated existing work record 894 for property 24
+2025-03-20 22:22:34,277 - INFO - Updated existing work record 895 for property 24
+2025-03-20 22:22:34,437 - INFO - Updated existing work record 896 for property 24
+2025-03-20 22:22:34,440 - INFO - Processed 40 rows for property: Planet Shakers - 20 Cecil St Southbank
+2025-03-20 22:22:34,440 - INFO - Inserted/updated 29 records, skipped 11 rows
+2025-03-20 22:22:34,440 - INFO - Processed sheet 33/38: Sheet1 (18)
+2025-03-20 22:22:34,441 - INFO - Processing sheet: Sheet1 (19)
+2025-03-20 22:22:34,441 - INFO - Found property address: Poke'd - 551 Little Lonsdale St
+2025-03-20 22:22:34,501 - INFO - Found existing property ID 25 for address: Poke'd - 551 Little Lonsdale St
+2025-03-20 22:22:34,634 - INFO - Updated existing work record 898 for property 25
+2025-03-20 22:22:34,791 - INFO - Updated existing work record 899 for property 25
+2025-03-20 22:22:34,948 - INFO - Updated existing work record 900 for property 25
+2025-03-20 22:22:35,098 - INFO - Updated existing work record 901 for property 25
+2025-03-20 22:22:35,262 - INFO - Updated existing work record 902 for property 25
+2025-03-20 22:22:35,428 - INFO - Updated existing work record 903 for property 25
+2025-03-20 22:22:35,594 - INFO - Updated existing work record 904 for property 25
+2025-03-20 22:22:35,749 - INFO - Updated existing work record 905 for property 25
+2025-03-20 22:22:35,750 - INFO - Processed 12 rows for property: Poke'd - 551 Little Lonsdale St
+2025-03-20 22:22:35,751 - INFO - Inserted/updated 8 records, skipped 4 rows
+2025-03-20 22:22:35,751 - INFO - Processed sheet 34/38: Sheet1 (19)
+2025-03-20 22:22:35,752 - INFO - Processing sheet: Sheet1 (20)
+2025-03-20 22:22:35,752 - INFO - Found property address: 31 Ambrose Rd Cheltenham (Cost+ Project)
+2025-03-20 22:22:35,813 - INFO - Found existing property ID 26 for address: 31 Ambrose Rd Cheltenham (Cost+ Project)
+2025-03-20 22:22:35,947 - INFO - Updated existing work record 907 for property 26
+2025-03-20 22:22:36,108 - INFO - Updated existing work record 908 for property 26
+2025-03-20 22:22:36,263 - INFO - Updated existing work record 909 for property 26
+2025-03-20 22:22:36,421 - INFO - Updated existing work record 910 for property 26
+2025-03-20 22:22:36,581 - INFO - Updated existing work record 911 for property 26
+2025-03-20 22:22:36,746 - INFO - Updated existing work record 912 for property 26
+2025-03-20 22:22:36,906 - INFO - Updated existing work record 913 for property 26
+2025-03-20 22:22:37,064 - INFO - Updated existing work record 914 for property 26
+2025-03-20 22:22:37,229 - INFO - Updated existing work record 915 for property 26
+2025-03-20 22:22:37,384 - INFO - Updated existing work record 916 for property 26
+2025-03-20 22:22:37,536 - INFO - Updated existing work record 917 for property 26
+2025-03-20 22:22:37,699 - INFO - Updated existing work record 918 for property 26
+2025-03-20 22:22:37,860 - INFO - Updated existing work record 919 for property 26
+2025-03-20 22:22:38,014 - INFO - Updated existing work record 920 for property 26
+2025-03-20 22:22:38,180 - INFO - Updated existing work record 921 for property 26
+2025-03-20 22:22:38,345 - INFO - Updated existing work record 922 for property 26
+2025-03-20 22:22:38,507 - INFO - Updated existing work record 923 for property 26
+2025-03-20 22:22:38,669 - INFO - Updated existing work record 924 for property 26
+2025-03-20 22:22:38,829 - INFO - Updated existing work record 925 for property 26
+2025-03-20 22:22:38,995 - INFO - Updated existing work record 926 for property 26
+2025-03-20 22:22:39,183 - INFO - Updated existing work record 927 for property 26
+2025-03-20 22:22:39,342 - INFO - Updated existing work record 928 for property 26
+2025-03-20 22:22:39,494 - INFO - Updated existing work record 929 for property 26
+2025-03-20 22:22:39,661 - INFO - Updated existing work record 930 for property 26
+2025-03-20 22:22:39,828 - INFO - Updated existing work record 931 for property 26
+2025-03-20 22:22:39,984 - INFO - Updated existing work record 932 for property 26
+2025-03-20 22:22:40,171 - INFO - Updated existing work record 933 for property 26
+2025-03-20 22:22:40,335 - INFO - Updated existing work record 934 for property 26
+2025-03-20 22:22:40,489 - INFO - Updated existing work record 935 for property 26
+2025-03-20 22:22:40,649 - INFO - Updated existing work record 936 for property 26
+2025-03-20 22:22:40,805 - INFO - Updated existing work record 937 for property 26
+2025-03-20 22:22:40,971 - INFO - Updated existing work record 938 for property 26
+2025-03-20 22:22:41,127 - INFO - Updated existing work record 939 for property 26
+2025-03-20 22:22:41,284 - INFO - Updated existing work record 940 for property 26
+2025-03-20 22:22:41,444 - INFO - Updated existing work record 941 for property 26
+2025-03-20 22:22:41,596 - INFO - Updated existing work record 942 for property 26
+2025-03-20 22:22:41,761 - INFO - Updated existing work record 943 for property 26
+2025-03-20 22:22:41,921 - INFO - Updated existing work record 944 for property 26
+2025-03-20 22:22:42,083 - INFO - Updated existing work record 945 for property 26
+2025-03-20 22:22:42,249 - INFO - Updated existing work record 946 for property 26
+2025-03-20 22:22:42,411 - INFO - Updated existing work record 947 for property 26
+2025-03-20 22:22:42,595 - INFO - Updated existing work record 948 for property 26
+2025-03-20 22:22:42,757 - INFO - Updated existing work record 949 for property 26
+2025-03-20 22:22:42,917 - INFO - Updated existing work record 950 for property 26
+2025-03-20 22:22:43,079 - INFO - Updated existing work record 951 for property 26
+2025-03-20 22:22:43,244 - INFO - Updated existing work record 952 for property 26
+2025-03-20 22:22:43,402 - INFO - Updated existing work record 953 for property 26
+2025-03-20 22:22:43,554 - INFO - Updated existing work record 954 for property 26
+2025-03-20 22:22:43,711 - INFO - Updated existing work record 955 for property 26
+2025-03-20 22:22:43,872 - INFO - Updated existing work record 956 for property 26
+2025-03-20 22:22:44,032 - INFO - Updated existing work record 957 for property 26
+2025-03-20 22:22:44,196 - INFO - Updated existing work record 958 for property 26
+2025-03-20 22:22:44,363 - INFO - Updated existing work record 959 for property 26
+2025-03-20 22:22:44,536 - INFO - Updated existing work record 960 for property 26
+2025-03-20 22:22:44,687 - INFO - Updated existing work record 961 for property 26
+2025-03-20 22:22:44,849 - INFO - Updated existing work record 962 for property 26
+2025-03-20 22:22:45,011 - INFO - Updated existing work record 963 for property 26
+2025-03-20 22:22:45,182 - INFO - Updated existing work record 964 for property 26
+2025-03-20 22:22:45,344 - INFO - Updated existing work record 965 for property 26
+2025-03-20 22:22:45,498 - INFO - Updated existing work record 966 for property 26
+2025-03-20 22:22:45,650 - INFO - Updated existing work record 967 for property 26
+2025-03-20 22:22:45,816 - INFO - Updated existing work record 968 for property 26
+2025-03-20 22:22:45,978 - INFO - Updated existing work record 969 for property 26
+2025-03-20 22:22:46,146 - INFO - Updated existing work record 970 for property 26
+2025-03-20 22:22:46,305 - INFO - Updated existing work record 971 for property 26
+2025-03-20 22:22:46,465 - INFO - Updated existing work record 972 for property 26
+2025-03-20 22:22:46,655 - INFO - Updated existing work record 973 for property 26
+2025-03-20 22:22:46,817 - INFO - Updated existing work record 974 for property 26
+2025-03-20 22:22:46,975 - INFO - Updated existing work record 975 for property 26
+2025-03-20 22:22:47,133 - INFO - Updated existing work record 976 for property 26
+2025-03-20 22:22:47,297 - INFO - Updated existing work record 977 for property 26
+2025-03-20 22:22:47,466 - INFO - Updated existing work record 978 for property 26
+2025-03-20 22:22:47,634 - INFO - Updated existing work record 979 for property 26
+2025-03-20 22:22:47,789 - INFO - Updated existing work record 980 for property 26
+2025-03-20 22:22:47,946 - INFO - Updated existing work record 981 for property 26
+2025-03-20 22:22:48,124 - INFO - Updated existing work record 982 for property 26
+2025-03-20 22:22:48,280 - INFO - Updated existing work record 983 for property 26
+2025-03-20 22:22:48,445 - INFO - Updated existing work record 984 for property 26
+2025-03-20 22:22:48,605 - INFO - Updated existing work record 985 for property 26
+2025-03-20 22:22:48,769 - INFO - Updated existing work record 986 for property 26
+2025-03-20 22:22:48,927 - INFO - Updated existing work record 987 for property 26
+2025-03-20 22:22:49,086 - INFO - Updated existing work record 988 for property 26
+2025-03-20 22:22:49,250 - INFO - Updated existing work record 989 for property 26
+2025-03-20 22:22:49,410 - INFO - Updated existing work record 990 for property 26
+2025-03-20 22:22:49,568 - INFO - Updated existing work record 991 for property 26
+2025-03-20 22:22:49,735 - INFO - Updated existing work record 992 for property 26
+2025-03-20 22:22:49,896 - INFO - Updated existing work record 993 for property 26
+2025-03-20 22:22:50,056 - INFO - Updated existing work record 994 for property 26
+2025-03-20 22:22:50,210 - INFO - Updated existing work record 995 for property 26
+2025-03-20 22:22:50,372 - INFO - Updated existing work record 996 for property 26
+2025-03-20 22:22:50,531 - INFO - Updated existing work record 997 for property 26
+2025-03-20 22:22:50,697 - INFO - Updated existing work record 998 for property 26
+2025-03-20 22:22:50,859 - INFO - Updated existing work record 999 for property 26
+2025-03-20 22:22:51,027 - INFO - Updated existing work record 1000 for property 26
+2025-03-20 22:22:51,187 - INFO - Updated existing work record 1001 for property 26
+2025-03-20 22:22:51,350 - INFO - Updated existing work record 1002 for property 26
+2025-03-20 22:22:51,510 - INFO - Updated existing work record 1003 for property 26
+2025-03-20 22:22:51,672 - INFO - Updated existing work record 1004 for property 26
+2025-03-20 22:22:51,838 - INFO - Updated existing work record 1005 for property 26
+2025-03-20 22:22:52,000 - INFO - Updated existing work record 1006 for property 26
+2025-03-20 22:22:52,166 - INFO - Updated existing work record 1007 for property 26
+2025-03-20 22:22:52,329 - INFO - Updated existing work record 1008 for property 26
+2025-03-20 22:22:52,493 - INFO - Updated existing work record 1009 for property 26
+2025-03-20 22:22:52,655 - INFO - Updated existing work record 1010 for property 26
+2025-03-20 22:22:52,821 - INFO - Updated existing work record 1011 for property 26
+2025-03-20 22:22:52,987 - INFO - Updated existing work record 1012 for property 26
+2025-03-20 22:22:53,156 - INFO - Updated existing work record 1013 for property 26
+2025-03-20 22:22:53,319 - INFO - Updated existing work record 1014 for property 26
+2025-03-20 22:22:53,482 - INFO - Updated existing work record 1015 for property 26
+2025-03-20 22:22:53,648 - INFO - Updated existing work record 1016 for property 26
+2025-03-20 22:22:53,810 - INFO - Updated existing work record 1017 for property 26
+2025-03-20 22:22:53,966 - INFO - Updated existing work record 1018 for property 26
+2025-03-20 22:22:54,130 - INFO - Updated existing work record 1019 for property 26
+2025-03-20 22:22:54,293 - INFO - Updated existing work record 1020 for property 26
+2025-03-20 22:22:54,457 - INFO - Updated existing work record 1021 for property 26
+2025-03-20 22:22:54,609 - INFO - Updated existing work record 1022 for property 26
+2025-03-20 22:22:54,773 - INFO - Updated existing work record 1023 for property 26
+2025-03-20 22:22:54,929 - INFO - Updated existing work record 1024 for property 26
+2025-03-20 22:22:55,091 - INFO - Updated existing work record 1025 for property 26
+2025-03-20 22:22:55,250 - INFO - Updated existing work record 1026 for property 26
+2025-03-20 22:22:55,414 - INFO - Updated existing work record 1027 for property 26
+2025-03-20 22:22:55,574 - INFO - Updated existing work record 1028 for property 26
+2025-03-20 22:22:55,739 - INFO - Updated existing work record 1029 for property 26
+2025-03-20 22:22:55,900 - INFO - Updated existing work record 1030 for property 26
+2025-03-20 22:22:56,066 - INFO - Updated existing work record 1031 for property 26
+2025-03-20 22:22:56,236 - INFO - Updated existing work record 1032 for property 26
+2025-03-20 22:22:56,409 - INFO - Updated existing work record 1033 for property 26
+2025-03-20 22:22:56,579 - INFO - Updated existing work record 1034 for property 26
+2025-03-20 22:22:56,739 - INFO - Updated existing work record 1035 for property 26
+2025-03-20 22:22:56,901 - INFO - Updated existing money out record 1 for property 26
+2025-03-20 22:22:57,063 - INFO - Updated existing work record 1036 for property 26
+2025-03-20 22:22:57,239 - INFO - Updated existing work record 1037 for property 26
+2025-03-20 22:22:57,394 - INFO - Updated existing work record 1038 for property 26
+2025-03-20 22:22:57,560 - INFO - Updated existing work record 1039 for property 26
+2025-03-20 22:22:57,725 - INFO - Updated existing work record 1040 for property 26
+2025-03-20 22:22:57,901 - INFO - Updated existing work record 1041 for property 26
+2025-03-20 22:22:58,063 - INFO - Updated existing work record 1042 for property 26
+2025-03-20 22:22:58,225 - INFO - Updated existing work record 1043 for property 26
+2025-03-20 22:22:58,378 - INFO - Updated existing work record 1044 for property 26
+2025-03-20 22:22:58,541 - INFO - Updated existing work record 1045 for property 26
+2025-03-20 22:22:58,705 - INFO - Updated existing work record 1046 for property 26
+2025-03-20 22:22:58,869 - INFO - Updated existing work record 1047 for property 26
+2025-03-20 22:22:59,029 - INFO - Updated existing work record 1048 for property 26
+2025-03-20 22:22:59,191 - INFO - Updated existing work record 1049 for property 26
+2025-03-20 22:22:59,359 - INFO - Updated existing work record 1050 for property 26
+2025-03-20 22:22:59,361 - INFO - Processed 157 rows for property: 31 Ambrose Rd Cheltenham (Cost+ Project)
+2025-03-20 22:22:59,362 - INFO - Inserted/updated 145 records, skipped 12 rows
+2025-03-20 22:22:59,362 - INFO - Processed sheet 35/38: Sheet1 (20)
+2025-03-20 22:22:59,363 - INFO - Processing sheet: Maintenance 2424
+2025-03-20 22:22:59,363 - INFO - Found property address: YUM SING HOUSE
+2025-03-20 22:22:59,422 - INFO - Found existing property ID 27 for address: YUM SING HOUSE
+2025-03-20 22:22:59,544 - INFO - Updated existing work record 1053 for property 27
+2025-03-20 22:22:59,712 - INFO - Updated existing work record 1054 for property 27
+2025-03-20 22:22:59,884 - INFO - Updated existing work record 1055 for property 27
+2025-03-20 22:22:59,885 - INFO - Processed 5 rows for property: YUM SING HOUSE
+2025-03-20 22:22:59,885 - INFO - Inserted/updated 3 records, skipped 2 rows
+2025-03-20 22:22:59,885 - INFO - Processed sheet 36/38: Maintenance 2424
+2025-03-20 22:22:59,885 - INFO - Processing sheet: Mong Kok Room KD
+2025-03-20 22:22:59,886 - INFO - Found property address: YUM SING HOUSE
+2025-03-20 22:22:59,948 - INFO - Found existing property ID 27 for address: YUM SING HOUSE
+2025-03-20 22:23:00,072 - INFO - Updated existing work record 1056 for property 27
+2025-03-20 22:23:00,234 - INFO - Updated existing work record 1057 for property 27
+2025-03-20 22:23:00,403 - INFO - Updated existing work record 1058 for property 27
+2025-03-20 22:23:00,559 - INFO - Updated existing work record 1059 for property 27
+2025-03-20 22:23:00,724 - INFO - Updated existing work record 1060 for property 27
+2025-03-20 22:23:00,883 - INFO - Updated existing work record 1061 for property 27
+2025-03-20 22:23:01,047 - INFO - Updated existing work record 1062 for property 27
+2025-03-20 22:23:01,209 - INFO - Updated existing work record 1063 for property 27
+2025-03-20 22:23:01,377 - INFO - Updated existing work record 1064 for property 27
+2025-03-20 22:23:01,531 - INFO - Updated existing work record 1065 for property 27
+2025-03-20 22:23:01,690 - INFO - Updated existing work record 1066 for property 27
+2025-03-20 22:23:01,846 - INFO - Updated existing work record 1067 for property 27
+2025-03-20 22:23:02,005 - INFO - Updated existing work record 1068 for property 27
+2025-03-20 22:23:02,150 - INFO - Updated existing work record 1069 for property 27
+2025-03-20 22:23:02,312 - INFO - Updated existing work record 1070 for property 27
+2025-03-20 22:23:02,312 - INFO - Processed 16 rows for property: YUM SING HOUSE
+2025-03-20 22:23:02,312 - INFO - Inserted/updated 15 records, skipped 1 rows
+2025-03-20 22:23:02,313 - INFO - Processed sheet 37/38: Mong Kok Room KD
+2025-03-20 22:23:02,313 - INFO - Extraction completed. Processed 37 sheets, inserted 1029 records.
+2025-03-20 22:23:02,320 - INFO - Database connection closed
+2025-03-20 22:23:02,333 - INFO - 127.0.0.1 - - [20/Mar/2025 22:23:02] "[32mPOST /upload HTTP/1.1[0m" 302 -
+2025-03-20 22:23:02,407 - INFO - Using database configuration from db_config.ini
+2025-03-20 22:23:02,934 - INFO - 127.0.0.1 - - [20/Mar/2025 22:23:02] "GET / HTTP/1.1" 200 -
+2025-03-20 22:23:23,465 - INFO - Using database configuration from db_config.ini
+2025-03-20 22:23:23,811 - INFO - 127.0.0.1 - - [20/Mar/2025 22:23:23] "GET /properties HTTP/1.1" 200 -
+2025-03-20 22:23:29,102 - INFO - Using database configuration from db_config.ini
+2025-03-20 22:23:29,521 - INFO - 127.0.0.1 - - [20/Mar/2025 22:23:29] "GET / HTTP/1.1" 200 -
+2025-03-20 22:25:52,824 - INFO - Using database configuration from db_config.ini
+2025-03-20 22:25:53,255 - INFO - 127.0.0.1 - - [20/Mar/2025 22:25:53] "GET /properties HTTP/1.1" 200 -
+2025-03-20 22:25:54,117 - INFO - Using database configuration from db_config.ini
+2025-03-20 22:25:54,420 - INFO - 127.0.0.1 - - [20/Mar/2025 22:25:54] "GET /map HTTP/1.1" 200 -
+2025-03-20 22:25:54,483 - INFO - Using database configuration from db_config.ini
+2025-03-20 22:25:54,770 - INFO - 127.0.0.1 - - [20/Mar/2025 22:25:54] "GET /api/property-locations HTTP/1.1" 200 -
+2025-03-20 22:25:54,775 - INFO - 127.0.0.1 - - [20/Mar/2025 22:25:54] "[33mGET /api/property-count HTTP/1.1[0m" 404 -
+2025-03-20 22:25:55,884 - INFO - 127.0.0.1 - - [20/Mar/2025 22:25:55] "GET /upload HTTP/1.1" 200 -
+2025-03-20 22:25:57,097 - INFO - Using database configuration from db_config.ini
+2025-03-20 22:25:57,382 - INFO - 127.0.0.1 - - [20/Mar/2025 22:25:57] "GET /map HTTP/1.1" 200 -
+2025-03-20 22:25:57,423 - INFO - Using database configuration from db_config.ini
+2025-03-20 22:25:57,703 - INFO - 127.0.0.1 - - [20/Mar/2025 22:25:57] "GET /api/property-locations HTTP/1.1" 200 -
+2025-03-20 22:25:57,707 - INFO - 127.0.0.1 - - [20/Mar/2025 22:25:57] "[33mGET /api/property-count HTTP/1.1[0m" 404 -
+2025-03-20 22:26:15,186 - INFO - Using database configuration from db_config.ini
+2025-03-20 22:26:15,629 - INFO - 127.0.0.1 - - [20/Mar/2025 22:26:15] "GET /property/15 HTTP/1.1" 200 -
+2025-03-20 22:26:21,433 - INFO - Using database configuration from db_config.ini
+2025-03-20 22:26:21,846 - INFO - 127.0.0.1 - - [20/Mar/2025 22:26:21] "GET / HTTP/1.1" 200 -
+2025-03-20 22:26:26,433 - INFO - 127.0.0.1 - - [20/Mar/2025 22:26:26] "GET /upload HTTP/1.1" 200 -
+2025-03-20 22:26:28,145 - INFO - Using database configuration from db_config.ini
+2025-03-20 22:26:28,573 - INFO - 127.0.0.1 - - [20/Mar/2025 22:26:28] "GET / HTTP/1.1" 200 -
