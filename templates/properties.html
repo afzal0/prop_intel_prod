@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+
+{% block title %}Properties - Property Intelligence{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 text-gray-800">Properties</h1>
+        <a href="{{ url_for('upload_file') }}" class="btn btn-primary">
+            <i class="fas fa-plus-circle me-2"></i>Add New Property
+        </a>
+    </div>
+
+    <!-- Search Form -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Search Properties</h6>
+        </div>
+        <div class="card-body">
+            <form action="{{ url_for('properties') }}" method="get">
+                <div class="input-group">
+                    <input type="text" class="form-control" name="search" value="{{ search }}" placeholder="Search by property name or address...">
+                    <button class="btn btn-primary" type="submit">
+                        <i class="fas fa-search"></i>
+                    </button>
+                    {% if search %}
+                    <a href="{{ url_for('properties') }}" class="btn btn-secondary">
+                        <i class="fas fa-times"></i> Clear
+                    </a>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Properties List -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                {% if search %}
+                    Search Results for "{{ search }}"
+                {% else %}
+                    All Properties
+                {% endif %}
+            </h6>
+        </div>
+        <div class="card-body">
+            {% if properties %}
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover" id="propertiesTable" width="100%" cellspacing="0">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Address</th>
+                                <th>Location</th>
+                                <th>Work Records</th>
+                                <th>Income Records</th>
+                                <th>Expense Records</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for property in properties %}
+                            <tr>
+                                <td>{{ property.property_id }}</td>
+                                <td>{{ property.property_name }}</td>
+                                <td>{{ property.address }}</td>
+                                <td>
+                                    {% if property.latitude and property.longitude %}
+                                        <span class="badge bg-success">
+                                            <i class="fas fa-map-marker-alt"></i> Geocoded
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">
+                                            <i class="fas fa-map"></i> Not Geocoded
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ property.work_count }}</td>
+                                <td>{{ property.income_count }}</td>
+                                <td>{{ property.expense_count }}</td>
+                                <td>
+                                    <a href="{{ url_for('property_detail', property_id=property.property_id) }}" class="btn btn-sm btn-info">
+                                        <i class="fas fa-eye"></i> View
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-search fa-3x mb-3 text-gray-300"></i>
+                    <p class="lead text-gray-800 mb-1">No properties found</p>
+                    <p class="text-gray-600 mb-3">
+                        {% if search %}
+                            No properties match your search criteria "{{ search }}".
+                        {% else %}
+                            There are no properties in the database yet.
+                        {% endif %}
+                    </p>
+                    <a href="{{ url_for('upload_file') }}" class="btn btn-primary">
+                        <i class="fas fa-upload me-2"></i>Upload Property Data
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize DataTable
+        if (document.getElementById('propertiesTable')) {
+            $('#propertiesTable').DataTable({
+                "order": [[0, "desc"]]
+            });
+        }
+    });
+</script>
+{% endblock %}

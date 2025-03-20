@@ -1,0 +1,392 @@
+{% extends "base.html" %}
+
+{% block title %}{{ property.property_name }} - Property Intelligence{% endblock %}
+
+{% block additional_head %}
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"
+      integrity="sha256-kLaT2GOSpHechhsozzB+flnD+zUyjE2LlfWPgU04xyI="
+      crossorigin=""/>
+<style>
+    #propertyMap {
+        height: 400px;
+        width: 100%;
+        border-radius: 4px;
+    }
+    .nav-tabs .nav-link {
+        border: none;
+        border-bottom: 3px solid transparent;
+    }
+    .nav-tabs .nav-link.active {
+        border-bottom: 3px solid #4e73df;
+        color: #4e73df;
+        font-weight: bold;
+    }
+    .tab-content {
+        padding-top: 20px;
+    }
+    .money-in {
+        color: #1cc88a;
+    }
+    .money-out {
+        color: #e74a3b;
+    }
+    .work-record {
+        color: #4e73df;
+    }
+    .table-hover tbody tr:hover {
+        background-color: rgba(0,0,0,.05);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Property Header -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            {{ property.property_name }}
+        </h1>
+        <div>
+            <a href="{{ url_for('properties') }}" class="btn btn-secondary btn-sm">
+                <i class="fas fa-arrow-left me-1"></i> Back to Properties
+            </a>
+        </div>
+    </div>
+
+    <!-- Property Info Section -->
+    <div class="row mb-4">
+        <div class="col-xl-8 col-lg-7">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Property Details</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <h4 class="small font-weight-bold">Property ID</h4>
+                            <p class="mb-3">{{ property.property_id }}</p>
+                            
+                            <h4 class="small font-weight-bold">Address</h4>
+                            <p class="mb-3">{{ property.address }}</p>
+                            
+                            <h4 class="small font-weight-bold">Location</h4>
+                            <p class="mb-3">
+                                {% if property.latitude and property.longitude %}
+                                    Latitude: {{ property.latitude }}<br>
+                                    Longitude: {{ property.longitude }}
+                                {% else %}
+                                    <span class="text-warning">
+                                        <i class="fas fa-exclamation-triangle me-1"></i> 
+                                        Not geocoded
+                                    </span>
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div class="col-md-4">
+                            <!-- Financial Summary -->
+                            <div class="text-center">
+                                <div class="mb-3">
+                                    <span class="d-block fw-bold text-primary">Total Income</span>
+                                    <span class="h4 text-success">{{ income_total|format_currency }}</span>
+                                </div>
+                                <div class="mb-3">
+                                    <span class="d-block fw-bold text-primary">Total Expenses</span>
+                                    <span class="h4 text-danger">{{ expense_total|format_currency }}</span>
+                                </div>
+                                <div class="mb-3">
+                                    <span class="d-block fw-bold text-primary">Total Work Cost</span>
+                                    <span class="h4 text-info">{{ work_total|format_currency }}</span>
+                                </div>
+                                <div class="py-2 border-top">
+                                    <span class="d-block fw-bold text-primary">Net Balance</span>
+                                    <span class="h3 {% if net_total >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                        {{ net_total|format_currency }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-4 col-lg-5">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Location Map</h6>
+                </div>
+                <div class="card-body">
+                    <div id="propertyMap"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Records Tabs -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <ul class="nav nav-tabs card-header-tabs" id="propertyTabs" role="tablist">
+                <li class="nav-item">
+                    <a class="nav-link active" id="all-tab" data-bs-toggle="tab" href="#all" role="tab" aria-controls="all" aria-selected="true">
+                        <i class="fas fa-list me-1"></i> All Transactions
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="work-tab" data-bs-toggle="tab" href="#work" role="tab" aria-controls="work" aria-selected="false">
+                        <i class="fas fa-tools me-1"></i> Work ({{ work_records|length }})
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="income-tab" data-bs-toggle="tab" href="#income" role="tab" aria-controls="income" aria-selected="false">
+                        <i class="fas fa-dollar-sign me-1"></i> Income ({{ income_records|length }})
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="expense-tab" data-bs-toggle="tab" href="#expense" role="tab" aria-controls="expense" aria-selected="false">
+                        <i class="fas fa-credit-card me-1"></i> Expenses ({{ expense_records|length }})
+                    </a>
+                </li>
+            </ul>
+        </div>
+        <div class="card-body">
+            <div class="tab-content" id="propertyTabsContent">
+                <!-- All Transactions Tab -->
+                <div class="tab-pane fade show active" id="all" role="tabpanel" aria-labelledby="all-tab">
+                    {% if work_records or income_records or expense_records %}
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-hover" id="allTransactionsTable">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Type</th>
+                                        <th>Description</th>
+                                        <th>Amount</th>
+                                        <th>Payment Method</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for record in work_records %}
+                                        <tr>
+                                            <td>{{ record.work_date|format_date }}</td>
+                                            <td><span class="badge bg-primary">Work</span></td>
+                                            <td>{{ record.work_description }}</td>
+                                            <td class="text-danger">{{ record.work_cost|format_currency }}</td>
+                                            <td>{{ record.payment_method if record.payment_method else '-' }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                    
+                                    {% for record in income_records %}
+                                        <tr>
+                                            <td>{{ record.income_date|format_date }}</td>
+                                            <td><span class="badge bg-success">Income</span></td>
+                                            <td>{{ record.income_details }}</td>
+                                            <td class="text-success">{{ record.income_amount|format_currency }}</td>
+                                            <td>{{ record.payment_method if record.payment_method else '-' }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                    
+                                    {% for record in expense_records %}
+                                        <tr>
+                                            <td>{{ record.expense_date|format_date }}</td>
+                                            <td><span class="badge bg-danger">Expense</span></td>
+                                            <td>{{ record.expense_details }}</td>
+                                            <td class="text-danger">{{ record.expense_amount|format_currency }}</td>
+                                            <td>{{ record.payment_method if record.payment_method else '-' }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-file-alt fa-3x mb-3 text-gray-300"></i>
+                            <p class="lead">No transactions found for this property.</p>
+                            <a href="{{ url_for('upload_file') }}" class="btn btn-primary mt-2">
+                                <i class="fas fa-upload me-1"></i> Upload New Data
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Work Records Tab -->
+                <div class="tab-pane fade" id="work" role="tabpanel" aria-labelledby="work-tab">
+                    {% if work_records %}
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-hover" id="workRecordsTable">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Description</th>
+                                        <th>Cost</th>
+                                        <th>Payment Method</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for record in work_records %}
+                                        <tr>
+                                            <td>{{ record.work_date|format_date }}</td>
+                                            <td>{{ record.work_description }}</td>
+                                            <td>{{ record.work_cost|format_currency }}</td>
+                                            <td>{{ record.payment_method if record.payment_method else '-' }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <th colspan="2" class="text-end">Total:</th>
+                                        <th>{{ work_total|format_currency }}</th>
+                                        <th></th>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-tools fa-3x mb-3 text-gray-300"></i>
+                            <p class="lead">No work records found for this property.</p>
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Income Tab -->
+                <div class="tab-pane fade" id="income" role="tabpanel" aria-labelledby="income-tab">
+                    {% if income_records %}
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-hover" id="incomeRecordsTable">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Details</th>
+                                        <th>Amount</th>
+                                        <th>Payment Method</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for record in income_records %}
+                                        <tr>
+                                            <td>{{ record.income_date|format_date }}</td>
+                                            <td>{{ record.income_details }}</td>
+                                            <td class="text-success">{{ record.income_amount|format_currency }}</td>
+                                            <td>{{ record.payment_method if record.payment_method else '-' }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <th colspan="2" class="text-end">Total:</th>
+                                        <th class="text-success">{{ income_total|format_currency }}</th>
+                                        <th></th>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-dollar-sign fa-3x mb-3 text-gray-300"></i>
+                            <p class="lead">No income records found for this property.</p>
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Expenses Tab -->
+                <div class="tab-pane fade" id="expense" role="tabpanel" aria-labelledby="expense-tab">
+                    {% if expense_records %}
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-hover" id="expenseRecordsTable">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Details</th>
+                                        <th>Amount</th>
+                                        <th>Payment Method</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for record in expense_records %}
+                                        <tr>
+                                            <td>{{ record.expense_date|format_date }}</td>
+                                            <td>{{ record.expense_details }}</td>
+                                            <td class="text-danger">{{ record.expense_amount|format_currency }}</td>
+                                            <td>{{ record.payment_method if record.payment_method else '-' }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <th colspan="2" class="text-end">Total:</th>
+                                        <th class="text-danger">{{ expense_total|format_currency }}</th>
+                                        <th></th>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-credit-card fa-3x mb-3 text-gray-300"></i>
+                            <p class="lead">No expense records found for this property.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"
+        integrity="sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM="
+        crossorigin=""></script>
+<!-- DataTables -->
+<script src="https://cdn.datatables.net/1.13.2/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.2/js/dataTables.bootstrap5.min.js"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize map
+        const map = L.map('propertyMap').setView([{{ map_lat }}, {{ map_lng }}], 15);
+        
+        // Add OpenStreetMap tiles
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; <a href="https://openstreetmap.org/copyright">OpenStreetMap contributors</a>'
+        }).addTo(map);
+        
+        // Add marker for property location
+        {% if property.latitude and property.longitude %}
+        const marker = L.marker([{{ property.latitude }}, {{ property.longitude }}]).addTo(map);
+        marker.bindPopup("<b>{{ property.property_name }}</b><br>{{ property.address }}").openPopup();
+        {% else %}
+        // Just show marker at Melbourne center with note that property is not geocoded
+        const marker = L.marker([{{ map_lat }}, {{ map_lng }}]).addTo(map);
+        marker.bindPopup("<b>{{ property.property_name }}</b><br>{{ property.address }}<br><i>Not geocoded - showing default location</i>").openPopup();
+        {% endif %}
+        
+        // Initialize DataTables
+        if (document.getElementById('allTransactionsTable')) {
+            $('#allTransactionsTable').DataTable({
+                "order": [[0, "desc"]]
+            });
+        }
+        
+        if (document.getElementById('workRecordsTable')) {
+            $('#workRecordsTable').DataTable({
+                "order": [[0, "desc"]]
+            });
+        }
+        
+        if (document.getElementById('incomeRecordsTable')) {
+            $('#incomeRecordsTable').DataTable({
+                "order": [[0, "desc"]]
+            });
+        }
+        
+        if (document.getElementById('expenseRecordsTable')) {
+            $('#expenseRecordsTable').DataTable({
+                "order": [[0, "desc"]]
+            });
+        }
+    });
+</script>
+{% endblock %}

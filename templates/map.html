@@ -1,0 +1,227 @@
+{% extends "base.html" %}
+
+{% block title %}Map View - Property Intelligence{% endblock %}
+
+{% block additional_head %}
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"
+      integrity="sha256-kLaT2GOSpHechhsozzB+flnD+zUyjE2LlfWPgU04xyI="
+      crossorigin=""/>
+<style>
+    #propertiesMap {
+        height: 700px;
+        width: 100%;
+        border-radius: 4px;
+    }
+    .property-popup {
+        max-width: 300px;
+    }
+    .property-popup h5 {
+        margin-bottom: 5px;
+        color: #4e73df;
+    }
+    .property-popup .address {
+        margin-bottom: 10px;
+        font-style: italic;
+    }
+    .property-popup .btn {
+        width: 100%;
+        margin-top: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Property Map</h1>
+    </div>
+
+    <div class="row">
+        <div class="col-xl-9 col-lg-8">
+            <!-- Map Card -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Property Locations</h6>
+                    <div>
+                        <button id="zoomToFit" class="btn btn-sm btn-primary">
+                            <i class="fas fa-expand-arrows-alt me-1"></i> Zoom to Fit All
+                        </button>
+                        <button id="centerOnMelbourne" class="btn btn-sm btn-info">
+                            <i class="fas fa-map-marker-alt me-1"></i> Center on Melbourne
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div id="propertiesMap"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-lg-4">
+            <!-- Legend Card -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Map Legend</h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <div class="d-flex align-items-center mb-2">
+                            <div style="width:24px; height:24px; background-color:#4e73df; border-radius:50%; margin-right:10px;"></div>
+                            <span>Properties with geodata</span>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <div style="width:24px; height:24px; background-color:#f6c23e; border-radius:50%; margin-right:10px;"></div>
+                            <span>Properties without geodata (showing Melbourne center)</span>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info" role="alert">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Click on a marker to view property details and access the property page.
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Map Stats -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Map Statistics</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row align-items-center mb-3">
+                        <div class="col-4 text-center">
+                            <i class="fas fa-map-marker-alt fa-2x text-primary"></i>
+                        </div>
+                        <div class="col-8">
+                            <div id="geocodedCount" class="h5 mb-0 font-weight-bold text-gray-800">Loading...</div>
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Geocoded Properties</div>
+                        </div>
+                    </div>
+                    
+                    <div class="row align-items-center mb-3">
+                        <div class="col-4 text-center">
+                            <i class="fas fa-map fa-2x text-warning"></i>
+                        </div>
+                        <div class="col-8">
+                            <div id="nonGeocodedCount" class="h5 mb-0 font-weight-bold text-gray-800">Loading...</div>
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Non-Geocoded Properties</div>
+                        </div>
+                    </div>
+                    
+                    <div class="row align-items-center">
+                        <div class="col-4 text-center">
+                            <i class="fas fa-percentage fa-2x text-info"></i>
+                        </div>
+                        <div class="col-8">
+                            <div id="geocodedPercentage" class="h5 mb-0 font-weight-bold text-gray-800">Loading...</div>
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Geocoding Coverage</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"
+        integrity="sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM="
+        crossorigin=""></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize map
+        const map = L.map('propertiesMap').setView([{{ center_lat }}, {{ center_lng }}], 12);
+        
+        // Add OpenStreetMap tiles
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; <a href="https://openstreetmap.org/copyright">OpenStreetMap contributors</a>'
+        }).addTo(map);
+        
+        // GeoJSON data
+        const propertiesData = {{ geojson|safe }};
+        
+        // Add GeoJSON to map with custom markers
+        const markers = L.geoJSON(propertiesData, {
+            pointToLayer: function(feature, latlng) {
+                return L.circleMarker(latlng, {
+                    radius: 8,
+                    fillColor: "#4e73df",
+                    color: "#fff",
+                    weight: 1,
+                    opacity: 1,
+                    fillOpacity: 0.8
+                });
+            },
+            onEachFeature: function(feature, layer) {
+                const popupContent = `
+                    <div class="property-popup">
+                        <h5>${feature.properties.name}</h5>
+                        <div class="address">${feature.properties.address}</div>
+                        <a href="${feature.properties.url}" class="btn btn-sm btn-primary">
+                            View Property Details
+                        </a>
+                    </div>
+                `;
+                layer.bindPopup(popupContent);
+            }
+        }).addTo(map);
+        
+        // Add non-geocoded properties at Melbourne center
+        fetch('/api/property-locations')
+            .then(response => response.json())
+            .then(data => {
+                // Count geocoded properties
+                const geocodedCount = data.features.length;
+                
+                // Get total properties count (need to query this separately)
+                fetch('/api/property-count')
+                    .then(response => response.json())
+                    .then(countData => {
+                        const totalProperties = countData.count;
+                        const nonGeocodedCount = totalProperties - geocodedCount;
+                        
+                        // Update stats
+                        document.getElementById('geocodedCount').textContent = geocodedCount;
+                        document.getElementById('nonGeocodedCount').textContent = nonGeocodedCount;
+                        
+                        const percentage = totalProperties > 0 
+                            ? Math.round((geocodedCount / totalProperties) * 100) 
+                            : 0;
+                        document.getElementById('geocodedPercentage').textContent = `${percentage}%`;
+                        
+                        // Create a bounds object to fit all markers
+                        if (geocodedCount > 0) {
+                            const bounds = markers.getBounds();
+                            
+                            // Zoom to fit button
+                            document.getElementById('zoomToFit').addEventListener('click', function() {
+                                map.fitBounds(bounds);
+                            });
+                            
+                            // Initially fit bounds
+                            map.fitBounds(bounds);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching property count:', error);
+                        document.getElementById('geocodedCount').textContent = geocodedCount;
+                        document.getElementById('nonGeocodedCount').textContent = 'N/A';
+                        document.getElementById('geocodedPercentage').textContent = 'N/A';
+                    });
+            })
+            .catch(error => {
+                console.error('Error fetching property locations:', error);
+            });
+        
+        // Center on Melbourne button
+        document.getElementById('centerOnMelbourne').addEventListener('click', function() {
+            map.setView([{{ center_lat }}, {{ center_lng }}], 12);
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,98 @@
+# Property Intelligence Web Application
+
+A Flask web application for managing and visualizing property data, with features for uploading Excel files, viewing properties on a map, and analyzing financial data.
+
+## Features
+
+- **Upload Excel Files**: Easily import property data from Excel files
+- **Property Dashboard**: Overview of all properties with financial summaries
+- **Property Details**: View work records, income, and expenses for each property
+- **Interactive Map**: See all properties on a map using their geocoded locations
+- **Search and Filter**: Find specific properties by name or address
+- **Responsive Design**: Works on desktop and mobile devices
+
+## Installation
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/yourusername/property-intelligence.git
+   cd property-intelligence
+   ```
+
+2. Create a virtual environment:
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # On Windows, use: venv\Scripts\activate
+   ```
+
+3. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+4. Create a `db_config.ini` file with your database credentials:
+   ```ini
+   [database]
+   user = prop_intel
+   password = your_password
+   host = your_database_host
+   port = 5432
+   database = postgres
+   ```
+
+5. Create necessary directories:
+   ```bash
+   mkdir uploads
+   mkdir templates
+   ```
+
+6. Place all template files in the `templates` directory.
+
+## Running the Application
+
+Start the Flask application:
+```bash
+flask run
+```
+
+The application will be available at http://127.0.0.1:5000/
+
+## Directory Structure
+
+```
+property-intelligence/
+├── app.py                     # Main Flask application
+├── property_data_extractor.py # Excel data extraction script
+├── requirements.txt           # Python dependencies
+├── db_config.ini              # Database configuration
+├── uploads/                   # Directory for uploaded Excel files
+└── templates/                 # HTML templates
+    ├── base.html
+    ├── index.html
+    ├── map.html
+    ├── properties.html
+    ├── property_detail.html
+    └── upload.html
+```
+
+## Database Schema
+
+The application uses a PostgreSQL database with the following structure:
+
+- **properties**: Property information including geocoding
+- **work**: Work records linked to properties
+- **money_in**: Income records linked to properties
+- **money_out**: Expense records linked to properties
+
+## Usage
+
+1. **Dashboard**: View a summary of all properties and financial data
+2. **Properties**: Browse all properties or search for specific ones
+3. **Map View**: See property locations on an interactive map
+4. **Upload Data**: Import new data from Excel files
+
+## Requirements
+
+- Python 3.8+
+- PostgreSQL 12+
+- Modern web browser
