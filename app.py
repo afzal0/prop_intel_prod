@@ -331,4 +331,4 @@ def format_currency(value):
     return f"${float(value):,.2f}"
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=False)

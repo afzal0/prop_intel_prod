@@ -103,3 +103,34 @@
 2025-03-20 16:43:58,436 - INFO - 127.0.0.1 - - [20/Mar/2025 16:43:58] "GET /property/18 HTTP/1.1" 200 -
 2025-03-20 16:44:04,984 - INFO - Using database configuration from db_config.ini
 2025-03-20 16:44:05,405 - INFO - 127.0.0.1 - - [20/Mar/2025 16:44:05] "GET / HTTP/1.1" 200 -
+2025-03-20 22:01:30,534 - INFO - Using database configuration from db_config.ini
+2025-03-20 22:01:30,544 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:59142
+2025-03-20 22:01:30,544 - INFO - [33mPress CTRL+C to quit[0m
+2025-03-20 22:01:30,604 - INFO - Using database configuration from db_config.ini
+2025-03-20 22:01:31,171 - INFO - 127.0.0.1 - - [20/Mar/2025 22:01:31] "GET / HTTP/1.1" 200 -
+2025-03-20 22:01:31,172 - INFO - Using database configuration from db_config.ini
+2025-03-20 22:01:31,574 - INFO - 127.0.0.1 - - [20/Mar/2025 22:01:31] "GET / HTTP/1.1" 200 -
+2025-03-20 22:01:31,576 - INFO - Using database configuration from db_config.ini
+2025-03-20 22:01:31,872 - INFO - 127.0.0.1 - - [20/Mar/2025 22:01:31] "GET /properties HTTP/1.1" 200 -
+2025-03-20 22:01:31,874 - INFO - Using database configuration from db_config.ini
+2025-03-20 22:01:32,172 - INFO - 127.0.0.1 - - [20/Mar/2025 22:01:32] "GET /map HTTP/1.1" 200 -
+2025-03-20 22:01:32,176 - INFO - 127.0.0.1 - - [20/Mar/2025 22:01:32] "GET /upload HTTP/1.1" 200 -
+2025-03-20 22:01:32,177 - INFO - 127.0.0.1 - - [20/Mar/2025 22:01:32] "[33mGET /debug HTTP/1.1[0m" 404 -
+2025-03-20 22:12:47,762 - INFO - Using database configuration from db_config.ini
+2025-03-20 22:12:50,811 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2025-03-20 22:12:50,812 - INFO - [33mPress CTRL+C to quit[0m
+2025-03-20 22:12:58,151 - INFO - Using database configuration from db_config.ini
+2025-03-20 22:12:58,712 - INFO - 127.0.0.1 - - [20/Mar/2025 22:12:58] "GET / HTTP/1.1" 200 -
+2025-03-20 22:13:02,183 - INFO - Using database configuration from db_config.ini
+2025-03-20 22:13:02,494 - INFO - 127.0.0.1 - - [20/Mar/2025 22:13:02] "GET /properties HTTP/1.1" 200 -
+2025-03-20 22:13:03,598 - INFO - Using database configuration from db_config.ini
+2025-03-20 22:13:03,895 - INFO - 127.0.0.1 - - [20/Mar/2025 22:13:03] "GET /map HTTP/1.1" 200 -
+2025-03-20 22:13:04,093 - INFO - Using database configuration from db_config.ini
+2025-03-20 22:13:04,383 - INFO - 127.0.0.1 - - [20/Mar/2025 22:13:04] "GET /api/property-locations HTTP/1.1" 200 -
+2025-03-20 22:13:04,388 - INFO - 127.0.0.1 - - [20/Mar/2025 22:13:04] "[33mGET /api/property-count HTTP/1.1[0m" 404 -
+2025-03-20 22:13:11,139 - INFO - Using database configuration from db_config.ini
+2025-03-20 22:13:11,547 - INFO - 127.0.0.1 - - [20/Mar/2025 22:13:11] "GET /property/11 HTTP/1.1" 200 -
+2025-03-20 22:13:25,385 - INFO - Using database configuration from db_config.ini
+2025-03-20 22:13:25,805 - INFO - 127.0.0.1 - - [20/Mar/2025 22:13:25] "GET / HTTP/1.1" 200 -
