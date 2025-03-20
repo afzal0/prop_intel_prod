@@ -75,3 +75,15 @@
 2025-03-20 14:42:04,083 - INFO - Using database configuration from db_config.ini
 2025-03-20 14:42:04,092 - WARNING -  * Debugger is active!
 2025-03-20 14:42:04,101 - INFO -  * Debugger PIN: 276-612-969
+2025-03-20 16:29:57,564 - INFO - Using database configuration from db_config.ini
+2025-03-20 16:29:57,584 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2025-03-20 16:29:57,584 - INFO - [33mPress CTRL+C to quit[0m
+2025-03-20 16:29:57,600 - INFO -  * Restarting with watchdog (fsevents)
+2025-03-20 16:29:58,258 - INFO - Using database configuration from db_config.ini
+2025-03-20 16:29:58,263 - WARNING -  * Debugger is active!
+2025-03-20 16:29:58,274 - INFO -  * Debugger PIN: 276-612-969
+2025-03-20 16:30:38,434 - INFO - Using database configuration from db_config.ini
+2025-03-20 16:30:39,394 - INFO - 127.0.0.1 - - [20/Mar/2025 16:30:39] "GET / HTTP/1.1" 200 -
+2025-03-20 16:30:41,091 - INFO - Using database configuration from db_config.ini
+2025-03-20 16:30:41,497 - INFO - 127.0.0.1 - - [20/Mar/2025 16:30:41] "GET /property/27 HTTP/1.1" 200 -
