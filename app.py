@@ -1,5 +1,7 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 import os
+import sys
+import logging
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 import psycopg2
 from psycopg2.extras import RealDictCursor
 import configparser
@@ -7,12 +9,18 @@ from werkzeug.utils import secure_filename
 import tempfile
 import datetime
 import json
+from urllib.parse import urlparse
 
-# Import our data extraction script
-import property_data_extractor as extractor
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger()
 
+# Create Flask app
 app = Flask(__name__)
-app.secret_key = 'propintel_secret_key'  # For flash messages
+app.secret_key = os.environ.get('SECRET_KEY', '70d0bad2f44c1fbd0c9e1765837225677012174de7bc02e698a1319f24b49302d6348f39c225f35e56dc350473ff47ab9895e7c1abb24a7ed80647eb483bb5319d7ab0ea52884d329b27d32ab112da0a')
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB limit
 
@@ -22,12 +30,66 @@ os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 # Default center of Melbourne
 MELBOURNE_CENTER = [-37.8136, 144.9631]
 
-# Database connection
+def get_db_config():
+    """
+    Get database configuration from environment variable (for Heroku)
+    or from config file (for local development)
+    """
+    # Check for DATABASE_URL environment variable (set by Heroku)
+    database_url = os.environ.get('DATABASE_URL')
+    
+    if database_url:
+        # Parse Heroku DATABASE_URL
+        # Note: Heroku uses 'postgres://' but psycopg2 needs 'postgresql://'
+        if database_url.startswith('postgres://'):
+            database_url = database_url.replace('postgres://', 'postgresql://', 1)
+            
+        # Parse the URL
+        result = urlparse(database_url)
+        
+        # Build connection parameters
+        return {
+            "user": result.username,
+            "password": result.password,
+            "host": result.hostname,
+            "port": result.port or 5432,
+            "database": result.path[1:],  # Remove leading slash
+        }
+    else:
+        # Fallback to config file for local development
+        config = configparser.ConfigParser()
+        
+        # Default connection parameters
+        default_params = {
+            "user": "prop_intel",
+            "password": "nyrty7-cytrit-qePkyf",
+            "host": "propintel.postgres.database.azure.com",
+            "port": 5432,
+            "database": "postgres",
+        }
+        
+        # Try to read from config file
+        if os.path.exists('db_config.ini'):
+            try:
+                config.read('db_config.ini')
+                if 'database' in config:
+                    return {
+                        "user": config['database'].get('user', default_params['user']),
+                        "password": config['database'].get('password', default_params['password']),
+                        "host": config['database'].get('host', default_params['host']),
+                        "port": int(config['database'].get('port', default_params['port'])),
+                        "database": config['database'].get('database', default_params['database']),
+                    }
+            except Exception as e:
+                print(f"Error reading config file: {e}. Using default parameters.")
+        
+        return default_params
+
 def get_db_connection():
     """Get a connection to the PostgreSQL database"""
-    # Use the same connection logic as in the extractor script
-    params = extractor.get_db_config()
-    conn = psycopg2.connect(**params)
+    conn_params = get_db_config()
+    logger.info(f"Connecting to database at {conn_params['host']}:{conn_params['port']}/{conn_params['database']}")
+    conn = psycopg2.connect(**conn_params)
     return conn
 
 @app.route('/')
@@ -75,6 +137,10 @@ def index():
                 ORDER BY property_id DESC LIMIT 5
             """)
             recent_properties = cur.fetchall()
+    except Exception as e:
+        logger.error(f"Database error: {e}")
+        flash(f"Database error: {e}", "danger")
+        return render_template('error.html', error=str(e))
     finally:
         conn.close()
     
@@ -112,6 +178,8 @@ def upload_file():
             
             # Process the file
             try:
+                # Import the extractor here to avoid circular imports
+                import property_data_extractor as extractor
                 extractor.extract_data_from_excel(file_path)
                 flash(f'Successfully processed {filename}')
             except Exception as e:
@@ -161,6 +229,10 @@ def properties():
                 """)
             
             properties = cur.fetchall()
+    except Exception as e:
+        logger.error(f"Database error: {e}")
+        flash(f"Database error: {e}", "danger")
+        return render_template('error.html', error=str(e))
     finally:
         conn.close()
     
@@ -211,6 +283,10 @@ def property_detail(property_id):
             income_total = sum(float(record['income_amount'] or 0) for record in income_records)
             expense_total = sum(float(record['expense_amount'] or 0) for record in expense_records)
             net_total = income_total - expense_total - work_total
+    except Exception as e:
+        logger.error(f"Database error: {e}")
+        flash(f"Database error: {e}", "danger")
+        return render_template('error.html', error=str(e))
     finally:
         conn.close()
     
@@ -264,6 +340,10 @@ def map_view():
                 'type': 'FeatureCollection',
                 'features': features
             }
+    except Exception as e:
+        logger.error(f"Database error: {e}")
+        flash(f"Database error: {e}", "danger")
+        return render_template('error.html', error=str(e))
     finally:
         conn.close()
     
@@ -306,10 +386,84 @@ def property_locations_api():
                 'type': 'FeatureCollection',
                 'features': features
             }
+    except Exception as e:
+        logger.error(f"API error: {e}")
+        return jsonify({'error': str(e)}), 500
     finally:
         conn.close()
     
     return jsonify(geojson)
+
+@app.route('/api/property-count')
+def property_count_api():
+    """API endpoint for property count"""
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SELECT COUNT(*) FROM propintel.properties")
+            count = cur.fetchone()[0]
+    except Exception as e:
+        logger.error(f"API error: {e}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        conn.close()
+    
+    return jsonify({'count': count})
+
+@app.route('/debug')
+def debug_info():
+    """Debug endpoint to help diagnose issues"""
+    import sys
+    import platform
+    
+    # Basic information
+    debug_data = {
+        'python_version': sys.version,
+        'platform': platform.platform(),
+        'working_directory': os.getcwd(),
+        'environment': os.environ.get('FLASK_ENV', 'not set'),
+    }
+    
+    # Check for essential directories
+    directories = ['templates', 'static', 'uploads']
+    dir_status = {}
+    for dir_name in directories:
+        dir_path = os.path.join(os.getcwd(), dir_name)
+        dir_status[dir_name] = {
+            'exists': os.path.exists(dir_path),
+            'is_dir': os.path.isdir(dir_path) if os.path.exists(dir_path) else False
+        }
+        if dir_status[dir_name]['exists'] and dir_status[dir_name]['is_dir']:
+            try:
+                dir_status[dir_name]['contents'] = os.listdir(dir_path)[:10]  # First 10 files
+            except:
+                dir_status[dir_name]['contents'] = 'Error listing contents'
+    
+    debug_data['directories'] = dir_status
+    
+    # Test database connection
+    db_status = 'Not tested'
+    try:
+        conn_params = get_db_config()
+        # Mask password
+        masked_params = conn_params.copy()
+        if 'password' in masked_params:
+            masked_params['password'] = '*****'
+        debug_data['db_connection_params'] = masked_params
+        
+        # Try to connect
+        conn = psycopg2.connect(**conn_params)
+        with conn.cursor() as cur:
+            cur.execute('SELECT version();')
+            db_version = cur.fetchone()[0]
+        conn.close()
+        db_status = f'Connected: {db_version}'
+    except Exception as e:
+        db_status = f'Error: {str(e)}'
+    
+    debug_data['database_status'] = db_status
+    
+    return jsonify(debug_data)
 
 @app.template_filter('format_date')
 def format_date(value):
@@ -330,5 +484,51 @@ def format_currency(value):
         return "$0.00"
     return f"${float(value):,.2f}"
 
+@app.errorhandler(404)
+def page_not_found(e):
+    return render_template('error.html', error='Page not found'), 404
+
+@app.errorhandler(500)
+def server_error(e):
+    return render_template('error.html', error='Server error occurred'), 500
+
+# Create an error.html template for error handling
+if not os.path.exists('templates/error.html'):
+    os.makedirs('templates', exist_ok=True)
+    with open('templates/error.html', 'w') as f:
+        f.write('''
+        {% extends "base.html" %}
+        {% block title %}Error{% endblock %}
+        {% block content %}
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <div class="card shadow mb-4">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-danger">Error</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="text-center mb-4">
+                                <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+                                <h4 class="text-gray-900">Something went wrong!</h4>
+                                <p class="text-gray-600">{{ error }}</p>
+                            </div>
+                            <div class="text-center">
+                                <a href="{{ url_for('index') }}" class="btn btn-primary">
+                                    <i class="fas fa-home me-2"></i>Return to Dashboard
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endblock %}
+        ''')
+
 if __name__ == '__main__':
-    app.run(debug=True)
+    # Use the PORT environment variable provided by Heroku, or default to 5000
+    port = int(os.environ.get('PORT', 5000))
+    
+    # In production, we're using Gunicorn so this won't be called
+    app.run(host='0.0.0.0', port=port)
