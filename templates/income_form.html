@@ -1,0 +1,58 @@
+{% extends "layout.html" %}
+{% block title %}Add Income Record - PropIntel{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h5 class="card-title mb-0">Add Income Record for {{ property_name }}</h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    <div class="mb-3">
+                        <label for="income_details" class="form-label">Income Details</label>
+                        <input type="text" class="form-control" id="income_details" name="income_details">
+                        <div class="form-text">Source or description of the income</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="income_date" class="form-label">Date</label>
+                        <input type="date" class="form-control" id="income_date" name="income_date" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="income_amount" class="form-label">Amount</label>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            <input type="number" class="form-control" id="income_amount" name="income_amount" step="0.01" min="0" required>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="payment_method" class="form-label">Payment Method</label>
+                        <select class="form-select" id="payment_method" name="payment_method">
+                            <option value="">-- Select --</option>
+                            <option value="Cash">Cash</option>
+                            <option value="Bank Transfer">Bank Transfer</option>
+                            <option value="Direct Deposit">Direct Deposit</option>
+                            <option value="Check">Check</option>
+                            <option value="PayPal">PayPal</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-save me-2"></i> Save Income Record
+                        </button>
+                        <a href="{{ url_for('property_detail', property_id=property_id) }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-2"></i> Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

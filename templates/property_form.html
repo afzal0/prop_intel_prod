@@ -1,0 +1,64 @@
+{% extends "layout.html" %}
+{% block title %}Add Property - PropIntel{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">Add New Property</h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    <div class="mb-3">
+                        <label for="property_name" class="form-label">Property Name</label>
+                        <input type="text" class="form-control" id="property_name" name="property_name" required>
+                        <div class="form-text">A unique identifier for the property (e.g., "123 Smith St")</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="address" class="form-label">Full Address</label>
+                        <input type="text" class="form-control" id="address" name="address" required>
+                        <div class="form-text">Complete address including street, city, state, and postal code</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="purchase_date" class="form-label">Purchase Date</label>
+                        <input type="date" class="form-control" id="purchase_date" name="purchase_date">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="purchase_price" class="form-label">Purchase Price</label>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            <input type="number" class="form-control" id="purchase_price" name="purchase_price" step="0.01" min="0">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="current_value" class="form-label">Current Value</label>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            <input type="number" class="form-control" id="current_value" name="current_value" step="0.01" min="0">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="notes" class="form-label">Notes</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="3"></textarea>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i> Save Property
+                        </button>
+                        <a href="{{ url_for('properties') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-2"></i> Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

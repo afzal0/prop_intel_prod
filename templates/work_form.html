@@ -1,0 +1,59 @@
+{% extends "layout.html" %}
+{% block title %}Add Work Record - PropIntel{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">Add Work Record for {{ property_name }}</h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    <div class="mb-3">
+                        <label for="work_description" class="form-label">Work Description</label>
+                        <input type="text" class="form-control" id="work_description" name="work_description" required>
+                        <div class="form-text">Brief description of the work performed</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="work_date" class="form-label">Date</label>
+                        <input type="date" class="form-control" id="work_date" name="work_date" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="work_cost" class="form-label">Cost</label>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            <input type="number" class="form-control" id="work_cost" name="work_cost" step="0.01" min="0">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="payment_method" class="form-label">Payment Method</label>
+                        <select class="form-select" id="payment_method" name="payment_method">
+                            <option value="">-- Select --</option>
+                            <option value="Cash">Cash</option>
+                            <option value="Bank Transfer">Bank Transfer</option>
+                            <option value="Credit Card">Credit Card</option>
+                            <option value="Debit Card">Debit Card</option>
+                            <option value="Check">Check</option>
+                            <option value="Direct Debit">Direct Debit</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i> Save Work Record
+                        </button>
+                        <a href="{{ url_for('property_detail', property_id=property_id) }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-2"></i> Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

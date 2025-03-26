@@ -1,159 +1,142 @@
-{% extends "base.html" %}
-
-{% block title %}Dashboard - Property Intelligence{% endblock %}
+{% extends "layout.html" %}
+{% block title %}Dashboard - PropIntel{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <h1 class="h3 mb-4 text-gray-800">Dashboard</h1>
-
-    <!-- Dashboard Cards -->
-    <div class="row mb-4">
-        <!-- Properties Card -->
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-0 shadow h-100 card-dashboard card-primary">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Properties</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ property_count }}</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-home fa-2x text-gray-300"></i>
-                        </div>
+<div class="row">
+    <!-- Sidebar -->
+    <div class="col-md-3 col-lg-2 d-md-block sidebar collapse">
+        <div class="position-sticky">
+            <div class="card mb-3">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">Quick Navigation</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        <a href="{{ url_for('properties') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-home me-2"></i> View All Properties
+                        </a>
+                        <a href="{{ url_for('map_view') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-map-marker-alt me-2"></i> View Property Map
+                        </a>
+                        <a href="{{ url_for('new_property') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-plus-circle me-2"></i> Add New Property
+                        </a>
+                        <a href="{{ url_for('upload_file') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-file-upload me-2"></i> Upload Data
+                        </a>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Work Records Card -->
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-0 shadow h-100 card-dashboard card-info">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Work Records</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ work_count }}</div>
-                            <div class="text-xs mt-1">Total: {{ work_total|format_currency }}</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-tools fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">Recent Properties</h5>
                 </div>
-            </div>
-        </div>
-
-        <!-- Income Card -->
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-0 shadow h-100 card-dashboard card-success">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Income</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ income_count }}</div>
-                            <div class="text-xs mt-1">Total: {{ income_total|format_currency }}</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Expenses Card -->
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-0 shadow h-100 card-dashboard card-warning">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Expenses</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ expense_count }}</div>
-                            <div class="text-xs mt-1">Total: {{ expense_total|format_currency }}</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-credit-card fa-2x text-gray-300"></i>
-                        </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        {% for property in recent_properties %}
+                        <a href="{{ url_for('property_detail', property_id=property[0]) }}" class="list-group-item list-group-item-action">
+                            {{ property[1] }}
+                            <small class="d-block text-muted">{{ property[2] }}</small>
+                        </a>
+                        {% else %}
+                        <div class="list-group-item">No properties found</div>
+                        {% endfor %}
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Recent Properties -->
-    <div class="row">
-        <div class="col-lg-6">
-            <div class="card shadow mb-4">
-                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                    <h6 class="m-0 font-weight-bold text-primary">Recent Properties</h6>
-                    <a href="{{ url_for('properties') }}" class="btn btn-sm btn-primary">View All</a>
+    <!-- Main Content -->
+    <div class="col-md-9 col-lg-10 main-content">
+        <h1 class="h2 mb-4">Dashboard</h1>
+
+        <!-- Stats Cards -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card stats-card bg-primary text-white">
+                    <div class="card-body">
+                        <i class="fas fa-home fa-2x mb-3"></i>
+                        <div class="number">{{ property_count }}</div>
+                        <div class="label">Properties</div>
+                    </div>
                 </div>
-                <div class="card-body">
-                    {% if recent_properties %}
-                        <div class="table-responsive">
-                            <table class="table table-bordered table-hover">
-                                <thead>
-                                    <tr>
-                                        <th>ID</th>
-                                        <th>Name</th>
-                                        <th>Address</th>
-                                        <th>Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for property in recent_properties %}
-                                    <tr>
-                                        <td>{{ property[0] }}</td>
-                                        <td>{{ property[1] }}</td>
-                                        <td>{{ property[2] }}</td>
-                                        <td>
-                                            <a href="{{ url_for('property_detail', property_id=property[0]) }}" class="btn btn-sm btn-info">
-                                                <i class="fas fa-eye"></i>
-                                            </a>
-                                        </td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                    {% else %}
-                        <p class="text-center">No properties found. Upload data to get started.</p>
-                    {% endif %}
+            </div>
+
+            <div class="col-md-3">
+                <div class="card stats-card bg-success text-white">
+                    <div class="card-body">
+                        <i class="fas fa-dollar-sign fa-2x mb-3"></i>
+                        <div class="number">{{ income_count }}</div>
+                        <div class="label">Income Records</div>
+                        <div>{{ income_total|format_currency }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="card stats-card bg-danger text-white">
+                    <div class="card-body">
+                        <i class="fas fa-file-invoice-dollar fa-2x mb-3"></i>
+                        <div class="number">{{ expense_count }}</div>
+                        <div class="label">Expense Records</div>
+                        <div>{{ expense_total|format_currency }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="card stats-card bg-info text-white">
+                    <div class="card-body">
+                        <i class="fas fa-tools fa-2x mb-3"></i>
+                        <div class="number">{{ work_count }}</div>
+                        <div class="label">Work Records</div>
+                        <div>{{ work_total|format_currency }}</div>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div class="col-lg-6">
-            <div class="card shadow mb-4">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">Quick Actions</h6>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <a href="{{ url_for('upload_file') }}" class="btn btn-primary btn-block w-100">
-                                <i class="fas fa-upload mr-2"></i> Upload Data
-                            </a>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <a href="{{ url_for('properties') }}" class="btn btn-info btn-block w-100">
-                                <i class="fas fa-search mr-2"></i> Find Property
-                            </a>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <a href="{{ url_for('map_view') }}" class="btn btn-success btn-block w-100">
-                                <i class="fas fa-map-marker-alt mr-2"></i> View Map
-                            </a>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <a href="#" class="btn btn-secondary btn-block w-100">
-                                <i class="fas fa-file-export mr-2"></i> Export Data
-                            </a>
-                        </div>
-                    </div>
-                </div>
+        <!-- Map -->
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">Property Locations</h5>
+                <a href="{{ url_for('map_view') }}" class="btn btn-sm btn-primary">View Full Map</a>
+            </div>
+            <div class="card-body p-0">
+                <div id="property-map" class="map-container"></div>
             </div>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Initialize property map
+    const map = L.map('property-map').setView([{{ center_lat }}, {{ center_lng }}], 11);
+    
+    // Add OpenStreetMap tiles
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+    
+    // Add property markers
+    const properties = {{ geojson|safe }};
+    
+    L.geoJSON(properties, {
+        pointToLayer: function(feature, latlng) {
+            return L.marker(latlng);
+        },
+        onEachFeature: function(feature, layer) {
+            const popupContent = `
+                <strong>${feature.properties.name}</strong><br>
+                ${feature.properties.address}<br>
+                <a href="${feature.properties.url}" class="btn btn-sm btn-primary mt-2">View Details</a>
+            `;
+            layer.bindPopup(popupContent);
+        }
+    }).addTo(map);
+</script>
 {% endblock %}

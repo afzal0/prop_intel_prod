@@ -1,82 +1,226 @@
-{% extends "base.html" %}
-
-{% block title %}Upload Data - Property Intelligence{% endblock %}
+{% extends "layout.html" %}
+{% block title %}Upload Data - PropIntel{% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="row justify-content-center">
-        <div class="col-lg-8">
-            <div class="card shadow mb-4">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">Upload Excel Data</h6>
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">Upload Property Data</h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info mb-4">
+                    <h5 class="alert-heading"><i class="fas fa-info-circle me-2"></i>Instructions</h5>
+                    <p>Upload an Excel file with your property investment data. The file should contain the following sheets:</p>
+                    <ul>
+                        <li><strong>Properties</strong> - Basic property information</li>
+                        <li><strong>Work</strong> - Records of work or maintenance</li>
+                        <li><strong>Income</strong> (or Money In) - Income records</li>
+                        <li><strong>Expenses</strong> (or Money Out) - Expense records</li>
+                    </ul>
+                    <p class="mb-0">Each sheet should include headers matching the expected fields. See the template below for reference.</p>
                 </div>
-                <div class="card-body">
-                    <p class="mb-4">
-                        Upload your Excel file containing property data. The system will automatically process the file and import the data into the database.
-                    </p>
+                
+                <form method="post" enctype="multipart/form-data">
+                    <div class="mb-4">
+                        <label for="file" class="form-label">Excel File</label>
+                        <input class="form-control" type="file" id="file" name="file" accept=".xlsx,.xls" required>
+                        <div class="form-text">
+                            Accepted file formats: .xlsx, .xls (Max 50MB)
+                        </div>
+                    </div>
                     
-                    <form method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
-                        <div class="mb-3">
-                            <label for="file" class="form-label">Excel File</label>
-                            <input type="file" class="form-control" id="file" name="file" accept=".xlsx, .xls" required>
-                            <div class="invalid-feedback">
-                                Please select an Excel file to upload.
-                            </div>
-                            <small class="form-text text-muted">
-                                Supported formats: .xlsx, .xls (max 50MB)
-                            </small>
-                        </div>
-                        
-                        <div class="alert alert-info" role="alert">
-                            <h5 class="alert-heading"><i class="fas fa-info-circle me-2"></i>Data Format</h5>
-                            <p>
-                                The file should contain property data in the following format:
-                            </p>
-                            <ul>
-                                <li><strong>Property Address</strong>: Usually located in the first few rows of each sheet</li>
-                                <li><strong>Date</strong>: Transaction or work dates</li>
-                                <li><strong>Description</strong>: Description of work or transaction</li>
-                                <li><strong>Amount</strong>: Cost or income amount</li>
-                                <li><strong>Method</strong>: Payment method (optional)</li>
-                            </ul>
-                            <p class="mb-0">
-                                Multiple properties can be in separate sheets within the same Excel file.
-                            </p>
-                        </div>
-                        
-                        <div class="d-grid gap-2">
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-upload me-2"></i>Upload and Process
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-upload me-2"></i> Upload File
+                        </button>
+                        <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-2"></i> Back to Dashboard
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <div class="card mt-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">Expected Data Format</h5>
+            </div>
+            <div class="card-body">
+                <div class="accordion" id="formatAccordion">
+                    <!-- Properties Sheet -->
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="propertiesHeading">
+                            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#propertiesCollapse" aria-expanded="true" aria-controls="propertiesCollapse">
+                                Properties Sheet
                             </button>
-                            <a href="{{ url_for('index') }}" class="btn btn-secondary">
-                                <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
-                            </a>
+                        </h2>
+                        <div id="propertiesCollapse" class="accordion-collapse collapse show" aria-labelledby="propertiesHeading">
+                            <div class="accordion-body">
+                                <div class="table-responsive">
+                                    <table class="table table-bordered table-sm">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>property_name</th>
+                                                <th>address</th>
+                                                <th>purchase_date</th>
+                                                <th>purchase_price</th>
+                                                <th>current_value</th>
+                                                <th>notes</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>123 Smith St</td>
+                                                <td>123 Smith Street, Melbourne VIC 3000</td>
+                                                <td>2020-01-15</td>
+                                                <td>750000</td>
+                                                <td>850000</td>
+                                                <td>3 bedroom townhouse with garage</td>
+                                            </tr>
+                                            <tr>
+                                                <td>45 Jones Ave</td>
+                                                <td>45 Jones Avenue, Richmond VIC 3121</td>
+                                                <td>2019-08-20</td>
+                                                <td>650000</td>
+                                                <td>720000</td>
+                                                <td>2 bedroom apartment with balcony</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
                         </div>
-                    </form>
+                    </div>
+                    
+                    <!-- Work Sheet -->
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="workHeading">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#workCollapse" aria-expanded="false" aria-controls="workCollapse">
+                                Work/Maintenance Sheet
+                            </button>
+                        </h2>
+                        <div id="workCollapse" class="accordion-collapse collapse" aria-labelledby="workHeading">
+                            <div class="accordion-body">
+                                <div class="table-responsive">
+                                    <table class="table table-bordered table-sm">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>property_name</th>
+                                                <th>work_description</th>
+                                                <th>work_date</th>
+                                                <th>work_cost</th>
+                                                <th>payment_method</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>123 Smith St</td>
+                                                <td>Kitchen renovation</td>
+                                                <td>2023-02-15</td>
+                                                <td>25000</td>
+                                                <td>Bank Transfer</td>
+                                            </tr>
+                                            <tr>
+                                                <td>45 Jones Ave</td>
+                                                <td>Bathroom repairs</td>
+                                                <td>2023-03-10</td>
+                                                <td>3500</td>
+                                                <td>Credit Card</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Income Sheet -->
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="incomeHeading">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#incomeCollapse" aria-expanded="false" aria-controls="incomeCollapse">
+                                Income/Money In Sheet
+                            </button>
+                        </h2>
+                        <div id="incomeCollapse" class="accordion-collapse collapse" aria-labelledby="incomeHeading">
+                            <div class="accordion-body">
+                                <div class="table-responsive">
+                                    <table class="table table-bordered table-sm">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>property_name</th>
+                                                <th>income_details</th>
+                                                <th>income_date</th>
+                                                <th>income_amount</th>
+                                                <th>payment_method</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>123 Smith St</td>
+                                                <td>Rent payment - January</td>
+                                                <td>2023-01-05</td>
+                                                <td>2800</td>
+                                                <td>Bank Transfer</td>
+                                            </tr>
+                                            <tr>
+                                                <td>45 Jones Ave</td>
+                                                <td>Rent payment - January</td>
+                                                <td>2023-01-03</td>
+                                                <td>2200</td>
+                                                <td>Direct Deposit</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Expenses Sheet -->
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="expensesHeading">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#expensesCollapse" aria-expanded="false" aria-controls="expensesCollapse">
+                                Expenses/Money Out Sheet
+                            </button>
+                        </h2>
+                        <div id="expensesCollapse" class="accordion-collapse collapse" aria-labelledby="expensesHeading">
+                            <div class="accordion-body">
+                                <div class="table-responsive">
+                                    <table class="table table-bordered table-sm">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>property_name</th>
+                                                <th>expense_details</th>
+                                                <th>expense_date</th>
+                                                <th>expense_amount</th>
+                                                <th>payment_method</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>123 Smith St</td>
+                                                <td>Council rates</td>
+                                                <td>2023-01-20</td>
+                                                <td>850</td>
+                                                <td>Bank Transfer</td>
+                                            </tr>
+                                            <tr>
+                                                <td>45 Jones Ave</td>
+                                                <td>Water bill</td>
+                                                <td>2023-01-15</td>
+                                                <td>120</td>
+                                                <td>Direct Debit</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
-{% endblock %}
-
-{% block scripts %}
-<script>
-    // Form validation script
-    (function() {
-        'use strict';
-        window.addEventListener('load', function() {
-            var forms = document.getElementsByClassName('needs-validation');
-            var validation = Array.prototype.filter.call(forms, function(form) {
-                form.addEventListener('submit', function(event) {
-                    if (form.checkValidity() === false) {
-                        event.preventDefault();
-                        event.stopPropagation();
-                    }
-                    form.classList.add('was-validated');
-                }, false);
-            });
-        }, false);
-    })();
-</script>
 {% endblock %}

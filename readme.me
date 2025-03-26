@@ -1,98 +1,127 @@
-# Property Intelligence Web Application
+# PropIntel - Property Investment Tracker
 
-A Flask web application for managing and visualizing property data, with features for uploading Excel files, viewing properties on a map, and analyzing financial data.
+PropIntel is a comprehensive web application designed to help property investors track and manage their real estate portfolio. The system allows users to record properties, maintenance work, income, and expenses, providing insights into the financial performance of investment properties.
 
 ## Features
 
-- **Upload Excel Files**: Easily import property data from Excel files
-- **Property Dashboard**: Overview of all properties with financial summaries
-- **Property Details**: View work records, income, and expenses for each property
-- **Interactive Map**: See all properties on a map using their geocoded locations
-- **Search and Filter**: Find specific properties by name or address
+- **Property Management**: Add and view property details, including address, purchase information, and current value
+- **Financial Tracking**: Record income and expenses for each property
+- **Maintenance Records**: Keep track of all maintenance and improvement work
+- **Interactive Map**: View all properties on an interactive map
+- **Financial Analysis**: See trends and financial performance visualizations
+- **Data Import**: Upload Excel spreadsheets with property data
 - **Responsive Design**: Works on desktop and mobile devices
 
 ## Installation
 
+### Prerequisites
+
+- Python 3.8 or higher
+- PostgreSQL database
+- Required Python packages (see requirements.txt)
+
+### Setup Instructions
+
 1. Clone the repository:
-   ```bash
-   git clone https://github.com/yourusername/property-intelligence.git
-   cd property-intelligence
+   ```
+   git clone https://github.com/yourusername/propintel.git
+   cd propintel
    ```
 
-2. Create a virtual environment:
-   ```bash
+2. Create a virtual environment and install dependencies:
+   ```
    python -m venv venv
-   source venv/bin/activate  # On Windows, use: venv\Scripts\activate
-   ```
-
-3. Install dependencies:
-   ```bash
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
    pip install -r requirements.txt
    ```
 
-4. Create a `db_config.ini` file with your database credentials:
-   ```ini
-   [database]
-   user = prop_intel
-   password = your_password
-   host = your_database_host
-   port = 5432
-   database = postgres
+3. Set up the PostgreSQL database:
+   - Create a new PostgreSQL database
+   - Run the `schema.sql` script to create tables:
+     ```
+     psql -U your_username -d your_database -f schema.sql
+     ```
+
+4. Configure database connection:
+   - Create a `database.ini` file from the sample or set environment variables
+   - Set `DATABASE_URL` environment variable for Heroku-style deployment
+
+5. Run the application:
+   ```
+   python app.py
    ```
 
-5. Create necessary directories:
-   ```bash
-   mkdir uploads
-   mkdir templates
-   ```
-
-6. Place all template files in the `templates` directory.
-
-## Running the Application
-
-Start the Flask application:
-```bash
-flask run
-```
-
-The application will be available on hosting ip until we get a domain 
-
-## Directory Structure
-
-```
-property-intelligence/
-├── app.py                     # Main Flask application
-├── property_data_extractor.py # Excel data extraction script
-├── requirements.txt           # Python dependencies
-├── db_config.ini              # Database configuration
-├── uploads/                   # Directory for uploaded Excel files
-└── templates/                 # HTML templates
-    ├── base.html
-    ├── index.html
-    ├── map.html
-    ├── properties.html
-    ├── property_detail.html
-    └── upload.html
-```
-
-## Database Schema
-
-The application uses a PostgreSQL database with the following structure:
-
-- **properties**: Property information including geocoding
-- **work**: Work records linked to properties
-- **money_in**: Income records linked to properties
-- **money_out**: Expense records linked to properties
+6. Navigate to `http://127.0.0.1:5000` in your web browser
 
 ## Usage
 
-1. **Dashboard**: View a summary of all properties and financial data
-2. **Properties**: Browse all properties or search for specific ones
-3. **Map View**: See property locations on an interactive map
-4. **Upload Data**: Import new data from Excel files
+### User Accounts
+
+- **Default Admin User**: 
+  - Username: `admin`
+  - Password: `admin123`
+- **Guest Mode**: Click "Continue as Guest" for read-only access
+
+### Managing Properties
+
+1. Add a new property by clicking "Add Property" button
+2. View property details by clicking on a property card
+3. Add income, expense, or work records from the property detail page
+
+### Importing Data
+
+1. Prepare an Excel file with the required sheets:
+   - Properties - Basic property information
+   - Work - Records of work or maintenance
+   - Income - Income records
+   - Expenses - Expense records
+
+2. Go to the Upload page and select your Excel file
+
+3. Submit the form to process the data
+
+### Viewing Data
+
+- Dashboard: Overview of your portfolio metrics
+- Properties: List of all properties
+- Map: Interactive map showing property locations
+- Property Detail: Detailed view of a specific property with financial data
+
+## Data Structure
+
+The application uses the following database tables:
+
+- `propintel.properties`: Property information
+- `propintel.work`: Work and maintenance records
+- `propintel.money_in`: Income records
+- `propintel.money_out`: Expense records
+
+## Technologies Used
+
+- **Backend**: Python, Flask
+- **Database**: PostgreSQL
+- **Frontend**: HTML, CSS, JavaScript, Bootstrap 5
+- **Maps**: Leaflet.js
+- **Charts**: Chart.js
+- **Geocoding**: GeoPy
 
 ## Requirements
 
-- Python 3.8+
-- PostgreSQL 12+
-- Modern web browser
+See `requirements.txt` for a full list of dependencies, which includes:
+
+- Flask
+- psycopg2
+- pandas
+- geopy
+- Werkzeug
+- configparser
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Acknowledgments
+
+- Bootstrap for the responsive UI framework
+- Leaflet.js for the map functionality
+- Chart.js for data visualization

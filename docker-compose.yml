@@ -1,42 +1,45 @@
-version: '3'
+version: '3.8'
 
 services:
-  # Web application
-  web:
-    build:
+  app:
+    build: 
       context: .
       dockerfile: Dockerfile
+    container_name: propintel-app
+    restart: always
     ports:
-      - "8000:8000"
+      - "5000:5000"
     environment:
+      - DATABASE_URL=postgresql://postgres:postgrespassword@db:5432/propintel
+      - SECRET_KEY=propintel_very_secure_key_change_in_production
       - FLASK_ENV=production
-      - PORT=8000
-      - SECRET_KEY=dev_secret_key_change_in_production
-      - DATABASE_URL=postgresql://postgres:postgres@db:5432/postgres
-    depends_on:
-      - db
     volumes:
       - ./uploads:/app/uploads
-    restart: always
-    command: gunicorn --bind 0.0.0.0:8000 app:app
+    depends_on:
+      - db
+    networks:
+      - propintel-network
 
-  # PostgreSQL database
   db:
-    image: postgres:14
+    image: postgres:15
+    container_name: propintel-db
+    restart: always
     environment:
       - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=postgres
-    ports:
-      - "5432:5432"
+      - POSTGRES_PASSWORD=postgrespassword
+      - POSTGRES_DB=propintel
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./init_db.sql:/docker-entrypoint-initdb.d/init_db.sql
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
+      - ./schema.sql:/docker-entrypoint-initdb.d/1-schema.sql
+    ports:
+      - "5432:5432"
+    networks:
+      - propintel-network
+
+networks:
+  propintel-network:
+    driver: bridge
 
 volumes:
   postgres_data:
+    driver: local

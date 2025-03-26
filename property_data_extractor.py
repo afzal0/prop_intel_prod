@@ -1071,7 +1071,7 @@ def test_db_connection():
 def main():
     # Command line arguments
     parser = argparse.ArgumentParser(description='Property Intelligence Data Import Tool')
-    parser.add_argument('--excel', default="Master Sheet.xlsx", help='Path to Excel file')
+    parser.add_argument('--excel', default="uploads/Master_Sheet.xlsx", help='Path to Excel file')
     parser.add_argument('--clean', action='store_true', help='Clean database before import (WARNING: deletes all data)')
     parser.add_argument('--test-connection', action='store_true', help='Test database connection and exit')
     args = parser.parse_args()
