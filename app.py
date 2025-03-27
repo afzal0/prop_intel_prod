@@ -97,51 +97,65 @@ def get_db_connection():
 
 @app.route('/')
 def index():
-    """Home page with dashboard overview"""
-    # Get property count
+    """Home page with property search"""
+    # Use the same code as the property_search route
     conn = get_db_connection()
     try:
-        with conn.cursor() as cur:
-            # Get property count
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            # Get property count for statistics
             cur.execute("SELECT COUNT(*) FROM propintel.properties")
-            property_count = cur.fetchone()[0]
-            
-            # Get work record count and total cost
-            cur.execute("""
-                SELECT COUNT(*), SUM(work_cost) 
-                FROM propintel.work
-            """)
-            work_data = cur.fetchone()
-            work_count = work_data[0]
-            work_total = work_data[1] if work_data[1] else 0
-            
-            # Get money in count and total
-            cur.execute("""
-                SELECT COUNT(*), SUM(income_amount) 
-                FROM propintel.money_in
-            """)
-            income_data = cur.fetchone()
-            income_count = income_data[0]
-            income_total = income_data[1] if income_data[1] else 0
-            
-            # Get money out count and total
-            cur.execute("""
-                SELECT COUNT(*), SUM(expense_amount) 
-                FROM propintel.money_out
-            """)
-            expense_data = cur.fetchone()
-            expense_count = expense_data[0]
-            expense_total = expense_data[1] if expense_data[1] else 0
-            
-            # Get recent properties
-            cur.execute("""
-                SELECT property_id, property_name, address 
-                FROM propintel.properties 
-                ORDER BY property_id DESC LIMIT 5
-            """)
-            recent_properties = cur.fetchall()
+            property_count = cur.fetchone()['count']
             
             # Get all property locations for the map
+            cur.execute("""
+                SELECT property_id, property_name, address, latitude, longitude
+                FROM propintel.properties
+                WHERE latitude IS NOT NULL AND longitude IS NOT NULL
+                AND (is_hidden IS NULL OR is_hidden = false)
+            """)
+            properties = cur.fetchall()
+            
+            # Convert to GeoJSON format
+            features = []
+            for prop in properties:
+                features.append({
+                    'type': 'Feature',
+                    'geometry': {
+                        'type': 'Point',
+                        'coordinates': [prop['longitude'], prop['latitude']]
+                    },
+                    'properties': {
+                        'id': prop['property_id'],
+                        'name': prop['property_name'],
+                        'address': prop['address'],
+                        'url': url_for('property_detail', property_id=prop['property_id'])
+                    }
+                })
+            
+            geojson = {
+                'type': 'FeatureCollection',
+                'features': features
+            }
+            
+    except Exception as e:
+        flash(f"Error loading dashboard: {e}", "danger")
+        property_count = 0
+        geojson = {"type": "FeatureCollection", "features": []}
+    finally:
+        conn.close()
+    
+    return render_template('property_search.html', 
+                          property_count=property_count,
+                          geojson=json.dumps(geojson),
+                          center_lat=MELBOURNE_CENTER[0],
+                          center_lng=MELBOURNE_CENTER[1])
+
+@app.route('/search')
+def property_search():
+    """Advanced property search view with map"""
+    conn = get_db_connection()
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
             cur.execute("""
                 SELECT property_id, property_name, address, latitude, longitude
                 FROM propintel.properties
@@ -156,13 +170,13 @@ def index():
                     'type': 'Feature',
                     'geometry': {
                         'type': 'Point',
-                        'coordinates': [prop[4], prop[3]]  # longitude, latitude
+                        'coordinates': [prop['longitude'], prop['latitude']]
                     },
                     'properties': {
-                        'id': prop[0],
-                        'name': prop[1],
-                        'address': prop[2],
-                        'url': url_for('property_detail', property_id=prop[0])
+                        'id': prop['property_id'],
+                        'name': prop['property_name'],
+                        'address': prop['address'],
+                        'url': url_for('property_detail', property_id=prop['property_id'])
                     }
                 })
             
@@ -170,28 +184,193 @@ def index():
                 'type': 'FeatureCollection',
                 'features': features
             }
-            
     except Exception as e:
-        flash(f"Error loading dashboard: {e}", "danger")
-        property_count = work_count = income_count = expense_count = 0
-        work_total = income_total = expense_total = 0
-        recent_properties = []
+        flash(f"Error loading property map: {e}", "danger")
         geojson = {"type": "FeatureCollection", "features": []}
     finally:
         conn.close()
     
-    return render_template('index.html', 
-                          property_count=property_count,
-                          work_count=work_count,
-                          work_total=work_total,
-                          income_count=income_count,
-                          income_total=income_total,
-                          expense_count=expense_count,
-                          expense_total=expense_total,
-                          recent_properties=recent_properties,
+    return render_template('property_search.html', 
                           geojson=json.dumps(geojson),
                           center_lat=MELBOURNE_CENTER[0],
                           center_lng=MELBOURNE_CENTER[1])
+
+@app.route('/property/<int:property_id>/enhanced')
+def property_detail_enhanced(property_id):
+    """Enhanced view for property details with visualizations"""
+    # Reuse the same data fetching logic from the original property_detail view
+    conn = get_db_connection()
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            # Get property details
+            cur.execute("""
+                SELECT * FROM propintel.properties WHERE property_id = %s
+            """, (property_id,))
+            property_data = cur.fetchone()
+            
+            if not property_data:
+                flash('Property not found', 'danger')
+                return redirect(url_for('properties'))
+            
+            # Get work records
+            cur.execute("""
+                SELECT * FROM propintel.work 
+                WHERE property_id = %s
+                ORDER BY work_date DESC
+            """, (property_id,))
+            work_records = cur.fetchall()
+            
+            # Get income records
+            cur.execute("""
+                SELECT * FROM propintel.money_in 
+                WHERE property_id = %s
+                ORDER BY income_date DESC
+            """, (property_id,))
+            income_records = cur.fetchall()
+            
+            # Get expense records
+            cur.execute("""
+                SELECT * FROM propintel.money_out 
+                WHERE property_id = %s
+                ORDER BY expense_date DESC
+            """, (property_id,))
+            expense_records = cur.fetchall()
+            
+            # Get monthly trend data for charts
+            cur.execute("""
+                SELECT 
+                    TO_CHAR(income_date, 'YYYY-MM') as month,
+                    SUM(income_amount) as total
+                FROM propintel.money_in
+                WHERE property_id = %s
+                GROUP BY TO_CHAR(income_date, 'YYYY-MM')
+                ORDER BY month
+            """, (property_id,))
+            income_trends = cur.fetchall()
+            
+            cur.execute("""
+                SELECT 
+                    TO_CHAR(expense_date, 'YYYY-MM') as month,
+                    SUM(expense_amount) as total
+                FROM propintel.money_out
+                WHERE property_id = %s
+                GROUP BY TO_CHAR(expense_date, 'YYYY-MM')
+                ORDER BY month
+            """, (property_id,))
+            expense_trends = cur.fetchall()
+            
+            # Calculate totals
+            work_total = sum(float(record['work_cost'] or 0) for record in work_records)
+            income_total = sum(float(record['income_amount'] or 0) for record in income_records)
+            expense_total = sum(float(record['expense_amount'] or 0) for record in expense_records)
+            net_total = income_total - expense_total - work_total
+    except Exception as e:
+        flash(f"Error loading property details: {e}", "danger")
+        return redirect(url_for('properties'))
+    finally:
+        conn.close()
+    
+    # Use property coords if available, otherwise default to Melbourne
+    map_lat = property_data['latitude'] if property_data['latitude'] else MELBOURNE_CENTER[0]
+    map_lng = property_data['longitude'] if property_data['longitude'] else MELBOURNE_CENTER[1]
+    
+    # Prepare trend data for charts
+    trend_labels = []
+    income_data = []
+    expense_data = []
+    
+    # Combine all months from both income and expense records
+    all_months = set()
+    for record in income_trends:
+        all_months.add(record['month'])
+    for record in expense_trends:
+        all_months.add(record['month'])
+    
+    # Sort months chronologically
+    all_months = sorted(list(all_months))
+    
+    # Create datasets with 0 for missing months
+    income_by_month = {record['month']: float(record['total']) for record in income_trends}
+    expense_by_month = {record['month']: float(record['total']) for record in expense_trends}
+    
+    for month in all_months:
+        trend_labels.append(month)
+        income_data.append(income_by_month.get(month, 0))
+        expense_data.append(expense_by_month.get(month, 0))
+    
+    # Prepare work timeline data
+    timeline_data = []
+    for record in work_records:
+        if record['work_date']:
+            timeline_data.append({
+                'id': record['work_id'],
+                'description': record['work_description'],
+                'date': record['work_date'].strftime('%Y-%m-%d'),
+                'cost': float(record['work_cost'] or 0)
+            })
+    
+    return render_template('property_detail_enhanced.html', 
+                          property=property_data,
+                          work_records=work_records,
+                          income_records=income_records,
+                          expense_records=expense_records,
+                          work_total=work_total,
+                          income_total=income_total,
+                          expense_total=expense_total,
+                          net_total=net_total,
+                          map_lat=map_lat,
+                          map_lng=map_lng,
+                          trend_labels=json.dumps(trend_labels),
+                          income_data=json.dumps(income_data),
+                          expense_data=json.dumps(expense_data),
+                          timeline_data=json.dumps(timeline_data))
+
+@app.route('/property/toggle_visibility/<int:property_id>', methods=['POST'])
+@login_required
+def toggle_property_visibility(property_id):
+    """API endpoint to toggle a property's visibility (admin only)"""
+    # Check if user is admin
+    if not g.user or g.user.get('role') != 'admin':
+        return jsonify({"error": "Unauthorized"}), 403
+        
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            # Check if property exists
+            cur.execute("SELECT property_id, is_hidden FROM propintel.properties WHERE property_id = %s", (property_id,))
+            property_data = cur.fetchone()
+            
+            if not property_data:
+                return jsonify({"error": "Property not found"}), 404
+                
+            # Toggle is_hidden status (add the column if it doesn't exist)
+            try:
+                cur.execute("SELECT column_name FROM information_schema.columns WHERE table_schema = 'propintel' AND table_name = 'properties' AND column_name = 'is_hidden'")
+                if not cur.fetchone():
+                    cur.execute("ALTER TABLE propintel.properties ADD COLUMN is_hidden BOOLEAN DEFAULT false")
+                    conn.commit()
+            except Exception as e:
+                conn.rollback()
+                return jsonify({"error": f"Failed to check/create is_hidden column: {str(e)}"}), 500
+                
+            # Toggle the value
+            current_status = property_data[1] if len(property_data) > 1 and property_data[1] is not None else False
+            new_status = not current_status
+            
+            cur.execute("UPDATE propintel.properties SET is_hidden = %s WHERE property_id = %s", (new_status, property_id))
+            conn.commit()
+            
+            return jsonify({
+                "success": True,
+                "property_id": property_id,
+                "is_hidden": new_status
+            })
+            
+    except Exception as e:
+        conn.rollback()
+        return jsonify({"error": str(e)}), 500
+    finally:
+        conn.close()
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
