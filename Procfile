@@ -1,0 +1,1 @@
+web: python -m app_fix; gunicorn app:app

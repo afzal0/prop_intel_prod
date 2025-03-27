@@ -1,15 +1,168 @@
 {% extends "layout.html" %}
 {% block title %}Upload Data - PropIntel{% endblock %}
 
+{% block extra_head %}
+<style>
+    .file-upload-wrapper {
+        position: relative;
+        width: 100%;
+        height: 180px;
+        border: 2px dashed #007bff;
+        border-radius: 8px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        overflow: hidden;
+        margin-bottom: 20px;
+        transition: all 0.3s ease;
+    }
+    
+    .file-upload-wrapper:hover {
+        background-color: rgba(0, 123, 255, 0.05);
+    }
+    
+    .file-upload-wrapper.has-file {
+        border-color: #28a745;
+        background-color: rgba(40, 167, 69, 0.05);
+    }
+    
+    .file-upload-input {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0;
+        cursor: pointer;
+        z-index: 10;
+    }
+    
+    .file-upload-message {
+        text-align: center;
+        pointer-events: none;
+    }
+    
+    .file-upload-icon {
+        font-size: 2.5rem;
+        color: #007bff;
+        margin-bottom: 10px;
+    }
+    
+    .file-upload-wrapper.has-file .file-upload-icon {
+        color: #28a745;
+    }
+    
+    .file-details {
+        display: none;
+        width: 100%;
+        padding: 10px 15px;
+    }
+    
+    .file-upload-wrapper.has-file .file-details {
+        display: block;
+    }
+    
+    .file-upload-wrapper.has-file .file-upload-text {
+        display: none;
+    }
+    
+    .format-example {
+        border-left: 4px solid #007bff;
+        padding-left: 15px;
+        margin: 15px 0;
+    }
+    
+    .step-indicator {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 30px;
+    }
+    
+    .step {
+        text-align: center;
+        flex: 1;
+        position: relative;
+    }
+    
+    .step-number {
+        width: 30px;
+        height: 30px;
+        background-color: #dee2e6;
+        color: #6c757d;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border-radius: 50%;
+        margin: 0 auto 10px auto;
+    }
+    
+    .step.active .step-number {
+        background-color: #007bff;
+        color: white;
+    }
+    
+    .step.completed .step-number {
+        background-color: #28a745;
+        color: white;
+    }
+    
+    .step-title {
+        font-size: 0.875rem;
+        color: #6c757d;
+    }
+    
+    .step.active .step-title {
+        color: #007bff;
+        font-weight: bold;
+    }
+    
+    .step.completed .step-title {
+        color: #28a745;
+    }
+    
+    .step-divider {
+        flex: 1;
+        height: 2px;
+        background-color: #dee2e6;
+        margin: 15px 10px;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="row justify-content-center">
-    <div class="col-md-8">
+    <div class="col-md-10">
         <div class="card">
             <div class="card-header bg-primary text-white">
-                <h5 class="card-title mb-0">Upload Property Data</h5>
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-file-upload me-2"></i> Upload Property Data
+                </h5>
             </div>
             <div class="card-body">
-                <div class="alert alert-info mb-4">
+                <!-- Step Indicator -->
+                <div class="step-indicator">
+                    <div class="step active">
+                        <div class="step-number">1</div>
+                        <div class="step-title">Select File</div>
+                    </div>
+                    <div class="step-divider"></div>
+                    <div class="step">
+                        <div class="step-number">2</div>
+                        <div class="step-title">Upload</div>
+                    </div>
+                    <div class="step-divider"></div>
+                    <div class="step">
+                        <div class="step-number">3</div>
+                        <div class="step-title">Process</div>
+                    </div>
+                    <div class="step-divider"></div>
+                    <div class="step">
+                        <div class="step-number">4</div>
+                        <div class="step-title">Complete</div>
+                    </div>
+                </div>
+                
+                <div class="alert alert-info">
                     <h5 class="alert-heading"><i class="fas fa-info-circle me-2"></i>Instructions</h5>
                     <p>Upload an Excel file with your property investment data. The file should contain the following sheets:</p>
                     <ul>
@@ -21,18 +174,36 @@
                     <p class="mb-0">Each sheet should include headers matching the expected fields. See the template below for reference.</p>
                 </div>
                 
-                <form method="post" enctype="multipart/form-data">
-                    <div class="mb-4">
-                        <label for="file" class="form-label">Excel File</label>
-                        <input class="form-control" type="file" id="file" name="file" accept=".xlsx,.xls" required>
-                        <div class="form-text">
-                            Accepted file formats: .xlsx, .xls (Max 50MB)
+                <form method="post" enctype="multipart/form-data" id="uploadForm">
+                    <div class="file-upload-wrapper" id="fileUploadWrapper">
+                        <input type="file" class="file-upload-input" id="file" name="file" accept=".xlsx,.xls" required>
+                        <div class="file-upload-message">
+                            <div class="file-upload-text">
+                                <div class="file-upload-icon">
+                                    <i class="fas fa-cloud-upload-alt"></i>
+                                </div>
+                                <h5>Drag and drop your Excel file here</h5>
+                                <p>or click to select a file</p>
+                                <small class="text-muted">Accepted file formats: .xlsx, .xls (Max 50MB)</small>
+                            </div>
+                            <div class="file-details">
+                                <div class="file-upload-icon">
+                                    <i class="fas fa-file-excel"></i>
+                                </div>
+                                <h5 id="fileName">No file selected</h5>
+                                <small id="fileSize" class="text-muted"></small>
+                                <p class="mt-2">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" id="changeFileBtn">
+                                        <i class="fas fa-exchange-alt me-1"></i> Change File
+                                    </button>
+                                </p>
+                            </div>
                         </div>
                     </div>
                     
                     <div class="d-grid gap-2">
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-upload me-2"></i> Upload File
+                        <button type="submit" class="btn btn-primary btn-lg" id="uploadButton" disabled>
+                            <i class="fas fa-upload me-2"></i> Upload and Process File
                         </button>
                         <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
                             <i class="fas fa-arrow-left me-2"></i> Back to Dashboard
@@ -44,7 +215,9 @@
         
         <div class="card mt-4">
             <div class="card-header bg-primary text-white">
-                <h5 class="card-title mb-0">Expected Data Format</h5>
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-table me-2"></i> Expected Data Format
+                </h5>
             </div>
             <div class="card-body">
                 <div class="accordion" id="formatAccordion">
@@ -52,13 +225,18 @@
                     <div class="accordion-item">
                         <h2 class="accordion-header" id="propertiesHeading">
                             <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#propertiesCollapse" aria-expanded="true" aria-controls="propertiesCollapse">
-                                Properties Sheet
+                                <i class="fas fa-home me-2"></i> Properties Sheet
                             </button>
                         </h2>
                         <div id="propertiesCollapse" class="accordion-collapse collapse show" aria-labelledby="propertiesHeading">
                             <div class="accordion-body">
+                                <p>This sheet contains basic information about each property in your portfolio.</p>
+                                <div class="format-example">
+                                    <p><strong>Required fields:</strong> property_name, address</p>
+                                    <p><strong>Optional fields:</strong> purchase_date, purchase_price, current_value, notes</p>
+                                </div>
                                 <div class="table-responsive">
-                                    <table class="table table-bordered table-sm">
+                                    <table class="table table-bordered table-sm table-striped">
                                         <thead class="table-light">
                                             <tr>
                                                 <th>property_name</th>
@@ -97,13 +275,18 @@
                     <div class="accordion-item">
                         <h2 class="accordion-header" id="workHeading">
                             <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#workCollapse" aria-expanded="false" aria-controls="workCollapse">
-                                Work/Maintenance Sheet
+                                <i class="fas fa-tools me-2"></i> Work/Maintenance Sheet
                             </button>
                         </h2>
                         <div id="workCollapse" class="accordion-collapse collapse" aria-labelledby="workHeading">
                             <div class="accordion-body">
+                                <p>This sheet contains records of maintenance, repairs, renovations, or other work done on properties.</p>
+                                <div class="format-example">
+                                    <p><strong>Required fields:</strong> property_name, work_description, work_date</p>
+                                    <p><strong>Optional fields:</strong> work_cost, payment_method</p>
+                                </div>
                                 <div class="table-responsive">
-                                    <table class="table table-bordered table-sm">
+                                    <table class="table table-bordered table-sm table-striped">
                                         <thead class="table-light">
                                             <tr>
                                                 <th>property_name</th>
@@ -139,13 +322,18 @@
                     <div class="accordion-item">
                         <h2 class="accordion-header" id="incomeHeading">
                             <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#incomeCollapse" aria-expanded="false" aria-controls="incomeCollapse">
-                                Income/Money In Sheet
+                                <i class="fas fa-dollar-sign me-2"></i> Income/Money In Sheet
                             </button>
                         </h2>
                         <div id="incomeCollapse" class="accordion-collapse collapse" aria-labelledby="incomeHeading">
                             <div class="accordion-body">
+                                <p>This sheet contains records of income received from your properties.</p>
+                                <div class="format-example">
+                                    <p><strong>Required fields:</strong> property_name, income_date, income_amount</p>
+                                    <p><strong>Optional fields:</strong> income_details, payment_method</p>
+                                </div>
                                 <div class="table-responsive">
-                                    <table class="table table-bordered table-sm">
+                                    <table class="table table-bordered table-sm table-striped">
                                         <thead class="table-light">
                                             <tr>
                                                 <th>property_name</th>
@@ -181,13 +369,18 @@
                     <div class="accordion-item">
                         <h2 class="accordion-header" id="expensesHeading">
                             <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#expensesCollapse" aria-expanded="false" aria-controls="expensesCollapse">
-                                Expenses/Money Out Sheet
+                                <i class="fas fa-file-invoice-dollar me-2"></i> Expenses/Money Out Sheet
                             </button>
                         </h2>
                         <div id="expensesCollapse" class="accordion-collapse collapse" aria-labelledby="expensesHeading">
                             <div class="accordion-body">
+                                <p>This sheet contains records of expenses paid for your properties.</p>
+                                <div class="format-example">
+                                    <p><strong>Required fields:</strong> property_name, expense_date, expense_amount</p>
+                                    <p><strong>Optional fields:</strong> expense_details, payment_method</p>
+                                </div>
                                 <div class="table-responsive">
-                                    <table class="table table-bordered table-sm">
+                                    <table class="table table-bordered table-sm table-striped">
                                         <thead class="table-light">
                                             <tr>
                                                 <th>property_name</th>
@@ -219,8 +412,153 @@
                         </div>
                     </div>
                 </div>
+                
+                <div class="mt-4">
+                    <a href="{{ url_for('index') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-download me-2"></i> Download Sample Excel Template
+                    </a>
+                    <p class="mt-2 text-muted">
+                        <small>
+                            <i class="fas fa-info-circle me-1"></i> 
+                            Download this template and modify it with your property data for easier importing.
+                        </small>
+                    </p>
+                </div>
             </div>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const fileInput = document.getElementById('file');
+        const uploadForm = document.getElementById('uploadForm');
+        const uploadButton = document.getElementById('uploadButton');
+        const fileWrapper = document.getElementById('fileUploadWrapper');
+        const fileName = document.getElementById('fileName');
+        const fileSize = document.getElementById('fileSize');
+        const changeFileBtn = document.getElementById('changeFileBtn');
+        const steps = document.querySelectorAll('.step');
+        
+        // Update file info when a file is selected
+        fileInput.addEventListener('change', function() {
+            if (fileInput.files.length > 0) {
+                const file = fileInput.files[0];
+                fileName.textContent = file.name;
+                
+                // Format file size
+                let size = file.size;
+                const units = ['B', 'KB', 'MB', 'GB'];
+                let unitIndex = 0;
+                
+                while (size >= 1024 && unitIndex < units.length - 1) {
+                    size /= 1024;
+                    unitIndex++;
+                }
+                
+                fileSize.textContent = `${size.toFixed(1)} ${units[unitIndex]}`;
+                
+                // Update UI
+                fileWrapper.classList.add('has-file');
+                uploadButton.disabled = false;
+                
+                // Update step indicator
+                steps[0].classList.remove('active');
+                steps[0].classList.add('completed');
+                steps[1].classList.add('active');
+            } else {
+                resetFileUpload();
+            }
+        });
+        
+        // Reset file upload state
+        function resetFileUpload() {
+            fileWrapper.classList.remove('has-file');
+            uploadButton.disabled = true;
+            fileInput.value = '';
+            
+            // Reset step indicator
+            steps.forEach((step, index) => {
+                if (index === 0) {
+                    step.classList.add('active');
+                    step.classList.remove('completed');
+                } else {
+                    step.classList.remove('active');
+                    step.classList.remove('completed');
+                }
+            });
+        }
+        
+        // Change file button
+        changeFileBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            resetFileUpload();
+        });
+        
+        // Drag and drop functionality
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            fileWrapper.addEventListener(eventName, preventDefaults, false);
+        });
+        
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        
+        ['dragenter', 'dragover'].forEach(eventName => {
+            fileWrapper.addEventListener(eventName, highlight, false);
+        });
+        
+        ['dragleave', 'drop'].forEach(eventName => {
+            fileWrapper.addEventListener(eventName, unhighlight, false);
+        });
+        
+        function highlight() {
+            fileWrapper.classList.add('border-primary');
+        }
+        
+        function unhighlight() {
+            fileWrapper.classList.remove('border-primary');
+        }
+        
+        fileWrapper.addEventListener('drop', handleDrop, false);
+        
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            
+            if (files.length > 0) {
+                fileInput.files = files;
+                
+                // Trigger change event
+                const event = new Event('change');
+                fileInput.dispatchEvent(event);
+            }
+        }
+        
+        // Form submission
+        uploadForm.addEventListener('submit', function(e) {
+            if (fileInput.files.length === 0) {
+                e.preventDefault();
+                alert('Please select a file to upload');
+                return;
+            }
+            
+            // Update step indicator
+            steps[1].classList.remove('active');
+            steps[1].classList.add('completed');
+            steps[2].classList.add('active');
+            
+            // Show loading with custom message
+            showLoading('Uploading and processing your Excel file. This may take several minutes for large files...');
+            
+            // Disable the upload button to prevent double submission
+            uploadButton.disabled = true;
+            
+            // Continue with form submission
+        });
+    });
+</script>
 {% endblock %}

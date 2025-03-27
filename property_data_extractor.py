@@ -43,12 +43,24 @@ logger = logging.getLogger()
 # Database connection parameters
 def get_db_config():
     """
-    Reads database configuration from db_config.ini file.
-    Falls back to default values if file doesn't exist.
+    Reads database configuration from:
+    1. DATABASE_URL environment variable (Heroku)
+    2. db_config.ini file
+    3. Default values as a last resort
     """
-    config = configparser.ConfigParser()
+    # Check for DATABASE_URL environment variable (for Heroku)
+    database_url = os.environ.get('DATABASE_URL')
     
-    # Default connection parameters
+    if database_url:
+        logger.info("Using DATABASE_URL environment variable for connection")
+        # Convert postgres:// to postgresql:// if necessary for psycopg2
+        if database_url.startswith('postgres://'):
+            database_url = database_url.replace('postgres://', 'postgresql://', 1)
+        
+        # Return as a DSN string
+        return {'dsn': database_url}
+    
+    # Default connection parameters (only used if neither DATABASE_URL nor config file is available)
     default_params = {
         "user": "prop_intel",
         "password": "nyrty7-cytrit-qePkyf",
@@ -60,6 +72,7 @@ def get_db_config():
     # Try to read from config file
     if os.path.exists('db_config.ini'):
         try:
+            config = configparser.ConfigParser()
             config.read('db_config.ini')
             if 'database' in config:
                 params = {
@@ -76,14 +89,9 @@ def get_db_config():
     
     logger.info("Using default database parameters")
     # Use default parameters if file doesn't exist or has errors
-    return {
-        "user": default_params["user"],
-        "password": default_params["password"],
-        "host": default_params["host"],
-        "port": int(default_params["port"]),
-        "database": default_params["database"],
-    }
+    return default_params
 
+# Get the connection parameters once at module level
 connection_params = get_db_config()
 
 def is_valid_date(date_value):

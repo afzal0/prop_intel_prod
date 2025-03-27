@@ -13,8 +13,29 @@ from functools import wraps
 
 # Import our data extraction script
 import property_data_extractor as extractor
+import json as standard_json
+import decimal
 
+# Save reference to the original dumps
+_original_dumps = standard_json.dumps
+
+class DecimalJSONEncoder(standard_json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, decimal.Decimal):
+            return float(obj)
+        return super().default(obj)
+
+def decimal_safe_dumps(obj, *args, **kwargs):
+    # Force use of DecimalJSONEncoder unless already set
+    kwargs['cls'] = kwargs.get('cls', DecimalJSONEncoder)
+    return _original_dumps(obj, *args, **kwargs)
+
+# Now patch it
+standard_json.dumps = decimal_safe_dumps
+
+# Set the custom JSON encoder for the app
 app = Flask(__name__)
+app.json_encoder = DecimalJSONEncoder
 app.secret_key = os.environ.get('SECRET_KEY', 'propintel_secret_key')
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB limit
