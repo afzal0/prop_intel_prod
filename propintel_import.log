@@ -7042,3 +7042,19 @@ psycopg2.OperationalError: FATAL:  password authentication failed for user "post
 2025-04-01 19:28:27,486 - INFO - Using database configuration from db_config.ini
 2025-04-01 19:28:27,514 - INFO - 127.0.0.1 - - [01/Apr/2025 19:28:27] "[36mGET /static/images/property-placeholder.jpg HTTP/1.1[0m" 304 -
 2025-04-01 19:28:27,514 - INFO - 127.0.0.1 - - [01/Apr/2025 19:28:27] "[36mGET /static/logo.png HTTP/1.1[0m" 304 -
+2025-04-01 19:32:35,403 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:32:35,489 - INFO - 127.0.0.1 - - [01/Apr/2025 19:32:35] "[32mPOST /login HTTP/1.1[0m" 302 -
+2025-04-01 19:32:35,494 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:32:35,545 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:32:35,562 - INFO - 127.0.0.1 - - [01/Apr/2025 19:32:35] "GET / HTTP/1.1" 200 -
+2025-04-01 19:32:35,652 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:32:35,684 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:32:35,699 - INFO - 127.0.0.1 - - [01/Apr/2025 19:32:35] "GET /api/properties HTTP/1.1" 200 -
+2025-04-01 19:32:37,756 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:32:37,788 - INFO - 127.0.0.1 - - [01/Apr/2025 19:32:37] "[32mGET /upload HTTP/1.1[0m" 302 -
+2025-04-01 19:32:37,802 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:32:37,833 - INFO - 127.0.0.1 - - [01/Apr/2025 19:32:37] "GET /login?next=http://127.0.0.1:5000/upload HTTP/1.1" 200 -
+2025-04-01 19:32:37,836 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:32:37,837 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:32:37,875 - INFO - 127.0.0.1 - - [01/Apr/2025 19:32:37] "[36mGET /static/images/property-placeholder.jpg HTTP/1.1[0m" 304 -
+2025-04-01 19:32:37,876 - INFO - 127.0.0.1 - - [01/Apr/2025 19:32:37] "[36mGET /static/logo.png HTTP/1.1[0m" 304 -
