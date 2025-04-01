@@ -7058,3 +7058,159 @@ psycopg2.OperationalError: FATAL:  password authentication failed for user "post
 2025-04-01 19:32:37,837 - INFO - Using database configuration from db_config.ini
 2025-04-01 19:32:37,875 - INFO - 127.0.0.1 - - [01/Apr/2025 19:32:37] "[36mGET /static/images/property-placeholder.jpg HTTP/1.1[0m" 304 -
 2025-04-01 19:32:37,876 - INFO - 127.0.0.1 - - [01/Apr/2025 19:32:37] "[36mGET /static/logo.png HTTP/1.1[0m" 304 -
+2025-04-01 19:53:45,134 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:53:45,145 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2025-04-01 19:53:45,145 - INFO - [33mPress CTRL+C to quit[0m
+2025-04-01 19:53:49,647 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:53:49,736 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:53:49,772 - INFO - 127.0.0.1 - - [01/Apr/2025 19:53:49] "GET / HTTP/1.1" 200 -
+2025-04-01 19:53:49,939 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:53:49,968 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:53:49,986 - INFO - 127.0.0.1 - - [01/Apr/2025 19:53:49] "GET /api/properties HTTP/1.1" 200 -
+2025-04-01 19:53:55,773 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:53:55,808 - INFO - 127.0.0.1 - - [01/Apr/2025 19:53:55] "[32mGET /upload HTTP/1.1[0m" 302 -
+2025-04-01 19:53:55,815 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:53:55,845 - INFO - 127.0.0.1 - - [01/Apr/2025 19:53:55] "GET /login?next=http://127.0.0.1:5000/upload HTTP/1.1" 200 -
+2025-04-01 19:53:55,847 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:53:55,848 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:53:55,875 - INFO - 127.0.0.1 - - [01/Apr/2025 19:53:55] "[36mGET /static/images/property-placeholder.jpg HTTP/1.1[0m" 304 -
+2025-04-01 19:53:55,876 - INFO - 127.0.0.1 - - [01/Apr/2025 19:53:55] "[36mGET /static/logo.png HTTP/1.1[0m" 304 -
+2025-04-01 19:53:59,216 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:53:59,246 - INFO - 127.0.0.1 - - [01/Apr/2025 19:53:59] "[32mPOST /login HTTP/1.1[0m" 302 -
+2025-04-01 19:53:59,251 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:53:59,273 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:53:59,293 - INFO - 127.0.0.1 - - [01/Apr/2025 19:53:59] "GET / HTTP/1.1" 200 -
+2025-04-01 19:53:59,327 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:53:59,346 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:53:59,366 - INFO - 127.0.0.1 - - [01/Apr/2025 19:53:59] "GET /api/properties HTTP/1.1" 200 -
+2025-04-01 19:54:01,699 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:54:01,751 - INFO - 127.0.0.1 - - [01/Apr/2025 19:54:01] "[32mGET /upload HTTP/1.1[0m" 302 -
+2025-04-01 19:54:01,759 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:54:01,790 - INFO - 127.0.0.1 - - [01/Apr/2025 19:54:01] "GET /login?next=http://127.0.0.1:5000/upload HTTP/1.1" 200 -
+2025-04-01 19:54:01,794 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:54:01,796 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:54:01,830 - INFO - 127.0.0.1 - - [01/Apr/2025 19:54:01] "[36mGET /static/images/property-placeholder.jpg HTTP/1.1[0m" 304 -
+2025-04-01 19:54:01,831 - INFO - 127.0.0.1 - - [01/Apr/2025 19:54:01] "[36mGET /static/logo.png HTTP/1.1[0m" 304 -
+2025-04-01 19:54:04,398 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:54:04,439 - INFO - 127.0.0.1 - - [01/Apr/2025 19:54:04] "GET /login HTTP/1.1" 200 -
+2025-04-01 19:54:04,443 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:54:04,443 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:54:04,470 - INFO - 127.0.0.1 - - [01/Apr/2025 19:54:04] "[36mGET /static/logo.png HTTP/1.1[0m" 304 -
+2025-04-01 19:54:04,471 - INFO - 127.0.0.1 - - [01/Apr/2025 19:54:04] "[36mGET /static/images/property-placeholder.jpg HTTP/1.1[0m" 304 -
+2025-04-01 19:54:06,280 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:54:06,315 - INFO - 127.0.0.1 - - [01/Apr/2025 19:54:06] "[32mPOST /login HTTP/1.1[0m" 302 -
+2025-04-01 19:54:06,322 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:54:06,344 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:54:06,370 - INFO - 127.0.0.1 - - [01/Apr/2025 19:54:06] "GET / HTTP/1.1" 200 -
+2025-04-01 19:54:06,402 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:54:06,425 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:54:06,443 - INFO - 127.0.0.1 - - [01/Apr/2025 19:54:06] "GET /api/properties HTTP/1.1" 200 -
+2025-04-01 19:56:44,432 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:56:44,443 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2025-04-01 19:56:44,443 - INFO - [33mPress CTRL+C to quit[0m
+2025-04-01 19:56:47,176 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:56:47,306 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:56:47,342 - INFO - 127.0.0.1 - - [01/Apr/2025 19:56:47] "GET / HTTP/1.1" 200 -
+2025-04-01 19:56:47,421 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:56:47,438 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:56:47,457 - INFO - 127.0.0.1 - - [01/Apr/2025 19:56:47] "GET /api/properties HTTP/1.1" 200 -
+2025-04-01 19:56:50,187 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:56:50,235 - INFO - 127.0.0.1 - - [01/Apr/2025 19:56:50] "GET /login HTTP/1.1" 200 -
+2025-04-01 19:56:50,240 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:56:50,240 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:56:50,265 - INFO - 127.0.0.1 - - [01/Apr/2025 19:56:50] "[36mGET /static/images/property-placeholder.jpg HTTP/1.1[0m" 304 -
+2025-04-01 19:56:50,265 - INFO - 127.0.0.1 - - [01/Apr/2025 19:56:50] "[36mGET /static/logo.png HTTP/1.1[0m" 304 -
+2025-04-01 19:56:54,563 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:56:54,612 - INFO - 127.0.0.1 - - [01/Apr/2025 19:56:54] "[32mPOST /login HTTP/1.1[0m" 302 -
+2025-04-01 19:56:54,617 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:56:54,640 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:56:54,661 - INFO - 127.0.0.1 - - [01/Apr/2025 19:56:54] "GET / HTTP/1.1" 200 -
+2025-04-01 19:56:54,709 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:56:54,732 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:56:54,752 - INFO - 127.0.0.1 - - [01/Apr/2025 19:56:54] "GET /api/properties HTTP/1.1" 200 -
+2025-04-01 19:56:56,054 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:56:56,081 - INFO - 127.0.0.1 - - [01/Apr/2025 19:56:56] "[32mGET /upload HTTP/1.1[0m" 302 -
+2025-04-01 19:56:56,089 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:56:56,110 - INFO - 127.0.0.1 - - [01/Apr/2025 19:56:56] "GET /login?next=http://127.0.0.1:5000/upload HTTP/1.1" 200 -
+2025-04-01 19:56:56,113 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:56:56,114 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:56:56,142 - INFO - 127.0.0.1 - - [01/Apr/2025 19:56:56] "[36mGET /static/logo.png HTTP/1.1[0m" 304 -
+2025-04-01 19:56:56,143 - INFO - 127.0.0.1 - - [01/Apr/2025 19:56:56] "[36mGET /static/images/property-placeholder.jpg HTTP/1.1[0m" 304 -
+2025-04-01 19:56:56,853 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:56:56,891 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:56:56,926 - INFO - 127.0.0.1 - - [01/Apr/2025 19:56:56] "GET /about HTTP/1.1" 200 -
+2025-04-01 19:56:56,930 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:56:56,930 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:56:56,960 - INFO - 127.0.0.1 - - [01/Apr/2025 19:56:56] "[36mGET /static/images/property-placeholder.jpg HTTP/1.1[0m" 304 -
+2025-04-01 19:56:56,960 - INFO - 127.0.0.1 - - [01/Apr/2025 19:56:56] "[36mGET /static/logo.png HTTP/1.1[0m" 304 -
+2025-04-01 19:56:59,791 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:56:59,834 - INFO - 127.0.0.1 - - [01/Apr/2025 19:56:59] "GET /login HTTP/1.1" 200 -
+2025-04-01 19:56:59,838 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:56:59,838 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:56:59,869 - INFO - 127.0.0.1 - - [01/Apr/2025 19:56:59] "[36mGET /static/logo.png HTTP/1.1[0m" 304 -
+2025-04-01 19:56:59,869 - INFO - 127.0.0.1 - - [01/Apr/2025 19:56:59] "[36mGET /static/images/property-placeholder.jpg HTTP/1.1[0m" 304 -
+2025-04-01 19:57:03,312 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:57:03,353 - INFO - 127.0.0.1 - - [01/Apr/2025 19:57:03] "[32mPOST /login HTTP/1.1[0m" 302 -
+2025-04-01 19:57:03,362 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:57:03,390 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:57:03,415 - INFO - 127.0.0.1 - - [01/Apr/2025 19:57:03] "GET / HTTP/1.1" 200 -
+2025-04-01 19:57:03,458 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:57:03,478 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:57:03,495 - INFO - 127.0.0.1 - - [01/Apr/2025 19:57:03] "GET /api/properties HTTP/1.1" 200 -
+2025-04-01 19:57:04,948 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:57:04,986 - INFO - 127.0.0.1 - - [01/Apr/2025 19:57:04] "[32mGET /upload HTTP/1.1[0m" 302 -
+2025-04-01 19:57:04,999 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:57:05,030 - INFO - 127.0.0.1 - - [01/Apr/2025 19:57:05] "GET /login?next=http://127.0.0.1:5000/upload HTTP/1.1" 200 -
+2025-04-01 19:57:05,036 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:57:05,036 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:57:05,067 - INFO - 127.0.0.1 - - [01/Apr/2025 19:57:05] "[36mGET /static/logo.png HTTP/1.1[0m" 304 -
+2025-04-01 19:57:05,068 - INFO - 127.0.0.1 - - [01/Apr/2025 19:57:05] "[36mGET /static/images/property-placeholder.jpg HTTP/1.1[0m" 304 -
+2025-04-01 19:57:06,437 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:57:06,466 - INFO - 127.0.0.1 - - [01/Apr/2025 19:57:06] "POST /login HTTP/1.1" 200 -
+2025-04-01 19:57:06,484 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:57:06,517 - INFO - 127.0.0.1 - - [01/Apr/2025 19:57:06] "[36mGET /static/logo.png HTTP/1.1[0m" 304 -
+2025-04-01 19:57:06,522 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:57:06,546 - INFO - 127.0.0.1 - - [01/Apr/2025 19:57:06] "[36mGET /static/images/property-placeholder.jpg HTTP/1.1[0m" 304 -
+2025-04-01 19:57:07,634 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:57:07,673 - INFO - 127.0.0.1 - - [01/Apr/2025 19:57:07] "POST /login HTTP/1.1" 200 -
+2025-04-01 19:57:07,692 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:57:07,710 - INFO - 127.0.0.1 - - [01/Apr/2025 19:57:07] "[36mGET /static/logo.png HTTP/1.1[0m" 304 -
+2025-04-01 19:57:07,714 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:57:07,732 - INFO - 127.0.0.1 - - [01/Apr/2025 19:57:07] "[36mGET /static/images/property-placeholder.jpg HTTP/1.1[0m" 304 -
+2025-04-01 19:57:08,831 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:57:08,864 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:57:08,902 - INFO - 127.0.0.1 - - [01/Apr/2025 19:57:08] "GET /properties HTTP/1.1" 200 -
+2025-04-01 19:57:12,779 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:57:12,822 - INFO - 127.0.0.1 - - [01/Apr/2025 19:57:12] "[32mGET /property/new HTTP/1.1[0m" 302 -
+2025-04-01 19:57:12,831 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:57:12,859 - INFO - 127.0.0.1 - - [01/Apr/2025 19:57:12] "GET /login?next=http://127.0.0.1:5000/property/new HTTP/1.1" 200 -
+2025-04-01 19:57:12,863 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:57:12,865 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:57:12,895 - INFO - 127.0.0.1 - - [01/Apr/2025 19:57:12] "[36mGET /static/logo.png HTTP/1.1[0m" 304 -
+2025-04-01 19:57:12,906 - INFO - 127.0.0.1 - - [01/Apr/2025 19:57:12] "[36mGET /static/images/property-placeholder.jpg HTTP/1.1[0m" 304 -
+2025-04-01 19:59:02,527 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:59:02,537 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2025-04-01 19:59:02,537 - INFO - [33mPress CTRL+C to quit[0m
+2025-04-01 19:59:05,259 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:59:05,344 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:59:05,380 - INFO - 127.0.0.1 - - [01/Apr/2025 19:59:05] "GET / HTTP/1.1" 200 -
+2025-04-01 19:59:05,478 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:59:05,505 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:59:05,521 - INFO - 127.0.0.1 - - [01/Apr/2025 19:59:05] "GET /api/properties HTTP/1.1" 200 -
+2025-04-01 19:59:07,504 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:59:07,543 - INFO - 127.0.0.1 - - [01/Apr/2025 19:59:07] "[32mGET /upload HTTP/1.1[0m" 302 -
+2025-04-01 19:59:07,555 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:59:07,593 - INFO - 127.0.0.1 - - [01/Apr/2025 19:59:07] "GET /login?next=http://127.0.0.1:5000/upload HTTP/1.1" 200 -
+2025-04-01 19:59:07,596 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:59:07,597 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:59:07,624 - INFO - 127.0.0.1 - - [01/Apr/2025 19:59:07] "[36mGET /static/images/property-placeholder.jpg HTTP/1.1[0m" 304 -
+2025-04-01 19:59:07,625 - INFO - 127.0.0.1 - - [01/Apr/2025 19:59:07] "[36mGET /static/logo.png HTTP/1.1[0m" 304 -
+2025-04-01 19:59:11,496 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:59:11,528 - INFO - 127.0.0.1 - - [01/Apr/2025 19:59:11] "POST /login HTTP/1.1" 200 -
+2025-04-01 19:59:11,547 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:59:11,574 - INFO - 127.0.0.1 - - [01/Apr/2025 19:59:11] "[36mGET /static/logo.png HTTP/1.1[0m" 304 -
+2025-04-01 19:59:11,578 - INFO - Using database configuration from db_config.ini
+2025-04-01 19:59:11,595 - INFO - 127.0.0.1 - - [01/Apr/2025 19:59:11] "[36mGET /static/images/property-placeholder.jpg HTTP/1.1[0m" 304 -
