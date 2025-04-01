@@ -1,0 +1,241 @@
+{% extends "layout.html" %}
+{% block title %}Register - PropIntel{% endblock %}
+
+{% block extra_head %}
+<style>
+    .auth-container {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #f8f9fa;
+    }
+    
+    .auth-card {
+        width: 100%;
+        max-width: 500px;
+        border-radius: 10px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        overflow: hidden;
+    }
+    
+    .auth-card .card-header {
+        background-color: #0d6efd;
+        color: white;
+        padding: 1.5rem;
+        border-bottom: 0;
+    }
+    
+    .auth-card .card-body {
+        padding: 2rem;
+    }
+    
+    .auth-logo {
+        max-width: 80px;
+        margin-bottom: 1rem;
+    }
+    
+    .form-control:focus {
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+        border-color: #0d6efd;
+    }
+    
+    .btn-primary {
+        padding: 0.5rem 1.5rem;
+    }
+    
+    .password-requirements {
+        font-size: 0.85rem;
+    }
+    
+    .password-requirement {
+        display: flex;
+        align-items: center;
+        margin-bottom: 0.25rem;
+    }
+    
+    .password-requirement i {
+        margin-right: 0.5rem;
+    }
+    
+    .password-requirement.valid i {
+        color: #198754;
+    }
+    
+    .password-requirement.invalid i {
+        color: #dc3545;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-card card">
+        <div class="card-header text-center">
+            <img src="{{ url_for('static', filename='logo.png') }}" alt="PropIntel Logo" class="auth-logo" onerror="this.src='{{ url_for('static', filename='images/property-placeholder.jpg') }}'">
+            <h3 class="mb-0">Create Account</h3>
+            <p class="mb-0">Join PropIntel to manage your properties</p>
+        </div>
+        <div class="card-body">
+            <form action="{{ url_for('register') }}" method="post" id="registrationForm">
+                <div class="mb-3">
+                    <label for="username" class="form-label">Username</label>
+                    <input type="text" class="form-control" id="username" name="username" value="{{ username or '' }}" required>
+                    <div class="form-text">Must be at least 3 characters. Letters, numbers, and underscores only.</div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="email" class="form-label">Email Address</label>
+                    <input type="email" class="form-control" id="email" name="email" value="{{ email or '' }}" required>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="full_name" class="form-label">Full Name</label>
+                    <input type="text" class="form-control" id="full_name" name="full_name" value="{{ full_name or '' }}" required>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="password" class="form-label">Password</label>
+                    <input type="password" class="form-control" id="password" name="password" required>
+                </div>
+                
+                <div class="mb-3">
+                    <div class="password-requirements mb-2">
+                        <div class="password-requirement" id="length-req">
+                            <i class="fas fa-check-circle"></i> At least 8 characters
+                        </div>
+                        <div class="password-requirement" id="letter-req">
+                            <i class="fas fa-check-circle"></i> Contains a letter
+                        </div>
+                        <div class="password-requirement" id="number-req">
+                            <i class="fas fa-check-circle"></i> Contains a number
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <label for="confirm_password" class="form-label">Confirm Password</label>
+                    <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+                </div>
+                
+                <div class="mb-4">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="terms" required>
+                        <label class="form-check-label" for="terms">
+                            I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-primary">Create Account</button>
+                </div>
+            </form>
+            
+            <div class="mt-4 text-center">
+                <p>Already have an account? <a href="{{ url_for('login') }}">Log In</a></p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('registrationForm');
+        const password = document.getElementById('password');
+        const confirmPassword = document.getElementById('confirm_password');
+        const username = document.getElementById('username');
+        
+        // Password requirement elements
+        const lengthReq = document.getElementById('length-req');
+        const letterReq = document.getElementById('letter-req');
+        const numberReq = document.getElementById('number-req');
+        
+        // Function to validate password
+        function validatePassword() {
+            const passwordValue = password.value;
+            
+            // Check length
+            if (passwordValue.length >= 8) {
+                lengthReq.classList.add('valid');
+                lengthReq.classList.remove('invalid');
+            } else {
+                lengthReq.classList.add('invalid');
+                lengthReq.classList.remove('valid');
+            }
+            
+            // Check for letters
+            if (/[a-zA-Z]/.test(passwordValue)) {
+                letterReq.classList.add('valid');
+                letterReq.classList.remove('invalid');
+            } else {
+                letterReq.classList.add('invalid');
+                letterReq.classList.remove('valid');
+            }
+            
+            // Check for numbers
+            if (/\d/.test(passwordValue)) {
+                numberReq.classList.add('valid');
+                numberReq.classList.remove('invalid');
+            } else {
+                numberReq.classList.add('invalid');
+                numberReq.classList.remove('valid');
+            }
+        }
+        
+        // Validate on password input
+        password.addEventListener('input', validatePassword);
+        
+        // Check if passwords match
+        confirmPassword.addEventListener('input', function() {
+            if (password.value === confirmPassword.value) {
+                confirmPassword.classList.remove('is-invalid');
+                confirmPassword.classList.add('is-valid');
+            } else {
+                confirmPassword.classList.add('is-invalid');
+                confirmPassword.classList.remove('is-valid');
+            }
+        });
+        
+        // Validate username
+        username.addEventListener('input', function() {
+            if (/^[a-zA-Z0-9_]{3,}$/.test(username.value)) {
+                username.classList.remove('is-invalid');
+                username.classList.add('is-valid');
+            } else {
+                username.classList.add('is-invalid');
+                username.classList.remove('is-valid');
+            }
+        });
+        
+        // Form submission validation
+        form.addEventListener('submit', function(event) {
+            let valid = true;
+            
+            // Validate username
+            if (!/^[a-zA-Z0-9_]{3,}$/.test(username.value)) {
+                username.classList.add('is-invalid');
+                valid = false;
+            }
+            
+            // Validate password
+            if (password.value.length < 8 || !/[a-zA-Z]/.test(password.value) || !/\d/.test(password.value)) {
+                password.classList.add('is-invalid');
+                valid = false;
+            }
+            
+            // Check if passwords match
+            if (password.value !== confirmPassword.value) {
+                confirmPassword.classList.add('is-invalid');
+                valid = false;
+            }
+            
+            if (!valid) {
+                event.preventDefault();
+            }
+        });
+    });
+</script>
+{% endblock %}

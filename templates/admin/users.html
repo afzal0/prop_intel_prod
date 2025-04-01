@@ -1,0 +1,203 @@
+{% extends "layout.html" %}
+{% block title %}User Management - PropIntel Admin{% endblock %}
+
+{% block extra_head %}
+<style>
+    .user-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background-color: #dee2e6;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+        color: #6c757d;
+    }
+    
+    .table-hover tbody tr:hover {
+        background-color: rgba(13, 110, 253, 0.05);
+    }
+    
+    .table td {
+        vertical-align: middle;
+    }
+    
+    .status-badge {
+        width: 80px;
+    }
+    
+    .role-badge.admin {
+        background-color: #6f42c1 !important;
+    }
+    
+    .role-badge.manager {
+        background-color: #0dcaf0 !important;
+    }
+    
+    .role-badge.user {
+        background-color: #6c757d !important;
+    }
+    
+    .action-icon {
+        cursor: pointer;
+        transition: transform 0.2s ease;
+    }
+    
+    .action-icon:hover {
+        transform: scale(1.2);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h2 mb-0">User Management</h1>
+        <a href="{{ url_for('admin_create_user') }}" class="btn btn-primary">
+            <i class="fas fa-user-plus me-2"></i> Create User
+        </a>
+    </div>
+    
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th scope="col">#</th>
+                            <th scope="col">User</th>
+                            <th scope="col">Email</th>
+                            <th scope="col">Role</th>
+                            <th scope="col">Created</th>
+                            <th scope="col">Last Login</th>
+                            <th scope="col">Status</th>
+                            <th scope="col" class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in users %}
+                        <tr>
+                            <td>{{ user.user_id }}</td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="user-avatar me-2">
+                                        <i class="fas fa-user"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-0">{{ user.full_name }}</h6>
+                                        <small class="text-muted">@{{ user.username }}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>{{ user.email }}</td>
+                            <td>
+                                <span class="badge role-badge {{ user.role }}">{{ user.role|capitalize }}</span>
+                            </td>
+                            <td>{{ user.created_at.strftime('%Y-%m-%d') }}</td>
+                            <td>
+                                {% if user.last_login %}
+                                    {{ user.last_login.strftime('%Y-%m-%d %H:%M') }}
+                                {% else %}
+                                    <span class="text-muted">Never</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge status-badge bg-{{ 'success' if user.is_active else 'danger' }}">
+                                    {{ 'Active' if user.is_active else 'Inactive' }}
+                                </span>
+                            </td>
+                            <td class="text-end">
+                                <div class="btn-group">
+                                    <a href="{{ url_for('admin_edit_user', user_id=user.user_id) }}" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    {% if user.user_id != g.user.user_id %}
+                                    <button type="button" class="btn btn-sm btn-outline-{{ 'danger' if user.is_active else 'success' }}"
+                                            onclick="toggleUserStatus({{ user.user_id }}, '{{ user.username }}', {{ 'true' if user.is_active else 'false' }})">
+                                        <i class="fas fa-{{ 'ban' if user.is_active else 'check' }}"></i>
+                                    </button>
+                                    {% else %}
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" disabled>
+                                        <i class="fas fa-ban"></i>
+                                    </button>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Confirmation Modal -->
+<div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmModalLabel">Confirm Action</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="confirmModalBody">
+                Are you sure you want to perform this action?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="confirmButton">Confirm</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let currentUserId = null;
+    let currentAction = null;
+    
+    function toggleUserStatus(userId, username, isActive) {
+        currentUserId = userId;
+        currentAction = isActive ? 'deactivate' : 'activate';
+        
+        const confirmMessage = isActive 
+            ? `Are you sure you want to deactivate user "${username}"? They will not be able to log in.` 
+            : `Are you sure you want to activate user "${username}"? They will be able to log in again.`;
+            
+        document.getElementById('confirmModalBody').innerText = confirmMessage;
+        document.getElementById('confirmButton').className = `btn btn-${isActive ? 'danger' : 'success'}`;
+        document.getElementById('confirmButton').innerText = isActive ? 'Deactivate' : 'Activate';
+        
+        const modal = new bootstrap.Modal(document.getElementById('confirmModal'));
+        modal.show();
+        
+        document.getElementById('confirmButton').onclick = function() {
+            submitToggleRequest(userId);
+            modal.hide();
+        };
+    }
+    
+    function submitToggleRequest(userId) {
+        fetch(`/admin/user/${userId}/toggle`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred. Please try again later.');
+        });
+    }
+</script>
+{% endblock %}

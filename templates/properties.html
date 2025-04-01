@@ -1,7 +1,271 @@
 {% extends "layout.html" %}
 {% block title %}Properties - PropIntel{% endblock %}
 
+{% block extra_head %}
+<style>
+    .property-card {
+        transition: transform 0.2s ease;
+    }
+    .property-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 15px rgba(0,0,0,0.1);
+    }
+    
+    /* Smooth transitions between views */
+    #cardView, #listView {
+        transition: opacity 0.3s ease, display 0.3s ease;
+    }
+    
+    /* Button styling */
+    .btn-outline-primary.active {
+        background-color: #0d6efd;
+        color: white;
+    }
+    
+    /* List view enhancements */
+    #listView .table {
+        margin-bottom: 0;
+    }
+    
+    /* Property count badge */
+    .property-count {
+        background-color: #f8f9fa;
+        border-radius: 20px;
+        padding: 5px 15px;
+        font-size: 0.9rem;
+    }
+    
+    /* Card enhancements */
+    .property-card .card-header {
+        background-color: #f8f9fa;
+    }
+    
+    /* Sortable table styles */
+    .sortable {
+        cursor: pointer;
+        user-select: none;
+    }
+    
+    .sortable:hover {
+        background-color: #f0f0f0;
+    }
+    
+    .sort-asc .fa-sort:before {
+        content: "\f0de"; /* fa-sort-up */
+    }
+    
+    .sort-desc .fa-sort:before {
+        content: "\f0dd"; /* fa-sort-down */
+    }
+    
+    /* Highlight row on hover */
+    #propertiesTable tbody tr:hover {
+        background-color: rgba(13, 110, 253, 0.05);
+    }
+</style>
+{% endblock %}
+
 {% block content %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Get view toggle buttons
+        const cardViewBtn = document.getElementById('cardViewBtn');
+        const listViewBtn = document.getElementById('listViewBtn');
+        
+        // Get view containers
+        const cardView = document.getElementById('cardView');
+        const listView = document.getElementById('listView');
+        
+        // Handle card view button click
+        cardViewBtn.addEventListener('click', function() {
+            cardView.style.display = 'flex';
+            listView.style.display = 'none';
+            cardViewBtn.classList.add('active');
+            listViewBtn.classList.remove('active');
+            
+            // Save preference to localStorage
+            localStorage.setItem('propertiesViewPreference', 'card');
+        });
+        
+        // Handle list view button click
+        listViewBtn.addEventListener('click', function() {
+            cardView.style.display = 'none';
+            listView.style.display = 'block';
+            cardViewBtn.classList.remove('active');
+            listViewBtn.classList.add('active');
+            
+            // Save preference to localStorage
+            localStorage.setItem('propertiesViewPreference', 'list');
+        });
+        
+        // Check for saved preference and apply it
+        const savedView = localStorage.getItem('propertiesViewPreference');
+        if (savedView === 'list') {
+            listViewBtn.click();
+        }
+        
+        // Set up table sorting
+        const propertiesTable = document.getElementById('propertiesTable');
+        if (propertiesTable) {
+            const sortableHeaders = propertiesTable.querySelectorAll('th.sortable');
+            let currentSortColumn = null;
+            let currentSortDirection = 'asc';
+            
+            sortableHeaders.forEach(header => {
+                header.addEventListener('click', function() {
+                    const sortKey = this.getAttribute('data-sort');
+                    
+                    // Reset all headers
+                    sortableHeaders.forEach(h => {
+                        h.classList.remove('sort-asc', 'sort-desc');
+                    });
+                    
+                    // Toggle direction if same column clicked twice
+                    if (currentSortColumn === sortKey) {
+                        currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
+                    } else {
+                        currentSortColumn = sortKey;
+                        currentSortDirection = 'asc';
+                    }
+                    
+                    // Add sort direction class
+                    this.classList.add(`sort-${currentSortDirection}`);
+                    
+                    // Get all rows to sort
+                    const tbody = propertiesTable.querySelector('tbody');
+                    const rows = Array.from(tbody.querySelectorAll('tr'));
+                    
+                    // Sort rows
+                    rows.sort((a, b) => {
+                        const cellA = a.querySelector(`td[data-value]:nth-child(${Array.from(sortableHeaders).indexOf(this) + 1})`);
+                        const cellB = b.querySelector(`td[data-value]:nth-child(${Array.from(sortableHeaders).indexOf(this) + 1})`);
+                        
+                        if (!cellA || !cellB) return 0;
+                        
+                        const valueA = cellA.getAttribute('data-value');
+                        const valueB = cellB.getAttribute('data-value');
+                        
+                        // Check if values are numbers
+                        const numA = parseFloat(valueA);
+                        const numB = parseFloat(valueB);
+                        
+                        if (!isNaN(numA) && !isNaN(numB)) {
+                            // Sort numerically
+                            return currentSortDirection === 'asc' 
+                                ? numA - numB 
+                                : numB - numA;
+                        } else {
+                            // Sort alphabetically
+                            return currentSortDirection === 'asc' 
+                                ? valueA.localeCompare(valueB) 
+                                : valueB.localeCompare(valueA);
+                        }
+                    });
+                    
+                    // Reorder rows in the DOM
+                    rows.forEach(row => {
+                        tbody.appendChild(row);
+                    });
+                });
+            });
+            
+            // Sort by name initially
+            if (sortableHeaders.length > 0) {
+                sortableHeaders[0].click();
+            }
+        }
+        
+        // Quick filter functionality
+        const quickSearch = document.getElementById('quickSearch');
+        let debounceTimer;
+        
+        if (quickSearch) {
+            quickSearch.addEventListener('input', function() {
+                // Debounce the filtering to improve performance
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(() => {
+                const searchTerm = this.value.toLowerCase().trim();
+                
+                // Update cards view
+                const cards = document.querySelectorAll('#cardView .property-card');
+                let visibleCount = 0;
+                
+                cards.forEach(card => {
+                    const cardTitle = card.querySelector('.card-title').textContent.toLowerCase();
+                    const cardAddress = card.querySelector('.card-text').textContent.toLowerCase();
+                    const cardContainer = card.closest('.col-md-6');
+                    
+                    if (cardTitle.includes(searchTerm) || cardAddress.includes(searchTerm)) {
+                        cardContainer.style.display = '';
+                        visibleCount++;
+                    } else {
+                        cardContainer.style.display = 'none';
+                    }
+                });
+                
+                // Update list view
+                const rows = document.querySelectorAll('#propertiesTable tbody tr');
+                rows.forEach(row => {
+                    const name = row.querySelector('td:first-child').textContent.toLowerCase();
+                    const address = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
+                    
+                    if (name.includes(searchTerm) || address.includes(searchTerm)) {
+                        row.style.display = '';
+                        visibleCount++;
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+                
+                // Update property count
+                document.getElementById('propertyCount').textContent = visibleCount;
+                
+                // Show message if no results
+                const noResults = document.getElementById('noFilterResults');
+                if (searchTerm && visibleCount === 0) {
+                    if (!noResults) {
+                        const alert = document.createElement('div');
+                        alert.id = 'noFilterResults';
+                        alert.className = 'alert alert-info mt-3';
+                        alert.textContent = 'No properties match your filter.';
+                        
+                        // Insert after both views
+                        const listView = document.getElementById('listView');
+                        listView.parentNode.insertBefore(alert, listView.nextSibling);
+                    }
+                } else if (noResults) {
+                    noResults.remove();
+                }
+                }, 200); // 200ms debounce delay
+            });
+            
+            // Add clear button functionality
+            const clearSearch = () => {
+                quickSearch.value = '';
+                quickSearch.dispatchEvent(new Event('input'));
+            };
+            
+            // Add clear button if there's a value
+            quickSearch.addEventListener('focus', function() {
+                if (this.value) {
+                    const inputGroup = this.closest('.input-group');
+                    let clearBtn = inputGroup.querySelector('.clear-search');
+                    
+                    if (!clearBtn) {
+                        clearBtn = document.createElement('button');
+                        clearBtn.type = 'button';
+                        clearBtn.className = 'btn btn-outline-secondary clear-search';
+                        clearBtn.innerHTML = '<i class="fas fa-times"></i>';
+                        clearBtn.onclick = clearSearch;
+                        
+                        inputGroup.appendChild(clearBtn);
+                    }
+                }
+            });
+        }
+    });
+</script>
+
 <div class="row">
     <!-- Sidebar -->
     <div class="col-md-3 col-lg-2 d-md-block sidebar collapse">
@@ -43,10 +307,31 @@
     <!-- Main Content -->
     <div class="col-md-9 col-lg-10 main-content">
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1 class="h2">Properties</h1>
-            <a href="{{ url_for('new_property') }}" class="btn btn-primary">
-                <i class="fas fa-plus-circle me-1"></i> Add Property
-            </a>
+            <div class="d-flex align-items-center">
+                <h1 class="h2 mb-0 me-3">Properties</h1>
+                <span class="property-count">
+                    <strong id="propertyCount">{{ properties|length }}</strong> properties
+                </span>
+            </div>
+            <div class="d-flex gap-2 align-items-center">
+                <div class="input-group me-2" style="max-width: 250px;">
+                    <input type="text" class="form-control" id="quickSearch" placeholder="Quick filter..." aria-label="Quick filter">
+                    <span class="input-group-text bg-white">
+                        <i class="fas fa-search text-muted"></i>
+                    </span>
+                </div>
+                <div class="btn-group me-2" role="group" aria-label="View options">
+                    <button type="button" class="btn btn-outline-primary active" id="cardViewBtn">
+                        <i class="fas fa-th me-1"></i> Cards
+                    </button>
+                    <button type="button" class="btn btn-outline-primary" id="listViewBtn">
+                        <i class="fas fa-list me-1"></i> List
+                    </button>
+                </div>
+                <a href="{{ url_for('new_property') }}" class="btn btn-primary">
+                    <i class="fas fa-plus-circle me-1"></i> Add Property
+                </a>
+            </div>
         </div>
         
         {% if search %}
@@ -56,7 +341,8 @@
         </div>
         {% endif %}
         
-        <div class="row">
+        <!-- Card View (default) -->
+        <div class="row" id="cardView" style="display: flex;">
             {% for property in properties %}
             <div class="col-md-6 col-lg-4 mb-4">
                 <div class="card h-100 property-card">
@@ -96,18 +382,62 @@
                     </div>
                 </div>
             </div>
-            {% else %}
-            <div class="col-12">
-                <div class="alert alert-info">
-                    {% if search %}
-                    No properties found matching "{{ search }}".
-                    {% else %}
-                    No properties found. Add your first property to get started.
-                    {% endif %}
-                </div>
-            </div>
             {% endfor %}
         </div>
+        
+        <!-- List View (hidden by default) -->
+        <div id="listView" style="display: none;">
+            <div class="card">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover mb-0" id="propertiesTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="sortable" data-sort="name">Name <i class="fas fa-sort ms-1"></i></th>
+                                    <th class="sortable" data-sort="address">Address <i class="fas fa-sort ms-1"></i></th>
+                                    <th class="sortable" data-sort="location">Location <i class="fas fa-sort ms-1"></i></th>
+                                    <th class="text-center sortable" data-sort="work">Work <i class="fas fa-sort ms-1"></i></th>
+                                    <th class="text-center sortable" data-sort="income">Income <i class="fas fa-sort ms-1"></i></th>
+                                    <th class="text-center sortable" data-sort="expense">Expenses <i class="fas fa-sort ms-1"></i></th>
+                                    <th class="text-center">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for property in properties %}
+                                <tr>
+                                    <td data-value="{{ property.property_name }}"><strong>{{ property.property_name }}</strong></td>
+                                    <td data-value="{{ property.address }}">{{ property.address }}</td>
+                                    <td data-value="{{ property.location or 'Melbourne' }}">{{ property.location or 'Melbourne' }}</td>
+                                    <td class="text-center" data-value="{{ property.work_count }}">
+                                        <span class="badge bg-primary rounded-pill">{{ property.work_count }}</span>
+                                    </td>
+                                    <td class="text-center" data-value="{{ property.income_count }}">
+                                        <span class="badge bg-success rounded-pill">{{ property.income_count }}</span>
+                                    </td>
+                                    <td class="text-center" data-value="{{ property.expense_count }}">
+                                        <span class="badge bg-danger rounded-pill">{{ property.expense_count }}</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <a href="{{ url_for('property_detail', property_id=property.property_id) }}" class="btn btn-sm btn-primary">View</a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        {% if properties|length == 0 %}
+        <div class="alert alert-info">
+            {% if search %}
+            No properties found matching "{{ search }}".
+            {% else %}
+            No properties found. Add your first property to get started.
+            {% endif %}
+        </div>
+        {% endif %}
     </div>
 </div>
 {% endblock %}

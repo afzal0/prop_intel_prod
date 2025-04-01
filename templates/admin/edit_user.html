@@ -1,0 +1,101 @@
+{% extends "layout.html" %}
+{% block title %}Edit User - PropIntel Admin{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h2 mb-0">Edit User</h1>
+                <a href="{{ url_for('admin_users') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i> Back to Users
+                </a>
+            </div>
+            
+            <div class="card shadow-sm">
+                <div class="card-body p-4">
+                    <form action="{{ url_for('admin_edit_user', user_id=user.user_id) }}" method="post">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="username" class="form-label">Username</label>
+                                <input type="text" class="form-control" id="username" value="{{ user.username }}" readonly disabled>
+                                <div class="form-text">Username cannot be changed.</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="email" class="form-label">Email Address <span class="text-danger">*</span></label>
+                                <input type="email" class="form-control" id="email" name="email" value="{{ user.email }}" required>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="full_name" class="form-label">Full Name <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="full_name" name="full_name" value="{{ user.full_name }}" required>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="role" class="form-label">Role <span class="text-danger">*</span></label>
+                                <select class="form-select" id="role" name="role" required>
+                                    <option value="user" {{ 'selected' if user.role == 'user' else '' }}>User</option>
+                                    <option value="manager" {{ 'selected' if user.role == 'manager' else '' }}>Manager</option>
+                                    <option value="admin" {{ 'selected' if user.role == 'admin' else '' }}>Administrator</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="status" class="form-label">Status</label>
+                                <div class="form-check form-switch mt-2">
+                                    <input class="form-check-input" type="checkbox" id="is_active" name="is_active" {{ 'checked' if user.is_active else '' }}>
+                                    <label class="form-check-label" for="is_active">
+                                        Active Account
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <hr class="my-4">
+                        
+                        <div class="mb-3">
+                            <label for="new_password" class="form-label">New Password</label>
+                            <input type="password" class="form-control" id="new_password" name="new_password">
+                            <div class="form-text">Leave blank to keep current password. New password must be at least 8 characters long.</div>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{{ url_for('admin_users') }}" class="btn btn-outline-secondary me-md-2">Cancel</a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i> Update User
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Add client-side validation
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.querySelector('form');
+        const newPassword = document.getElementById('new_password');
+        
+        form.addEventListener('submit', function(event) {
+            let valid = true;
+            
+            // Password validation (only if a new password is provided)
+            if (newPassword.value !== '' && newPassword.value.length < 8) {
+                newPassword.classList.add('is-invalid');
+                valid = false;
+            } else {
+                newPassword.classList.remove('is-invalid');
+            }
+            
+            if (!valid) {
+                event.preventDefault();
+            }
+        });
+    });
+</script>
+{% endblock %}

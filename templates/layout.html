@@ -198,17 +198,39 @@
                     </li>
                     <li class="nav-item">
                         <a class="nav-link {% if request.path == url_for('properties') %}active{% endif %}" href="{{ url_for('properties') }}">
-                            <i class="fas fa-home me-1"></i>Properties
+                            <i class="fas fa-building me-1"></i>Properties
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link {% if request.path == url_for('map_view') %}active{% endif %}" href="{{ url_for('map_view') }}">
-                            <i class="fas fa-map-marker-alt me-1"></i>Map
+                            <i class="fas fa-map-marked-alt me-1"></i>Map
                         </a>
                     </li>
+                    {% if g.user and g.user.role == 'admin' %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-tools me-1"></i>Admin
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{{ url_for('admin_users') }}">
+                                <i class="fas fa-users me-2"></i>Manage Users
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{{ url_for('upload_file') }}">
+                                <i class="fas fa-file-upload me-2"></i>Import Data
+                            </a></li>
+                        </ul>
+                    </li>
+                    {% else %}
                     <li class="nav-item">
                         <a class="nav-link {% if request.path == url_for('upload_file') %}active{% endif %}" href="{{ url_for('upload_file') }}">
                             <i class="fas fa-file-upload me-1"></i>Upload
+                        </a>
+                    </li>
+                    {% endif %}
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path == url_for('about') %}active{% endif %}" href="{{ url_for('about') }}">
+                            <i class="fas fa-info-circle me-1"></i>About
                         </a>
                     </li>
                 </ul>
@@ -225,18 +247,38 @@
                 <ul class="navbar-nav">
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
-                            <i class="fas fa-user me-1"></i>
+                            <i class="fas fa-user-circle me-1"></i>
                             {% if g.user %}
-                                {{ g.user.name }}
+                                {% if g.user.user_id == 'guest' %}
+                                    Guest
+                                {% else %}
+                                    {{ g.user.full_name }}
+                                {% endif %}
                             {% else %}
                                 Account
                             {% endif %}
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
                             {% if g.user %}
-                                <li><a class="dropdown-item" href="{{ url_for('logout') }}">Logout</a></li>
+                                {% if g.user.user_id != 'guest' %}
+                                    <li><a class="dropdown-item" href="{{ url_for('user_profile') }}">
+                                        <i class="fas fa-user me-2"></i>My Profile
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('new_property') }}">
+                                        <i class="fas fa-plus-circle me-2"></i>Add Property
+                                    </a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                {% endif %}
+                                <li><a class="dropdown-item" href="{{ url_for('logout') }}">
+                                    <i class="fas fa-sign-out-alt me-2"></i>Logout
+                                </a></li>
                             {% else %}
-                                <li><a class="dropdown-item" href="{{ url_for('login') }}">Login</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('login') }}">
+                                    <i class="fas fa-sign-in-alt me-2"></i>Login
+                                </a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('register') }}">
+                                    <i class="fas fa-user-plus me-2"></i>Register
+                                </a></li>
                             {% endif %}
                         </ul>
                     </li>

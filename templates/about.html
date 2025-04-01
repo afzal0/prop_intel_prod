@@ -1,0 +1,323 @@
+{% extends "layout.html" %}
+{% block title %}About PropIntel{% endblock %}
+
+{% block extra_head %}
+<style>
+    .stat-card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+    
+    .stat-icon {
+        font-size: 2.5rem;
+        opacity: 0.8;
+    }
+    
+    .stat-value {
+        font-size: 2rem;
+        font-weight: 700;
+    }
+    
+    .stat-label {
+        font-size: 1rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    
+    .feature-item {
+        border-left: 4px solid #0d6efd;
+        padding-left: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .feature-icon {
+        background-color: #e9ecef;
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 1rem;
+    }
+    
+    .chart-container {
+        height: 300px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row mb-5">
+        <div class="col-md-8">
+            <h1 class="display-4 mb-4">PropIntel</h1>
+            <h2 class="h4 text-muted mb-4">Comprehensive Property Management System</h2>
+            <p class="lead">
+                PropIntel is a powerful property management platform designed specifically for builders and property developers 
+                to track projects, manage expenses, and optimize operations.
+            </p>
+            <p>
+                Our platform provides a holistic view of your property portfolio, empowering you 
+                to make informed decisions based on real-time data and analytics.
+            </p>
+        </div>
+        <div class="col-md-4 d-flex align-items-center justify-content-center">
+            <img src="{{ url_for('static', filename='logo.png') }}" alt="PropIntel Logo" class="img-fluid" style="max-height: 180px;" onerror="this.src='{{ url_for('static', filename='images/property-placeholder.jpg') }}'">
+        </div>
+    </div>
+    
+    <!-- Stats Cards -->
+    <div class="row mb-5">
+        <div class="col-md-3 mb-4">
+            <div class="stat-card card h-100 bg-primary text-white">
+                <div class="card-body d-flex flex-column align-items-center justify-content-center p-4">
+                    <div class="stat-icon mb-2">
+                        <i class="fas fa-building"></i>
+                    </div>
+                    <div class="stat-value mb-1">{{ property_count }}</div>
+                    <div class="stat-label">Properties</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-4">
+            <div class="stat-card card h-100 bg-success text-white">
+                <div class="card-body d-flex flex-column align-items-center justify-content-center p-4">
+                    <div class="stat-icon mb-2">
+                        <i class="fas fa-dollar-sign"></i>
+                    </div>
+                    <div class="stat-value mb-1">${{ '{:,.0f}'.format(total_income) }}</div>
+                    <div class="stat-label">Total Income</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-4">
+            <div class="stat-card card h-100 bg-danger text-white">
+                <div class="card-body d-flex flex-column align-items-center justify-content-center p-4">
+                    <div class="stat-icon mb-2">
+                        <i class="fas fa-file-invoice-dollar"></i>
+                    </div>
+                    <div class="stat-value mb-1">${{ '{:,.0f}'.format(total_expenses) }}</div>
+                    <div class="stat-label">Total Expenses</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-4">
+            <div class="stat-card card h-100 bg-info text-white">
+                <div class="card-body d-flex flex-column align-items-center justify-content-center p-4">
+                    <div class="stat-icon mb-2">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="stat-value mb-1">{{ user_count }}</div>
+                    <div class="stat-label">Active Users</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Charts -->
+    <div class="row mb-5">
+        <div class="col-md-6 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-header bg-light">
+                    <h5 class="card-title mb-0">Projects by Type</h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="projectTypeChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-header bg-light">
+                    <h5 class="card-title mb-0">Projects by Status</h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="statusChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Features -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <h2 class="h3 mb-4">Key Features</h2>
+        </div>
+        
+        <div class="col-md-6 mb-4">
+            <div class="feature-item d-flex">
+                <div class="feature-icon">
+                    <i class="fas fa-map-marked-alt text-primary"></i>
+                </div>
+                <div>
+                    <h4 class="h5">Interactive Property Map</h4>
+                    <p>Visualize all your properties on an interactive map with customizable markers and detailed property information.</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6 mb-4">
+            <div class="feature-item d-flex">
+                <div class="feature-icon">
+                    <i class="fas fa-chart-line text-primary"></i>
+                </div>
+                <div>
+                    <h4 class="h5">Financial Tracking</h4>
+                    <p>Track income, expenses, and profit for each property with detailed financial reports and visualizations.</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6 mb-4">
+            <div class="feature-item d-flex">
+                <div class="feature-icon">
+                    <i class="fas fa-tasks text-primary"></i>
+                </div>
+                <div>
+                    <h4 class="h5">Project Management</h4>
+                    <p>Manage project timelines, track work progress, and assign tasks to team members with our comprehensive tools.</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6 mb-4">
+            <div class="feature-item d-flex">
+                <div class="feature-icon">
+                    <i class="fas fa-shield-alt text-primary"></i>
+                </div>
+                <div>
+                    <h4 class="h5">User Access Control</h4>
+                    <p>Set permissions and control who can view and edit your property data with our robust user management system.</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6 mb-4">
+            <div class="feature-item d-flex">
+                <div class="feature-icon">
+                    <i class="fas fa-file-upload text-primary"></i>
+                </div>
+                <div>
+                    <h4 class="h5">Data Import & Export</h4>
+                    <p>Easily import data from Excel or CSV files, and export reports in various formats for sharing and analysis.</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6 mb-4">
+            <div class="feature-item d-flex">
+                <div class="feature-icon">
+                    <i class="fas fa-images text-primary"></i>
+                </div>
+                <div>
+                    <h4 class="h5">Property Image Gallery</h4>
+                    <p>Store and organize multiple images for each property and work activity with our integrated image management.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Call to Action -->
+    <div class="row">
+        <div class="col-12 text-center">
+            <div class="card bg-light p-4">
+                <h3 class="mb-3">Ready to get started?</h3>
+                <p class="mb-4">Join the growing number of builders and property developers using PropIntel.</p>
+                <div>
+                    {% if g.user %}
+                    <a href="{{ url_for('properties') }}" class="btn btn-primary btn-lg">View Your Properties</a>
+                    {% else %}
+                    <a href="{{ url_for('register') }}" class="btn btn-primary btn-lg me-2">Sign Up</a>
+                    <a href="{{ url_for('login') }}" class="btn btn-outline-primary btn-lg">Log In</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Project Type Chart
+        const projectTypeCtx = document.getElementById('projectTypeChart').getContext('2d');
+        const projectTypeChart = new Chart(projectTypeCtx, {
+            type: 'pie',
+            data: {
+                labels: {{ project_type_labels|safe }},
+                datasets: [{
+                    data: {{ project_type_data|safe }},
+                    backgroundColor: [
+                        '#0d6efd',
+                        '#6610f2',
+                        '#6f42c1',
+                        '#d63384',
+                        '#dc3545',
+                        '#fd7e14',
+                        '#ffc107',
+                        '#198754',
+                        '#20c997',
+                        '#0dcaf0'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right'
+                    }
+                }
+            }
+        });
+        
+        // Status Chart
+        const statusCtx = document.getElementById('statusChart').getContext('2d');
+        const statusChart = new Chart(statusCtx, {
+            type: 'bar',
+            data: {
+                labels: {{ status_labels|safe }},
+                datasets: [{
+                    label: 'Properties by Status',
+                    data: {{ status_data|safe }},
+                    backgroundColor: [
+                        '#198754',  // Active - Green
+                        '#0d6efd',  // In Progress - Blue
+                        '#ffc107',  // On Hold - Yellow
+                        '#6f42c1',  // Planning - Purple
+                        '#dc3545'   // Cancelled - Red
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            precision: 0
+                        }
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

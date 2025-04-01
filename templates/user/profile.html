@@ -1,0 +1,343 @@
+{% extends "layout.html" %}
+{% block title %}My Profile - PropIntel{% endblock %}
+
+{% block extra_head %}
+<style>
+    .profile-header {
+        position: relative;
+        background-color: #f8f9fa;
+        border-radius: 10px;
+        padding: 30px;
+        margin-bottom: 30px;
+    }
+    
+    .profile-avatar {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        background-color: #dee2e6;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.5rem;
+        color: #6c757d;
+    }
+    
+    .stat-card {
+        transition: transform 0.2s ease;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .nav-pills .nav-link.active {
+        background-color: #0d6efd;
+    }
+    
+    .activity-item {
+        border-left: 3px solid #0d6efd;
+        padding-left: 15px;
+        margin-bottom: 15px;
+        position: relative;
+    }
+    
+    .activity-timestamp {
+        font-size: 0.8rem;
+        color: #6c757d;
+    }
+    
+    /* Timeline connector */
+    .activity-item::before {
+        content: '';
+        position: absolute;
+        left: -7px;
+        top: 0;
+        width: 12px;
+        height: 12px;
+        background-color: #0d6efd;
+        border-radius: 50%;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-lg-3">
+            <!-- Profile Header -->
+            <div class="profile-header text-center">
+                <div class="profile-avatar mx-auto mb-3">
+                    <i class="fas fa-user"></i>
+                </div>
+                <h5 class="mb-1">{{ user.full_name }}</h5>
+                <p class="text-muted mb-2">@{{ user.username }}</p>
+                <span class="badge bg-{{ 'primary' if user.role == 'admin' else 'secondary' }}">
+                    {{ user.role|capitalize }}
+                </span>
+            </div>
+            
+            <!-- Navigation -->
+            <div class="list-group mb-4">
+                <a href="#profile" class="list-group-item list-group-item-action active" data-bs-toggle="list">
+                    <i class="fas fa-user-circle me-2"></i> Profile
+                </a>
+                <a href="#settings" class="list-group-item list-group-item-action" data-bs-toggle="list">
+                    <i class="fas fa-cog me-2"></i> Settings
+                </a>
+                <a href="#security" class="list-group-item list-group-item-action" data-bs-toggle="list">
+                    <i class="fas fa-lock me-2"></i> Security
+                </a>
+                <a href="#activity" class="list-group-item list-group-item-action" data-bs-toggle="list">
+                    <i class="fas fa-history me-2"></i> Activity
+                </a>
+            </div>
+            
+            <!-- Stats -->
+            <div class="row mb-4">
+                <div class="col-6 mb-3">
+                    <div class="stat-card card text-center h-100">
+                        <div class="card-body">
+                            <h6 class="card-subtitle mb-2 text-muted">Properties</h6>
+                            <h3 class="card-title mb-0">{{ property_count }}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 mb-3">
+                    <div class="stat-card card text-center h-100">
+                        <div class="card-body">
+                            <h6 class="card-subtitle mb-2 text-muted">Work Entries</h6>
+                            <h3 class="card-title mb-0">{{ work_count }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-9">
+            <div class="tab-content">
+                <!-- Profile Tab -->
+                <div class="tab-pane fade show active" id="profile">
+                    <div class="card mb-4">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0">Account Information</h5>
+                            <small class="text-muted">Member since {{ user.created_at.strftime('%b %d, %Y') }}</small>
+                        </div>
+                        <div class="card-body">
+                            <form action="{{ url_for('user_profile') }}" method="post">
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="username" class="form-label">Username</label>
+                                        <input type="text" class="form-control" id="username" value="{{ user.username }}" readonly disabled>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="email" class="form-label">Email Address</label>
+                                        <input type="email" class="form-control" id="email" name="email" value="{{ user.email }}" required>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="full_name" class="form-label">Full Name</label>
+                                    <input type="text" class="form-control" id="full_name" name="full_name" value="{{ user.full_name }}" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="role" class="form-label">Role</label>
+                                    <input type="text" class="form-control" id="role" value="{{ user.role|capitalize }}" readonly disabled>
+                                </div>
+                                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save me-2"></i> Update Profile
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Settings Tab -->
+                <div class="tab-pane fade" id="settings">
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Application Settings</h5>
+                        </div>
+                        <div class="card-body">
+                            <form action="{{ url_for('update_user_settings') }}" method="post">
+                                <div class="mb-3">
+                                    <label class="form-label">Map Display Theme</label>
+                                    <div class="d-flex gap-3">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="map_theme" id="light_theme" value="light" 
+                                                {{ 'checked' if settings.map_theme == 'light' or not settings.map_theme else '' }}>
+                                            <label class="form-check-label" for="light_theme">
+                                                Light
+                                            </label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="map_theme" id="dark_theme" value="dark"
+                                                {{ 'checked' if settings.map_theme == 'dark' else '' }}>
+                                            <label class="form-check-label" for="dark_theme">
+                                                Dark
+                                            </label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="map_theme" id="satellite_theme" value="satellite"
+                                                {{ 'checked' if settings.map_theme == 'satellite' else '' }}>
+                                            <label class="form-check-label" for="satellite_theme">
+                                                Satellite
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">Default View</label>
+                                    <div class="d-flex gap-3">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="default_view" id="card_view" value="card"
+                                                {{ 'checked' if settings.default_view == 'card' or not settings.default_view else '' }}>
+                                            <label class="form-check-label" for="card_view">
+                                                Card View
+                                            </label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="default_view" id="list_view" value="list"
+                                                {{ 'checked' if settings.default_view == 'list' else '' }}>
+                                            <label class="form-check-label" for="list_view">
+                                                List View
+                                            </label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="default_view" id="map_view" value="map"
+                                                {{ 'checked' if settings.default_view == 'map' else '' }}>
+                                            <label class="form-check-label" for="map_view">
+                                                Map View
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="notifications_enabled" name="notifications_enabled"
+                                            {{ 'checked' if settings.notifications_enabled else '' }}>
+                                        <label class="form-check-label" for="notifications_enabled">
+                                            Enable Notifications
+                                        </label>
+                                    </div>
+                                    <small class="text-muted">Receive notifications about property updates and activity.</small>
+                                </div>
+                                
+                                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save me-2"></i> Save Settings
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Security Tab -->
+                <div class="tab-pane fade" id="security">
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Change Password</h5>
+                        </div>
+                        <div class="card-body">
+                            <form action="{{ url_for('user_profile') }}" method="post">
+                                <div class="mb-3">
+                                    <label for="current_password" class="form-label">Current Password</label>
+                                    <input type="password" class="form-control" id="current_password" name="current_password" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="new_password" class="form-label">New Password</label>
+                                    <input type="password" class="form-control" id="new_password" name="new_password" required>
+                                    <div class="form-text">Password must be at least 8 characters long.</div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="confirm_password" class="form-label">Confirm New Password</label>
+                                    <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+                                </div>
+                                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-key me-2"></i> Change Password
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                    
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Account Security</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-0">Last Login</h6>
+                                        <p class="text-muted mb-0">
+                                            {% if user.last_login %}
+                                                {{ user.last_login.strftime('%B %d, %Y at %I:%M %p') }}
+                                            {% else %}
+                                                Never
+                                            {% endif %}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            <hr>
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-0">Account Status</h6>
+                                        <p class="text-muted mb-0">Active</p>
+                                    </div>
+                                    <span class="badge bg-success">Active</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Activity Tab -->
+                <div class="tab-pane fade" id="activity">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Recent Activity</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if recent_activities %}
+                                <div class="activity-timeline">
+                                    {% for activity in recent_activities %}
+                                        <div class="activity-item">
+                                            <div class="d-flex justify-content-between">
+                                                <h6 class="mb-1">{{ activity.action_type|capitalize }}</h6>
+                                                <span class="activity-timestamp">{{ activity.created_at.strftime('%b %d, %Y %H:%M') }}</span>
+                                            </div>
+                                            <p class="mb-0">
+                                                {% if activity.table_name %}
+                                                    <span class="badge bg-secondary me-1">{{ activity.table_name }}</span>
+                                                {% endif %}
+                                                {{ activity.details or "No details" }}
+                                            </p>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <div class="text-center py-4">
+                                    <div class="mb-3">
+                                        <i class="fas fa-history fa-3x text-muted"></i>
+                                    </div>
+                                    <h6>No activity to show</h6>
+                                    <p class="text-muted">Your recent activities will appear here.</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

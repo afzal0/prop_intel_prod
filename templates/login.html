@@ -1,160 +1,152 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - PropIntel</title>
+{% extends "layout.html" %}
+{% block title %}Login - PropIntel{% endblock %}
+
+{% block extra_head %}
+<style>
+    .auth-container {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #f8f9fa;
+    }
     
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    .auth-card {
+        width: 100%;
+        max-width: 420px;
+        border-radius: 10px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        overflow: hidden;
+    }
     
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    .auth-card .card-header {
+        background-color: #0d6efd;
+        color: white;
+        padding: 1.5rem;
+        border-bottom: 0;
+    }
     
-    <style>
-        body {
-            background-color: #f5f5f5;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-        }
-        
-        .login-container {
-            max-width: 400px;
-            padding: 15px;
-            width: 100%;
-        }
-        
-        .login-card {
-            border: none;
-            border-radius: 1rem;
-            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
-            overflow: hidden;
-        }
-        
-        .card-header {
-            background-color: #007bff;
-            color: white;
-            text-align: center;
-            padding: 1.5rem;
-        }
-        
-        .card-header .logo {
-            font-size: 2rem;
-            margin-bottom: 0.5rem;
-            font-weight: bold;
-        }
-        
-        .card-body {
-            padding: 2rem;
-        }
-        
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
-        
-        .form-control {
-            padding: 0.75rem 1rem;
-            border-radius: 0.5rem;
-        }
-        
-        .btn-login {
-            padding: 0.75rem 1rem;
-            font-weight: bold;
-            border-radius: 0.5rem;
-            width: 100%;
-        }
-        
-        .divider {
-            display: flex;
-            align-items: center;
-            margin: 1.5rem 0;
-        }
-        
-        .divider hr {
-            flex: 1;
-            border-color: #dee2e6;
-        }
-        
-        .divider span {
-            padding: 0 1rem;
-            color: #6c757d;
-        }
-        
-        .guest-login {
-            text-align: center;
-        }
-    </style>
-</head>
-<body>
-    <div class="login-container">
-        <!-- Flash Messages -->
-        {% for category, message in get_flashed_messages(with_categories=true) %}
-            <div class="alert alert-{{ category }} alert-dismissible fade show mb-4" role="alert">
-                {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        {% endfor %}
-        
-        <div class="card login-card">
-            <div class="card-header">
-                <div class="logo">
-                    <i class="fas fa-building me-2"></i>PropIntel
-                </div>
-                <h5>Property Investment Tracker</h5>
-            </div>
-            <div class="card-body">
-                <form method="post" action="{{ url_for('login') }}">
-                    <div class="form-group">
-                        <label for="username" class="form-label">Username</label>
-                        <div class="input-group">
-                            <span class="input-group-text">
-                                <i class="fas fa-user"></i>
-                            </span>
-                            <input type="text" class="form-control" id="username" name="username" placeholder="Enter username" required>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label for="password" class="form-label">Password</label>
-                        <div class="input-group">
-                            <span class="input-group-text">
-                                <i class="fas fa-lock"></i>
-                            </span>
-                            <input type="password" class="form-control" id="password" name="password" placeholder="Enter password" required>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <button type="submit" class="btn btn-primary btn-login">
-                            <i class="fas fa-sign-in-alt me-2"></i>Login
-                        </button>
-                    </div>
-                </form>
-                
-                <div class="divider">
-                    <hr>
-                    <span>OR</span>
-                    <hr>
-                </div>
-                
-                <div class="guest-login">
-                    <form method="post" action="{{ url_for('login') }}">
-                        <input type="hidden" name="username" value="guest">
-                        <input type="hidden" name="password" value="">
-                        <button type="submit" class="btn btn-outline-secondary">
-                            <i class="fas fa-user-shield me-2"></i>Continue as Guest
-                        </button>
-                    </form>
-                </div>
-            </div>
+    .auth-card .card-body {
+        padding: 2rem;
+    }
+    
+    .auth-logo {
+        max-width: 80px;
+        margin-bottom: 1rem;
+    }
+    
+    .form-control:focus {
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+        border-color: #0d6efd;
+    }
+    
+    .btn-primary {
+        padding: 0.5rem 1.5rem;
+    }
+    
+    .input-group-text {
+        background-color: #f8f9fa;
+        border-right: none;
+    }
+    
+    .input-group .form-control {
+        border-left: none;
+    }
+    
+    .divider {
+        display: flex;
+        align-items: center;
+        margin: 1.5rem 0;
+    }
+    
+    .divider hr {
+        flex: 1;
+        border-color: #dee2e6;
+    }
+    
+    .divider span {
+        padding: 0 1rem;
+        color: #6c757d;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-card card">
+        <div class="card-header text-center">
+            <img src="{{ url_for('static', filename='logo.png') }}" alt="PropIntel Logo" class="auth-logo" onerror="this.src='{{ url_for('static', filename='images/property-placeholder.jpg') }}'">
+            <h3 class="mb-0">Welcome Back</h3>
+            <p class="mb-0">Login to access your PropIntel account</p>
         </div>
-        
-        <div class="text-center mt-3 text-muted">
-            <small>&copy; 2025 PropIntel. All rights reserved.</small>
+        <div class="card-body">
+            <form method="post" action="{{ url_for('login') }}">
+                <div class="mb-3">
+                    <label for="username" class="form-label">Username</label>
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="fas fa-user"></i>
+                        </span>
+                        <input type="text" class="form-control" id="username" name="username" placeholder="Enter your username" required>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between">
+                        <label for="password" class="form-label">Password</label>
+                        <a href="#" class="text-decoration-none small">Forgot password?</a>
+                    </div>
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="fas fa-lock"></i>
+                        </span>
+                        <input type="password" class="form-control" id="password" name="password" placeholder="Enter your password" required>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="remember" name="remember">
+                        <label class="form-check-label" for="remember">
+                            Remember me
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-primary">Login</button>
+                </div>
+            </form>
+            
+            <div class="divider">
+                <hr>
+                <span>OR</span>
+                <hr>
+            </div>
+            
+            <div class="text-center">
+                <form method="post" action="{{ url_for('login') }}">
+                    <input type="hidden" name="username" value="guest">
+                    <input type="hidden" name="password" value="">
+                    <button type="submit" class="btn btn-outline-secondary">
+                        <i class="fas fa-user-shield me-2"></i>Continue as Guest
+                    </button>
+                </form>
+            </div>
+            
+            <div class="mt-4 text-center">
+                <p>Don't have an account? <a href="{{ url_for('register') }}">Sign Up</a></p>
+            </div>
         </div>
     </div>
-    
-    <!-- Bootstrap JS Bundle with Popper -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Focus on username field
+        document.getElementById('username').focus();
+    });
+</script>
+{% endblock %}

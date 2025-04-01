@@ -1,0 +1,14 @@
+[database]
+# Local PostgreSQL connection parameters
+user = postgres
+password = your_password_here
+host = localhost
+port = 5432
+database = propintel
+
+# Sample Azure connection
+# user = prop_intel
+# password = your_password_here
+# host = propintel.postgres.database.azure.com
+# port = 5432
+# database = postgres
