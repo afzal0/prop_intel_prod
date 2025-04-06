@@ -1,2 +1,13 @@
 my-flask-app.tar
 my-flask-app.tar
+
+# Database credentials
+*.env
+.env
+database.ini
+db_config.ini
+key.txt
+key.txt.pub
+secret_key.txt
+*_credentials.txt
+*_credentials.json

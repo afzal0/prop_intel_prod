@@ -69,7 +69,13 @@
             </p>
         </div>
         <div class="col-md-4 d-flex align-items-center justify-content-center">
+            {% if g.has_logo %}
             <img src="{{ url_for('static', filename='logo.png') }}" alt="PropIntel Logo" class="img-fluid" style="max-height: 180px;">
+            {% else %}
+            <div class="bg-light d-flex align-items-center justify-content-center" style="height: 180px; width: 180px; border-radius: 50%;">
+                <h1 class="display-4 text-primary">PI</h1>
+            </div>
+            {% endif %}
         </div>
     </div>
     

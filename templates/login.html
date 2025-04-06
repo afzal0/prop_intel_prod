@@ -75,7 +75,13 @@
 <div class="auth-container">
     <div class="auth-card card">
         <div class="card-header text-center">
+            {% if g.has_logo %}
             <img src="{{ url_for('static', filename='logo.png') }}" alt="PropIntel Logo" class="auth-logo">
+            {% else %}
+            <div class="auth-logo d-flex align-items-center justify-content-center bg-light rounded-circle" style="width: 80px; height: 80px;">
+                <span class="h3 text-primary mb-0">PI</span>
+            </div>
+            {% endif %}
             <h3 class="mb-0">Welcome Back</h3>
             <p class="mb-0">Login to access your PropIntel account</p>
         </div>
