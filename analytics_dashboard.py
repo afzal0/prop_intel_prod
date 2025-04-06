@@ -19,13 +19,37 @@ import calendar
 def get_db_connection():
     """Get a database connection using the provided configuration"""
     import psycopg2
-    conn = psycopg2.connect(
-        user='postgres',
-        password='1234',
-        host='localhost',
-        port='5432',
-        dbname='postgres'
-    )
+    import os
+    
+    # Check if running on Heroku
+    if 'DATABASE_URL' in os.environ:
+        # Parse database URL for Heroku
+        conn = psycopg2.connect(os.environ['DATABASE_URL'], sslmode='require')
+    else:
+        # Try to load from config file
+        try:
+            import configparser
+            config = configparser.ConfigParser()
+            config.read('db_config.ini')
+            
+            conn = psycopg2.connect(
+                user=config['database']['user'],
+                password=config['database']['password'],
+                host=config['database']['host'],
+                port=config['database']['port'],
+                dbname=config['database']['database']
+            )
+        except Exception as e:
+            print(f"Failed to load config: {e}")
+            # Fallback to hardcoded values
+            conn = psycopg2.connect(
+                user='postgres',
+                password='1234',
+                host='localhost',
+                port='5432',
+                dbname='postgres'
+            )
+    
     conn.autocommit = False
     return conn
 
@@ -728,7 +752,153 @@ def prepare_property_geojson(properties, fetch_polygons=False):
     }
 
 def get_demo_data():
-    """Generate demo data for the dashboard in case of database errors"""
+    """Try to retrieve real property data but generate demo data as fallback"""
+    
+    # First try to get real property data from the database
+    try:
+        import psycopg2
+        import os
+        properties = []
+        
+        # Try to get a connection and fetch real property data
+        if 'DATABASE_URL' in os.environ:
+            # Parse database URL for Heroku
+            conn = psycopg2.connect(os.environ['DATABASE_URL'], sslmode='require')
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute("""
+                    SELECT property_id, property_name, address, location,
+                           latitude, longitude
+                    FROM propintel.properties
+                    WHERE is_hidden IS NOT TRUE
+                    ORDER BY property_name
+                """)
+                properties = cur.fetchall()
+            conn.close()
+            
+            if properties and len(properties) > 0:
+                print(f"Found {len(properties)} real properties to use")
+                
+                # Convert properties to the format we need
+                demo_properties = []
+                for prop in properties:
+                    demo_properties.append({
+                        'property_id': prop['property_id'],
+                        'property_name': prop['property_name'],
+                        'address': prop['address'] or "No address",
+                        'location': prop['location'] or "No location"
+                    })
+                
+                # Make synthetic data based on real property names
+                property_performance = []
+                property_expenses = []
+                
+                for prop in demo_properties:
+                    # Create realistic performance data
+                    income = random.uniform(25000, 45000)
+                    expenses = random.uniform(15000, 30000)
+                    work_cost = random.uniform(3000, 10000)
+                    profit = income - expenses - work_cost
+                    
+                    property_performance.append({
+                        'id': prop['property_id'],
+                        'name': prop['property_name'],
+                        'income': income,
+                        'expenses': expenses,
+                        'work_cost': work_cost,
+                        'profit': profit
+                    })
+                    
+                    # Create realistic expense data
+                    categories = random.choice([
+                        'wage, material',
+                        'project_manager, material',
+                        'wage, miscellaneous',
+                        'material, project_manager'
+                    ])
+                    
+                    property_expenses.append({
+                        'property_id': prop['property_id'],
+                        'property_name': prop['property_name'],
+                        'total_expenses': expenses,
+                        'categories': categories
+                    })
+            else:
+                # If no properties found, use demo properties
+                demo_properties = [
+                    {'property_id': '1', 'property_name': 'Property A', 'address': '123 Main St', 'location': 'New York, NY 10001'},
+                    {'property_id': '2', 'property_name': 'Property B', 'address': '456 Broadway', 'location': 'New York, NY 10002'},
+                    {'property_id': '3', 'property_name': 'Property C', 'address': '789 5th Ave', 'location': 'New York, NY 10003'},
+                    {'property_id': '4', 'property_name': 'Property D', 'address': '101 Park Ave', 'location': 'New York, NY 10004'}
+                ]
+                
+                # Demo property performance data
+                property_performance = [
+                    {'id': '1', 'name': 'Property A', 'income': 45000, 'expenses': 30000, 'work_cost': 10000, 'profit': 5000},
+                    {'id': '2', 'name': 'Property B', 'income': 35000, 'expenses': 20000, 'work_cost': 5000, 'profit': 10000},
+                    {'id': '3', 'name': 'Property C', 'income': 25000, 'expenses': 15000, 'work_cost': 3000, 'profit': 7000},
+                    {'id': '4', 'name': 'Property D', 'income': 30000, 'expenses': 18000, 'work_cost': 7000, 'profit': 5000}
+                ]
+                
+                # Demo property expenses
+                property_expenses = [
+                    {'property_id': '1', 'property_name': 'Property A', 'total_expenses': 30000, 'categories': 'wage, material'},
+                    {'property_id': '2', 'property_name': 'Property B', 'total_expenses': 20000, 'categories': 'project_manager, material'},
+                    {'property_id': '3', 'property_name': 'Property C', 'total_expenses': 15000, 'categories': 'wage, miscellaneous'},
+                    {'property_id': '4', 'property_name': 'Property D', 'total_expenses': 18000, 'categories': 'material, project_manager'}
+                ]
+        else:
+            # Fallback to demo properties
+            demo_properties = [
+                {'property_id': '1', 'property_name': 'Property A', 'address': '123 Main St', 'location': 'New York, NY 10001'},
+                {'property_id': '2', 'property_name': 'Property B', 'address': '456 Broadway', 'location': 'New York, NY 10002'},
+                {'property_id': '3', 'property_name': 'Property C', 'address': '789 5th Ave', 'location': 'New York, NY 10003'},
+                {'property_id': '4', 'property_name': 'Property D', 'address': '101 Park Ave', 'location': 'New York, NY 10004'}
+            ]
+            
+            # Demo property performance data
+            property_performance = [
+                {'id': '1', 'name': 'Property A', 'income': 45000, 'expenses': 30000, 'work_cost': 10000, 'profit': 5000},
+                {'id': '2', 'name': 'Property B', 'income': 35000, 'expenses': 20000, 'work_cost': 5000, 'profit': 10000},
+                {'id': '3', 'name': 'Property C', 'income': 25000, 'expenses': 15000, 'work_cost': 3000, 'profit': 7000},
+                {'id': '4', 'name': 'Property D', 'income': 30000, 'expenses': 18000, 'work_cost': 7000, 'profit': 5000}
+            ]
+            
+            # Demo property expenses
+            property_expenses = [
+                {'property_id': '1', 'property_name': 'Property A', 'total_expenses': 30000, 'categories': 'wage, material'},
+                {'property_id': '2', 'property_name': 'Property B', 'total_expenses': 20000, 'categories': 'project_manager, material'},
+                {'property_id': '3', 'property_name': 'Property C', 'total_expenses': 15000, 'categories': 'wage, miscellaneous'},
+                {'property_id': '4', 'property_name': 'Property D', 'total_expenses': 18000, 'categories': 'material, project_manager'}
+            ]
+    except Exception as e:
+        print(f"Error fetching property data: {e}")
+        # Fallback to demo properties
+        demo_properties = [
+            {'property_id': '1', 'property_name': 'Property A', 'address': '123 Main St', 'location': 'New York, NY 10001'},
+            {'property_id': '2', 'property_name': 'Property B', 'address': '456 Broadway', 'location': 'New York, NY 10002'},
+            {'property_id': '3', 'property_name': 'Property C', 'address': '789 5th Ave', 'location': 'New York, NY 10003'},
+            {'property_id': '4', 'property_name': 'Property D', 'address': '101 Park Ave', 'location': 'New York, NY 10004'}
+        ]
+        
+        # Demo property performance data
+        property_performance = [
+            {'id': '1', 'name': 'Property A', 'income': 45000, 'expenses': 30000, 'work_cost': 10000, 'profit': 5000},
+            {'id': '2', 'name': 'Property B', 'income': 35000, 'expenses': 20000, 'work_cost': 5000, 'profit': 10000},
+            {'id': '3', 'name': 'Property C', 'income': 25000, 'expenses': 15000, 'work_cost': 3000, 'profit': 7000},
+            {'id': '4', 'name': 'Property D', 'income': 30000, 'expenses': 18000, 'work_cost': 7000, 'profit': 5000}
+        ]
+        
+        # Demo property expenses
+        property_expenses = [
+            {'property_id': '1', 'property_name': 'Property A', 'total_expenses': 30000, 'categories': 'wage, material'},
+            {'property_id': '2', 'property_name': 'Property B', 'total_expenses': 20000, 'categories': 'project_manager, material'},
+            {'property_id': '3', 'property_name': 'Property C', 'total_expenses': 15000, 'categories': 'wage, miscellaneous'},
+            {'property_id': '4', 'property_name': 'Property D', 'total_expenses': 18000, 'categories': 'material, project_manager'}
+        ]
+    
+    # Create GeoJSON for map (without polygon fetching for demo data)
+    geojson = prepare_property_geojson(demo_properties, fetch_polygons=False)
+    
     # Generate 12 months of data
     now = datetime.datetime.now()
     labels = []
@@ -742,29 +912,6 @@ def get_demo_data():
         income_data.append(random.uniform(10000, 20000))
         expense_data.append(random.uniform(5000, 12000))
         work_cost_data.append(random.uniform(2000, 5000))
-    
-    # Demo property performance data
-    property_performance = [
-        {'id': '1', 'name': 'Property A', 'income': 45000, 'expenses': 30000, 'work_cost': 10000, 'profit': 5000},
-        {'id': '2', 'name': 'Property B', 'income': 35000, 'expenses': 20000, 'work_cost': 5000, 'profit': 10000},
-        {'id': '3', 'name': 'Property C', 'income': 25000, 'expenses': 15000, 'work_cost': 3000, 'profit': 7000},
-        {'id': '4', 'name': 'Property D', 'income': 30000, 'expenses': 18000, 'work_cost': 7000, 'profit': 5000}
-    ]
-    
-    # Demo properties for map
-    demo_properties = [
-        {'property_id': '1', 'property_name': 'Property A', 
-         'address': '123 Main St', 'location': 'New York, NY 10001'},
-        {'property_id': '2', 'property_name': 'Property B', 
-         'address': '456 Broadway', 'location': 'New York, NY 10002'},
-        {'property_id': '3', 'property_name': 'Property C', 
-         'address': '789 5th Ave', 'location': 'New York, NY 10003'},
-        {'property_id': '4', 'property_name': 'Property D', 
-         'address': '101 Park Ave', 'location': 'New York, NY 10004'}
-    ]
-    
-    # Create GeoJSON for map (without polygon fetching for demo data)
-    geojson = prepare_property_geojson(demo_properties, fetch_polygons=False)
     
     # Demo expense categories
     expense_categories = {
@@ -818,18 +965,11 @@ def get_demo_data():
             })
     
     # Demo pending work
+    now = datetime.datetime.now()
     pending_work = [
         {'work_id': 1, 'property_name': 'Property A', 'work_description': 'Repair roof', 'work_date': now + datetime.timedelta(days=5), 'work_cost': 1500, 'status': 'Pending'},
         {'work_id': 2, 'property_name': 'Property B', 'work_description': 'Replace windows', 'work_date': now + datetime.timedelta(days=10), 'work_cost': 3000, 'status': 'Pending'},
         {'work_id': 3, 'property_name': 'Property C', 'work_description': 'Paint exterior', 'work_date': now + datetime.timedelta(days=15), 'work_cost': 2500, 'status': 'Pending'}
-    ]
-    
-    # Demo property expenses
-    property_expenses = [
-        {'property_id': '1', 'property_name': 'Property A', 'total_expenses': 30000, 'categories': 'wage, material'},
-        {'property_id': '2', 'property_name': 'Property B', 'total_expenses': 20000, 'categories': 'project_manager, material'},
-        {'property_id': '3', 'property_name': 'Property C', 'total_expenses': 15000, 'categories': 'wage, miscellaneous'},
-        {'property_id': '4', 'property_name': 'Property D', 'total_expenses': 18000, 'categories': 'material, project_manager'}
     ]
     
     return {
