@@ -1,0 +1,689 @@
+{% extends "layout.html" %}
+{% block title %}Budget Planner - PropIntel{% endblock %}
+
+{% block extra_head %}
+<style>
+    .budget-container {
+        padding: 1.5rem 0;
+    }
+    
+    .budget-card {
+        border-radius: 10px;
+        overflow: hidden;
+        margin-bottom: 1.5rem;
+        height: 100%;
+        transition: all 0.3s ease;
+    }
+    
+    .budget-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    }
+    
+    .budget-card .card-header {
+        padding: 1rem 1.25rem;
+        background-color: #f8f9fa;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    }
+    
+    .budget-card .card-body {
+        padding: 1.25rem;
+    }
+    
+    .budget-chart-container {
+        height: 300px;
+        position: relative;
+    }
+    
+    .budget-item {
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        transition: background-color 0.2s;
+    }
+    
+    .budget-item:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .budget-item:last-child {
+        border-bottom: none;
+    }
+    
+    .budget-item-title {
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+    }
+    
+    .budget-item-details {
+        font-size: 0.875rem;
+        color: #6c757d;
+    }
+    
+    .budget-item-amount {
+        font-weight: 700;
+        font-size: 1.1rem;
+    }
+    
+    .budget-progress {
+        height: 0.5rem;
+        border-radius: 1rem;
+        margin-top: 0.5rem;
+    }
+    
+    .budget-header-action {
+        font-size: 0.875rem;
+    }
+    
+    .add-budget-btn {
+        position: fixed;
+        bottom: 2rem;
+        right: 2rem;
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background-color: var(--primary-color);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+        z-index: 100;
+        transition: all 0.3s;
+    }
+    
+    .add-budget-btn:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+        color: white;
+    }
+    
+    .add-budget-btn i {
+        font-size: 1.5rem;
+    }
+    
+    .category-tag {
+        display: inline-block;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.375rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        margin-right: 0.5rem;
+    }
+    
+    .category-tag.wage {
+        background-color: rgba(40, 167, 69, 0.1);
+        color: #28a745;
+    }
+    
+    .category-tag.project_manager {
+        background-color: rgba(23, 162, 184, 0.1);
+        color: #17a2b8;
+    }
+    
+    .category-tag.material {
+        background-color: rgba(67, 97, 238, 0.1);
+        color: #4361ee;
+    }
+    
+    .category-tag.miscellaneous {
+        background-color: rgba(108, 117, 125, 0.1);
+        color: #6c757d;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="budget-container">
+    <div class="container-fluid">
+        <!-- Budget Planner Header -->
+        <div class="row align-items-center mb-4">
+            <div class="col-md-8">
+                <h1 class="h2 mb-0">Budget Planner</h1>
+                <p class="text-muted mb-0">Plan and track your property budgets</p>
+            </div>
+            <div class="col-md-4 text-end">
+                <button class="btn btn-outline-primary me-2" id="exportBudget">
+                    <i class="fas fa-download me-2"></i>Export
+                </button>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newBudgetModal">
+                    <i class="fas fa-plus me-2"></i>New Budget
+                </button>
+            </div>
+        </div>
+        
+        <!-- Property Filter -->
+        <div class="card mb-4 shadow-sm">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <label for="propertyFilter" class="form-label">Property</label>
+                        <select id="propertyFilter" class="form-select">
+                            <option value="all" selected>All Properties</option>
+                            {% for property in properties %}
+                            <option value="{{ property.property_id }}">{{ property.property_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="yearFilter" class="form-label">Year</label>
+                        <select id="yearFilter" class="form-select">
+                            <option value="2025" selected>2025</option>
+                            <option value="2024">2024</option>
+                            <option value="2023">2023</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="statusFilter" class="form-label">Status</label>
+                        <select id="statusFilter" class="form-select">
+                            <option value="all" selected>All Statuses</option>
+                            <option value="active">Active</option>
+                            <option value="completed">Completed</option>
+                            <option value="draft">Draft</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Budget Overview -->
+        <div class="row g-3 mb-4">
+            <div class="col-lg-8">
+                <div class="card budget-card shadow-sm">
+                    <div class="card-header">
+                        <h6 class="card-title mb-0">Annual Budget Overview</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="budget-chart-container">
+                            <canvas id="budgetOverviewChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="card budget-card shadow-sm">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h6 class="card-title mb-0">Budget Allocation</h6>
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="budgetAllocationMenu" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-filter"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="budgetAllocationMenu">
+                                <li><a class="dropdown-item active" href="#">By Category</a></li>
+                                <li><a class="dropdown-item" href="#">By Property</a></li>
+                                <li><a class="dropdown-item" href="#">By Quarter</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="budget-chart-container">
+                            <canvas id="budgetAllocationChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Budget Details -->
+        <div class="row g-3">
+            <!-- Active Budgets -->
+            <div class="col-lg-6">
+                <div class="card budget-card shadow-sm">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h6 class="card-title mb-0">Active Budgets</h6>
+                        <div class="budget-header-action">
+                            <a href="#" class="text-decoration-none">View All <i class="fas fa-chevron-right ms-1 small"></i></a>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="list-group list-group-flush">
+                            <div class="budget-item">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <div class="budget-item-title">Property A - Q1 Renovation</div>
+                                        <div class="budget-item-details">Jan 2025 - Mar 2025</div>
+                                        <div class="mt-2">
+                                            <span class="category-tag material">Material</span>
+                                            <span class="category-tag wage">Wage</span>
+                                        </div>
+                                    </div>
+                                    <div class="text-end">
+                                        <div class="budget-item-amount text-primary">$15,000</div>
+                                        <small class="text-muted">$8,250 spent (55%)</small>
+                                    </div>
+                                </div>
+                                <div class="progress budget-progress">
+                                    <div class="progress-bar bg-primary" role="progressbar" style="width: 55%" aria-valuenow="55" aria-valuemin="0" aria-valuemax="100"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="budget-item">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <div class="budget-item-title">Property B - Maintenance</div>
+                                        <div class="budget-item-details">Feb 2025 - Jun 2025</div>
+                                        <div class="mt-2">
+                                            <span class="category-tag material">Material</span>
+                                            <span class="category-tag project_manager">Project Manager</span>
+                                        </div>
+                                    </div>
+                                    <div class="text-end">
+                                        <div class="budget-item-amount text-primary">$8,000</div>
+                                        <small class="text-muted">$2,400 spent (30%)</small>
+                                    </div>
+                                </div>
+                                <div class="progress budget-progress">
+                                    <div class="progress-bar bg-primary" role="progressbar" style="width: 30%" aria-valuenow="30" aria-valuemin="0" aria-valuemax="100"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="budget-item">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <div class="budget-item-title">Property C - Kitchen Update</div>
+                                        <div class="budget-item-details">Mar 2025 - Apr 2025</div>
+                                        <div class="mt-2">
+                                            <span class="category-tag material">Material</span>
+                                            <span class="category-tag wage">Wage</span>
+                                        </div>
+                                    </div>
+                                    <div class="text-end">
+                                        <div class="budget-item-amount text-primary">$12,500</div>
+                                        <small class="text-muted">$1,250 spent (10%)</small>
+                                    </div>
+                                </div>
+                                <div class="progress budget-progress">
+                                    <div class="progress-bar bg-primary" role="progressbar" style="width: 10%" aria-valuenow="10" aria-valuemin="0" aria-valuemax="100"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Upcoming Expenses -->
+            <div class="col-lg-6">
+                <div class="card budget-card shadow-sm">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h6 class="card-title mb-0">Upcoming Planned Expenses</h6>
+                        <div class="budget-header-action">
+                            <a href="#" class="text-decoration-none">View All <i class="fas fa-chevron-right ms-1 small"></i></a>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Description</th>
+                                        <th>Property</th>
+                                        <th>Date</th>
+                                        <th>Amount</th>
+                                        <th>Category</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Plumbing repairs</td>
+                                        <td>Property A</td>
+                                        <td>Apr 15, 2025</td>
+                                        <td>$1,200</td>
+                                        <td><span class="category-tag material">Material</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>Interior painting</td>
+                                        <td>Property B</td>
+                                        <td>Apr 22, 2025</td>
+                                        <td>$3,500</td>
+                                        <td><span class="category-tag wage">Wage</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>New appliances</td>
+                                        <td>Property C</td>
+                                        <td>May 1, 2025</td>
+                                        <td>$4,800</td>
+                                        <td><span class="category-tag material">Material</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>Landscaping</td>
+                                        <td>Property A</td>
+                                        <td>May 10, 2025</td>
+                                        <td>$1,500</td>
+                                        <td><span class="category-tag miscellaneous">Miscellaneous</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>HVAC maintenance</td>
+                                        <td>Property B</td>
+                                        <td>May 15, 2025</td>
+                                        <td>$850</td>
+                                        <td><span class="category-tag project_manager">Project Manager</span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- New Budget Modal -->
+<div class="modal fade" id="newBudgetModal" tabindex="-1" aria-labelledby="newBudgetModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="newBudgetModalLabel">Create New Budget</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="newBudgetForm">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="budgetTitle" class="form-label">Budget Title</label>
+                            <input type="text" class="form-control" id="budgetTitle" placeholder="e.g. Q2 Renovation" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="budgetProperty" class="form-label">Property</label>
+                            <select class="form-select" id="budgetProperty" required>
+                                <option value="" selected disabled>Select a property</option>
+                                {% for property in properties %}
+                                <option value="{{ property.property_id }}">{{ property.property_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="budgetStartDate" class="form-label">Start Date</label>
+                            <input type="date" class="form-control" id="budgetStartDate" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="budgetEndDate" class="form-label">End Date</label>
+                            <input type="date" class="form-control" id="budgetEndDate" required>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="budgetAmount" class="form-label">Total Budget Amount</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" class="form-control" id="budgetAmount" placeholder="0.00" min="0" step="0.01" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="budgetStatus" class="form-label">Status</label>
+                            <select class="form-select" id="budgetStatus" required>
+                                <option value="active" selected>Active</option>
+                                <option value="draft">Draft</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Budget Allocation</label>
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="wageBudget" class="form-label">Wage</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">$</span>
+                                            <input type="number" class="form-control allocation-input" id="wageBudget" placeholder="0.00" min="0" step="0.01">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="pmBudget" class="form-label">Project Manager</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">$</span>
+                                            <input type="number" class="form-control allocation-input" id="pmBudget" placeholder="0.00" min="0" step="0.01">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="materialBudget" class="form-label">Material</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">$</span>
+                                            <input type="number" class="form-control allocation-input" id="materialBudget" placeholder="0.00" min="0" step="0.01">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="miscBudget" class="form-label">Miscellaneous</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">$</span>
+                                            <input type="number" class="form-control allocation-input" id="miscBudget" placeholder="0.00" min="0" step="0.01">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="progress">
+                                    <div class="progress-bar bg-success" id="wageProgressBar" role="progressbar" style="width: 25%" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
+                                    <div class="progress-bar bg-info" id="pmProgressBar" role="progressbar" style="width: 25%" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
+                                    <div class="progress-bar bg-primary" id="materialProgressBar" role="progressbar" style="width: 25%" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
+                                    <div class="progress-bar bg-secondary" id="miscProgressBar" role="progressbar" style="width: 25%" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
+                                </div>
+                                <small class="text-muted mt-2 d-block" id="allocationTotal">Total allocated: $0.00 of $0.00</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="budgetNotes" class="form-label">Notes</label>
+                        <textarea class="form-control" id="budgetNotes" rows="3" placeholder="Additional notes or details about this budget"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="saveBudgetBtn">Save Budget</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Budget Button (Mobile) -->
+<a href="#" class="add-budget-btn d-lg-none" data-bs-toggle="modal" data-bs-target="#newBudgetModal">
+    <i class="fas fa-plus"></i>
+</a>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        initializeCharts();
+        setupEventListeners();
+    });
+    
+    function initializeCharts() {
+        // Budget Overview Chart
+        const budgetOverviewCtx = document.getElementById('budgetOverviewChart').getContext('2d');
+        const budgetOverviewChart = new Chart(budgetOverviewCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                datasets: [
+                    {
+                        label: 'Budget',
+                        data: [12000, 15000, 18000, 20000, 16000, 14000, 13000, 15000, 17000, 19000, 16000, 14000],
+                        backgroundColor: 'rgba(67, 97, 238, 0.3)',
+                        borderColor: 'rgba(67, 97, 238, 1)',
+                        borderWidth: 1,
+                        type: 'line',
+                        fill: true,
+                        tension: 0.4
+                    },
+                    {
+                        label: 'Spent',
+                        data: [10000, 13500, 15000, 5000, 2000, 0, 0, 0, 0, 0, 0, 0],
+                        backgroundColor: 'rgba(40, 167, 69, 0.7)',
+                        borderColor: 'rgba(40, 167, 69, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Projected',
+                        data: [0, 0, 0, 0, 12000, 14000, 13000, 15000, 17000, 19000, 16000, 14000],
+                        backgroundColor: 'rgba(108, 117, 125, 0.3)',
+                        borderColor: 'rgba(108, 117, 125, 1)',
+                        borderWidth: 1,
+                        borderDash: [5, 5]
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const value = context.raw;
+                                return context.dataset.label + ': $' + value.toLocaleString();
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return '$' + value.toLocaleString();
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Budget Allocation Chart
+        const budgetAllocationCtx = document.getElementById('budgetAllocationChart').getContext('2d');
+        const budgetAllocationChart = new Chart(budgetAllocationCtx, {
+            type: 'pie',
+            data: {
+                labels: ['Wage', 'Project Manager', 'Material', 'Miscellaneous'],
+                datasets: [{
+                    data: [35, 15, 40, 10],
+                    backgroundColor: [
+                        'rgba(40, 167, 69, 0.7)',
+                        'rgba(23, 162, 184, 0.7)',
+                        'rgba(67, 97, 238, 0.7)',
+                        'rgba(108, 117, 125, 0.7)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const value = context.raw;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = Math.round((value / total) * 100);
+                                return context.label + ': ' + percentage + '%';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
+    function setupEventListeners() {
+        // Budget form validation and progress bar update
+        const budgetAmountInput = document.getElementById('budgetAmount');
+        const allocationInputs = document.querySelectorAll('.allocation-input');
+        const allocationTotalElement = document.getElementById('allocationTotal');
+        const wageProgressBar = document.getElementById('wageProgressBar');
+        const pmProgressBar = document.getElementById('pmProgressBar');
+        const materialProgressBar = document.getElementById('materialProgressBar');
+        const miscProgressBar = document.getElementById('miscProgressBar');
+        
+        // Update allocation progress bars when inputs change
+        budgetAmountInput.addEventListener('input', updateAllocationProgress);
+        allocationInputs.forEach(input => {
+            input.addEventListener('input', updateAllocationProgress);
+        });
+        
+        function updateAllocationProgress() {
+            const totalBudget = parseFloat(budgetAmountInput.value) || 0;
+            let wageAmount = parseFloat(document.getElementById('wageBudget').value) || 0;
+            let pmAmount = parseFloat(document.getElementById('pmBudget').value) || 0;
+            let materialAmount = parseFloat(document.getElementById('materialBudget').value) || 0;
+            let miscAmount = parseFloat(document.getElementById('miscBudget').value) || 0;
+            
+            const totalAllocated = wageAmount + pmAmount + materialAmount + miscAmount;
+            
+            // Update progress bars
+            if (totalBudget > 0) {
+                wageProgressBar.style.width = ((wageAmount / totalBudget) * 100) + '%';
+                pmProgressBar.style.width = ((pmAmount / totalBudget) * 100) + '%';
+                materialProgressBar.style.width = ((materialAmount / totalBudget) * 100) + '%';
+                miscProgressBar.style.width = ((miscAmount / totalBudget) * 100) + '%';
+            } else {
+                wageProgressBar.style.width = '0%';
+                pmProgressBar.style.width = '0%';
+                materialProgressBar.style.width = '0%';
+                miscProgressBar.style.width = '0%';
+            }
+            
+            // Update total text
+            allocationTotalElement.textContent = `Total allocated: $${totalAllocated.toFixed(2)} of $${totalBudget.toFixed(2)}`;
+            
+            // Highlight if over-allocated
+            if (totalAllocated > totalBudget && totalBudget > 0) {
+                allocationTotalElement.classList.add('text-danger');
+                allocationTotalElement.classList.remove('text-muted');
+            } else {
+                allocationTotalElement.classList.remove('text-danger');
+                allocationTotalElement.classList.add('text-muted');
+            }
+        }
+        
+        // Save budget button
+        document.getElementById('saveBudgetBtn').addEventListener('click', function() {
+            const form = document.getElementById('newBudgetForm');
+            
+            // Check form validity
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+            
+            // Check allocation total
+            const totalBudget = parseFloat(budgetAmountInput.value) || 0;
+            let wageAmount = parseFloat(document.getElementById('wageBudget').value) || 0;
+            let pmAmount = parseFloat(document.getElementById('pmBudget').value) || 0;
+            let materialAmount = parseFloat(document.getElementById('materialBudget').value) || 0;
+            let miscAmount = parseFloat(document.getElementById('miscBudget').value) || 0;
+            
+            const totalAllocated = wageAmount + pmAmount + materialAmount + miscAmount;
+            
+            if (totalAllocated > totalBudget) {
+                alert('Your budget allocations exceed the total budget amount. Please adjust the values.');
+                return;
+            }
+            
+            // Demo just shows success message
+            alert('Budget created successfully!');
+            
+            // Close modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('newBudgetModal'));
+            modal.hide();
+        });
+        
+        // Filter change events
+        document.getElementById('propertyFilter').addEventListener('change', updateBudgetData);
+        document.getElementById('yearFilter').addEventListener('change', updateBudgetData);
+        document.getElementById('statusFilter').addEventListener('change', updateBudgetData);
+        
+        function updateBudgetData() {
+            // In a real app, this would fetch updated data from the server
+            console.log('Updating budget data with new filters');
+        }
+    }
+</script>
+{% endblock %}

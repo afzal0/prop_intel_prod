@@ -64,38 +64,186 @@
 
 {% block scripts %}
 <script>
-    // Initialize full map
-    const map = L.map('full-map').setView([{{ center_lat }}, {{ center_lng }}], 11);
+    // Load Leaflet heat plugin
+    document.write('<script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"><\/script>');
     
-    // Add OpenStreetMap tiles
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-    }).addTo(map);
+    // Initialize full map with enhanced controls
+    const map = L.map('full-map', {
+        zoomControl: true,
+        scrollWheelZoom: true, 
+        fullscreenControl: true
+    }).setView([{{ center_lat }}, {{ center_lng }}], 11);
+    
+    // Add scale control
+    L.control.scale().addTo(map);
+    
+    // Map tile layers
+    const baseLayers = {
+        "Standard": L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map),
+        "Satellite": L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+            attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+        }),
+        "Dark": L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+        }),
+        "Terrain": L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
+            attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ, TomTom, Intermap, iPC, USGS, FAO, NPS, NRCAN, GeoBase, Kadaster NL, Ordnance Survey, Esri Japan, METI, Esri China (Hong Kong), and the GIS User Community'
+        })
+    };
+    
+    // Add layer control to map
+    L.control.layers(baseLayers, null, {position: 'topright'}).addTo(map);
     
     // Add property markers
     const properties = {{ geojson|safe }};
     const propertyList = document.getElementById('property-list');
     const markers = {};
     
-    // Create GeoJSON layer with custom markers and popups
+    // Create work heatmap layer
+    const heatmapData = [];
+    properties.features.forEach(feature => {
+        if (feature.properties.work_count > 0) {
+            const coords = feature.geometry.coordinates;
+            heatmapData.push([
+                coords[1], 
+                coords[0], 
+                Math.min(feature.properties.work_count / 2, 1) // Normalize intensity
+            ]);
+        }
+    });
+    
+    // Create heatmap layer if we have data
+    let heatmapLayer = null;
+    if (heatmapData.length > 0) {
+        heatmapLayer = L.heatLayer(heatmapData, {
+            radius: 25,
+            blur: 15,
+            maxZoom: 17,
+            max: 1.0,
+            gradient: {0.4: 'blue', 0.65: 'lime', 0.85: 'yellow', 1.0: 'red'}
+        });
+    }
+    
+    // Overlay layers
+    const overlays = {
+        "Properties": L.layerGroup().addTo(map),
+        "Work Heatmap": heatmapLayer
+    };
+    
+    // Update layer control
+    L.control.layers(baseLayers, overlays, {position: 'topright'}).addTo(map);
+    
+    // Create GeoJSON layer with custom markers/polygons and popups
     const propertiesLayer = L.geoJSON(properties, {
         pointToLayer: function(feature, latlng) {
-            const marker = L.marker(latlng);
+            // Only called for Point geometries
+            // Determine marker style based on work count
+            const workCount = feature.properties.work_count || 0;
+            const expenseCount = feature.properties.expense_count || 0;
+            const incomeCount = feature.properties.income_count || 0;
+            
+            // Determine if property might be over budget
+            const potentiallyOverBudget = feature.properties.is_over_budget || false;
+            
+            // Create custom icon
+            const markerHtml = `
+                <div class="custom-marker ${potentiallyOverBudget ? 'over-budget' : ''}" 
+                     style="background-color: ${potentiallyOverBudget ? '#dc3545' : '#0d6efd'}; 
+                            width: 32px; height: 32px; 
+                            border-radius: 50%; 
+                            display: flex; 
+                            justify-content: center; 
+                            align-items: center; 
+                            color: white; 
+                            font-weight: bold; 
+                            border: 2px solid white; 
+                            box-shadow: 0 2px 5px rgba(0,0,0,0.3);">
+                    <i class="fas fa-home"></i>
+                </div>`;
+            
+            const customIcon = L.divIcon({
+                html: markerHtml,
+                className: '',
+                iconSize: [32, 32],
+                iconAnchor: [16, 16]
+            });
+            
+            const marker = L.marker(latlng, {icon: customIcon});
             markers[feature.properties.id] = marker;
             return marker;
+        },
+        style: function(feature) {
+            // Style for Polygon geometries (buildings)
+            // Determine if property might be over budget
+            const potentiallyOverBudget = feature.properties.is_over_budget || false;
+            
+            return {
+                fillColor: potentiallyOverBudget ? '#dc3545' : '#0d6efd',
+                color: '#ffffff',
+                weight: 2,
+                opacity: 1,
+                fillOpacity: 0.7
+            };
         },
         onEachFeature: function(feature, layer) {
             const property = feature.properties;
             
-            // Create popup content
+            // Create improved popup content
+            const workCount = property.work_count || 0;
+            const expenseCount = property.expense_count || 0;
+            const incomeCount = property.income_count || 0;
+            
             const popupContent = `
-                <strong>${property.name}</strong><br>
-                ${property.address}<br>
-                <a href="${property.url}" class="btn btn-sm btn-primary mt-2">View Details</a>
+                <div class="property-popup">
+                    <h6 class="mb-2">${property.name}</h6>
+                    <p class="mb-2"><i class="fas fa-map-marker-alt me-1 text-danger"></i> ${property.address}</p>
+                    
+                    <div class="mb-3 small">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span><i class="fas fa-tools me-1"></i> Work Items:</span>
+                            <strong>${workCount}</strong>
+                        </div>
+                        <div class="d-flex justify-content-between mb-1">
+                            <span><i class="fas fa-dollar-sign me-1 text-success"></i> Income:</span>
+                            <strong>${incomeCount}</strong>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span><i class="fas fa-file-invoice-dollar me-1 text-danger"></i> Expenses:</span>
+                            <strong>${expenseCount}</strong>
+                        </div>
+                    </div>
+                    
+                    <a href="${property.url}" class="btn btn-sm btn-primary w-100">
+                        <i class="fas fa-info-circle me-1"></i> View Details
+                    </a>
+                </div>
             `;
             
-            // Bind popup to marker
+            // Bind popup to layer (either marker or polygon)
             layer.bindPopup(popupContent);
+            
+            // Store reference to the layer for sidebar interaction
+            markers[property.id] = layer;
+            
+            // Add highlight on hover
+            layer.on('mouseover', function() {
+                if (feature.geometry.type === 'Polygon') {
+                    this.setStyle({
+                        weight: 3,
+                        opacity: 1,
+                        fillOpacity: 0.9
+                    });
+                }
+            });
+            
+            // Reset style on mouseout
+            layer.on('mouseout', function() {
+                if (feature.geometry.type === 'Polygon') {
+                    propertiesLayer.resetStyle(this);
+                }
+            });
             
             // Create sidebar item
             const listItem = document.createElement('a');
@@ -119,10 +267,16 @@
                 });
                 this.classList.add('active');
                 
-                // Fly to marker and open popup
-                const marker = markers[property.id];
-                map.flyTo(marker.getLatLng(), 15);
-                marker.openPopup();
+                // Fly to layer and open popup
+                const layer = markers[property.id];
+                if (feature.geometry.type === 'Polygon') {
+                    // For polygons, fly to bounds
+                    map.flyToBounds(layer.getBounds(), { padding: [50, 50], maxZoom: 18 });
+                } else {
+                    // For points, fly to latlng
+                    map.flyTo(layer.getLatLng(), 18);
+                }
+                layer.openPopup();
             });
             
             // Add to sidebar

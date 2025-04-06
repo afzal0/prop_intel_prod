@@ -16,18 +16,70 @@
     
     <!-- Custom CSS -->
     <style>
+        :root {
+            --primary-color: #4361ee;
+            --secondary-color: #3f37c9;
+            --accent-color: #4895ef;
+            --success-color: #4cc9f0;
+            --info-color: #4361ee;
+            --warning-color: #f72585;
+            --danger-color: #f72585;
+            --light-color: #f8f9fa;
+            --dark-color: #212529;
+            --body-bg: #f9fafb;
+            --card-bg: #ffffff;
+        }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--body-bg);
+            color: var(--dark-color);
+            padding-top: 56px; /* For fixed navbar */
+        }
+        
+        .navbar {
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1030;
+        }
+        
         .navbar-brand {
-            font-weight: bold;
+            font-weight: 700;
+            letter-spacing: 0.5px;
         }
         
         .nav-link {
-            padding: 0.5rem 1rem;
+            padding: 0.7rem 1rem;
+            font-weight: 500;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-link.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 1rem;
+            right: 1rem;
+            height: 3px;
+            background-color: #fff;
+            border-radius: 3px 3px 0 0;
+        }
+        
+        .nav-link:hover {
+            transform: translateY(-2px);
         }
         
         .sidebar {
             min-height: calc(100vh - 56px);
-            background-color: #f8f9fa;
-            padding: 1rem;
+            background-color: var(--card-bg);
+            padding: 1.5rem;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
+            border-radius: 10px;
+            margin-top: 1rem;
         }
         
         .main-content {
@@ -35,88 +87,157 @@
         }
         
         .card {
-            margin-bottom: 1rem;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 1.5rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            border: none;
+            border-radius: 10px;
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        
+        .card-header {
+            font-weight: 600;
+            border-bottom: none;
+            padding: 1.25rem 1.5rem;
         }
         
         .stats-card {
             text-align: center;
-            padding: 1rem;
+            padding: 1.5rem;
+            background: linear-gradient(135deg, var(--card-bg), #f0f3ff);
+            border-radius: 10px;
         }
         
         .stats-card .number {
-            font-size: 2rem;
-            font-weight: bold;
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            line-height: 1.2;
         }
         
         .stats-card .label {
-            color: #6c757d;
+            color: var(--dark-color);
+            font-weight: 500;
+            margin-top: 0.5rem;
+            font-size: 0.9rem;
         }
         
         .map-container {
-            height: 400px;
+            height: 1000px;
             margin-bottom: 1rem;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
         }
         
         footer {
-            margin-top: 2rem;
-            padding: 1rem 0;
+            margin-top: 3rem;
+            padding: 2rem 0;
             text-align: center;
-            background-color: #f8f9fa;
-            color: #6c757d;
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: 15px 15px 0 0;
         }
         
         .flash-messages {
             margin-bottom: 1rem;
+            position: fixed;
+            top: 70px;
+            right: 15px;
+            z-index: 1040;
+            width: 350px;
+            max-width: 90%;
+        }
+        
+        .flash-messages .alert {
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            border: none;
+            border-radius: 10px;
         }
         
         .property-card {
-            transition: transform 0.2s;
+            transition: transform 0.3s, box-shadow 0.3s;
+            border-radius: 15px;
+            overflow: hidden;
         }
         
         .property-card:hover {
-            transform: translateY(-5px);
+            transform: translateY(-10px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn {
+            border-radius: 8px;
+            padding: 0.6rem 1.2rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+        
+        .btn-primary:hover {
+            background-color: var(--secondary-color);
+            border-color: var(--secondary-color);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(67, 97, 238, 0.3);
         }
         
         .timeline {
             position: relative;
-            padding: 1rem 0;
+            padding: 1.5rem 0;
         }
         
         .timeline::before {
             content: '';
             position: absolute;
-            width: 2px;
-            background-color: #dee2e6;
+            width: 3px;
+            background: linear-gradient(to bottom, var(--primary-color), var(--info-color));
             top: 0;
             bottom: 0;
             left: 25px;
+            border-radius: 3px;
         }
         
         .timeline-item {
-            margin-left: 45px;
-            padding-bottom: 1.5rem;
+            margin-left: 50px;
+            padding-bottom: 2rem;
             position: relative;
         }
         
         .timeline-badge {
             position: absolute;
-            width: 30px;
-            height: 30px;
-            left: -45px;
+            width: 36px;
+            height: 36px;
+            left: -50px;
             text-align: center;
-            line-height: 30px;
+            line-height: 36px;
             border-radius: 50%;
             color: white;
-            background-color: #007bff;
+            background: linear-gradient(135deg, var(--primary-color), var(--info-color));
             top: 0;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
         }
         
         .timeline-panel {
-            padding: 1rem;
-            border-radius: 0.25rem;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+            padding: 1.25rem;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
             background-color: white;
+            transition: transform 0.3s ease;
+        }
+        
+        .timeline-panel:hover {
+            transform: translateY(-5px);
         }
         
         /* Loading screen styles */
@@ -134,6 +255,7 @@
             visibility: hidden;
             opacity: 0;
             transition: opacity 0.3s, visibility 0.3s;
+            backdrop-filter: blur(5px);
         }
 
         .loading-overlay.active {
@@ -142,10 +264,10 @@
         }
 
         .loading-spinner {
-            width: 70px;
-            height: 70px;
-            border: 5px solid transparent;
-            border-top-color: #007bff;
+            width: 80px;
+            height: 80px;
+            border: 5px solid rgba(255, 255, 255, 0.2);
+            border-top-color: var(--primary-color);
             border-radius: 50%;
             animation: spin 1s ease-in-out infinite;
         }
@@ -156,8 +278,9 @@
         }
 
         .loading-content p {
-            margin-top: 15px;
+            margin-top: 20px;
             font-size: 18px;
+            font-weight: 500;
         }
 
         @keyframes spin {
@@ -166,16 +289,61 @@
             }
         }
         
+        /* Responsive adjustments */
         @media (max-width: 767.98px) {
             .sidebar {
                 min-height: auto;
+                margin-bottom: 1.5rem;
             }
             
             .stats-card .number {
-                font-size: 1.5rem;
+                font-size: 2rem;
+            }
+            
+            .card-header {
+                padding: 1rem;
+            }
+            
+            .navbar-collapse {
+                background-color: rgba(67, 97, 238, 0.98);
+                padding: 1rem;
+                border-radius: 0 0 15px 15px;
+                box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            }
+            
+            .main-content {
+                padding: 1rem;
+            }
+            
+            .timeline::before {
+                left: 20px;
+            }
+            
+            .timeline-item {
+                margin-left: 40px;
+            }
+            
+            .timeline-badge {
+                width: 30px;
+                height: 30px;
+                left: -40px;
+                line-height: 30px;
+                font-size: 0.8rem;
             }
         }
+        
+        /* Utility classes */
+        .rounded-xl {
+            border-radius: 15px;
+        }
+        
+        .shadow-hover:hover {
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+        }
     </style>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
     {% block extra_head %}{% endblock %}
 </head>
@@ -205,6 +373,19 @@
                         <a class="nav-link {% if request.path == url_for('map_view') %}active{% endif %}" href="{{ url_for('map_view') }}">
                             <i class="fas fa-map-marked-alt me-1"></i>Map
                         </a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle {% if 'analytics' in request.path or 'budget-planner' in request.path %}active{% endif %}" href="#" id="analyticsDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-chart-bar me-1"></i>Analytics
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{{ url_for('analytics') }}">
+                                <i class="fas fa-chart-line me-2"></i>Dashboard
+                            </a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('budget_planner') }}">
+                                <i class="fas fa-money-bill-wave me-2"></i>Budget Planner
+                            </a></li>
+                        </ul>
                     </li>
                     {% if g.user and g.user.role == 'admin' %}
                     <li class="nav-item dropdown">

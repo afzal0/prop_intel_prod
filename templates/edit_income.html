@@ -1,0 +1,58 @@
+{% extends "layout.html" %}
+{% block title %}Edit Income Record - PropIntel{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h5 class="card-title mb-0">Edit Income Record for {{ property_name }}</h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    <div class="mb-3">
+                        <label for="income_details" class="form-label">Income Details</label>
+                        <input type="text" class="form-control" id="income_details" name="income_details" value="{{ income.income_details or '' }}">
+                        <div class="form-text">Source or description of the income</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="income_date" class="form-label">Date</label>
+                        <input type="date" class="form-control" id="income_date" name="income_date" value="{{ income.income_date.strftime('%Y-%m-%d') if income.income_date else '' }}" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="income_amount" class="form-label">Amount</label>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            <input type="number" class="form-control" id="income_amount" name="income_amount" step="0.01" min="0" value="{{ income.income_amount or 0 }}" required>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="payment_method" class="form-label">Payment Method</label>
+                        <select class="form-select" id="payment_method" name="payment_method">
+                            <option value="">-- Select --</option>
+                            <option value="Cash" {{ 'selected' if income.payment_method == 'Cash' else '' }}>Cash</option>
+                            <option value="Bank Transfer" {{ 'selected' if income.payment_method == 'Bank Transfer' else '' }}>Bank Transfer</option>
+                            <option value="Direct Deposit" {{ 'selected' if income.payment_method == 'Direct Deposit' else '' }}>Direct Deposit</option>
+                            <option value="Check" {{ 'selected' if income.payment_method == 'Check' else '' }}>Check</option>
+                            <option value="PayPal" {{ 'selected' if income.payment_method == 'PayPal' else '' }}>PayPal</option>
+                            <option value="Other" {{ 'selected' if income.payment_method == 'Other' else '' }}>Other</option>
+                        </select>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-save me-2"></i> Update Income Record
+                        </button>
+                        <a href="{{ url_for('property_detail', property_id=property_id) }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-2"></i> Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

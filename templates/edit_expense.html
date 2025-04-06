@@ -1,0 +1,107 @@
+{% extends "layout.html" %}
+{% block title %}Edit Expense Record - PropIntel{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-danger text-white">
+                <h5 class="card-title mb-0">Edit Expense Record for {{ property_name }}</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label for="expense_details" class="form-label">Expense Details</label>
+                        <input type="text" class="form-control" id="expense_details" name="expense_details" value="{{ expense.expense_details or '' }}">
+                        <div class="form-text">Description of the expense</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="expense_date" class="form-label">Date</label>
+                        <input type="date" class="form-control" id="expense_date" name="expense_date" value="{{ expense.expense_date.strftime('%Y-%m-%d') if expense.expense_date else '' }}" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="expense_amount" class="form-label">Amount</label>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            <input type="number" class="form-control" id="expense_amount" name="expense_amount" step="0.01" min="0" value="{{ expense.expense_amount or 0 }}" required>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="expense_category" class="form-label">Expense Category</label>
+                        <select class="form-select" id="expense_category" name="expense_category">
+                            <option value="material" {{ 'selected' if expense.expense_category == 'material' else '' }}>Material</option>
+                            <option value="wage" {{ 'selected' if expense.expense_category == 'wage' else '' }}>Wage</option>
+                            <option value="project_manager" {{ 'selected' if expense.expense_category == 'project_manager' else '' }}>Project Manager</option>
+                            <option value="miscellaneous" {{ 'selected' if expense.expense_category == 'miscellaneous' else '' }}>Miscellaneous</option>
+                        </select>
+                        <div class="form-text">Select the type of expense</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="expense_image" class="form-label">Expense Receipt/Image</label>
+                        {% if expense.image_path %}
+                        <div class="mb-2">
+                            <img src="/{{ expense.image_path }}" alt="Current receipt" class="img-thumbnail" style="max-height: 100px;">
+                            <div class="form-text">Current receipt</div>
+                        </div>
+                        {% endif %}
+                        <input type="file" class="form-control" id="expense_image" name="expense_image" accept="image/*">
+                        <div class="form-text">Upload a new receipt or image (optional, leave empty to keep current)</div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="payment_method" class="form-label">Payment Method</label>
+                        <select class="form-select" id="payment_method" name="payment_method">
+                            <option value="">-- Select --</option>
+                            <option value="Cash" {{ 'selected' if expense.payment_method == 'Cash' else '' }}>Cash</option>
+                            <option value="Bank Transfer" {{ 'selected' if expense.payment_method == 'Bank Transfer' else '' }}>Bank Transfer</option>
+                            <option value="Credit Card" {{ 'selected' if expense.payment_method == 'Credit Card' else '' }}>Credit Card</option>
+                            <option value="Debit Card" {{ 'selected' if expense.payment_method == 'Debit Card' else '' }}>Debit Card</option>
+                            <option value="Check" {{ 'selected' if expense.payment_method == 'Check' else '' }}>Check</option>
+                            <option value="Direct Debit" {{ 'selected' if expense.payment_method == 'Direct Debit' else '' }}>Direct Debit</option>
+                            <option value="PayPal" {{ 'selected' if expense.payment_method == 'PayPal' else '' }}>PayPal</option>
+                            <option value="Other" {{ 'selected' if expense.payment_method == 'Other' else '' }}>Other</option>
+                        </select>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-save me-2"></i> Update Expense Record
+                        </button>
+                        <a href="{{ url_for('property_detail', property_id=property_id) }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-2"></i> Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const expenseDetails = document.getElementById('expense_details');
+        const expenseCategory = document.getElementById('expense_category');
+        
+        // Auto-categorize expenses based on details
+        expenseDetails.addEventListener('blur', function() {
+            const details = expenseDetails.value.toLowerCase();
+            
+            if (details.includes('wage') || details.includes('salary') || details.includes('payment')) {
+                expenseCategory.value = 'wage';
+            } else if (details.includes('project manager') || details.includes('pm') || details.includes('management fee')) {
+                expenseCategory.value = 'project_manager';
+            } else if (details.includes('material') || details.includes('supplies') || details.includes('equipment')) {
+                expenseCategory.value = 'material';
+            } else {
+                expenseCategory.value = 'miscellaneous';
+            }
+        });
+    });
+</script>
+{% endblock %}

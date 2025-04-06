@@ -9,7 +9,7 @@
                 <h5 class="card-title mb-0">Add New Property</h5>
             </div>
             <div class="card-body">
-                <form method="post">
+                <form method="post" enctype="multipart/form-data">
                     <div class="mb-3">
                         <label for="property_name" class="form-label">Property Name</label>
                         <input type="text" class="form-control" id="property_name" name="property_name" required>
@@ -28,19 +28,15 @@
                     </div>
                     
                     <div class="mb-3">
-                        <label for="purchase_price" class="form-label">Purchase Price</label>
-                        <div class="input-group">
-                            <span class="input-group-text">$</span>
-                            <input type="number" class="form-control" id="purchase_price" name="purchase_price" step="0.01" min="0">
-                        </div>
+                        <label for="property_manager" class="form-label">Property Manager</label>
+                        <input type="text" class="form-control" id="property_manager" name="property_manager">
+                        <div class="form-text">Person responsible for managing this property</div>
                     </div>
                     
                     <div class="mb-3">
-                        <label for="current_value" class="form-label">Current Value</label>
-                        <div class="input-group">
-                            <span class="input-group-text">$</span>
-                            <input type="number" class="form-control" id="current_value" name="current_value" step="0.01" min="0">
-                        </div>
+                        <label for="property_image" class="form-label">Property Image</label>
+                        <input type="file" class="form-control" id="property_image" name="property_image" accept="image/*">
+                        <div class="form-text">Upload an image of the property (optional)</div>
                     </div>
                     
                     <div class="mb-4">

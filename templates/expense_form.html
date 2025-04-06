@@ -9,7 +9,7 @@
                 <h5 class="card-title mb-0">Add Expense Record for {{ property_name }}</h5>
             </div>
             <div class="card-body">
-                <form method="post">
+                <form method="post" enctype="multipart/form-data">
                     <div class="mb-3">
                         <label for="expense_details" class="form-label">Expense Details</label>
                         <input type="text" class="form-control" id="expense_details" name="expense_details">
@@ -27,6 +27,23 @@
                             <span class="input-group-text">$</span>
                             <input type="number" class="form-control" id="expense_amount" name="expense_amount" step="0.01" min="0" required>
                         </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="expense_category" class="form-label">Expense Category</label>
+                        <select class="form-select" id="expense_category" name="expense_category">
+                            <option value="material">Material</option>
+                            <option value="wage">Wage</option>
+                            <option value="project_manager">Project Manager</option>
+                            <option value="miscellaneous">Miscellaneous</option>
+                        </select>
+                        <div class="form-text">Select the type of expense</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="expense_image" class="form-label">Expense Receipt/Image</label>
+                        <input type="file" class="form-control" id="expense_image" name="expense_image" accept="image/*">
+                        <div class="form-text">Upload a receipt or image (optional)</div>
                     </div>
                     
                     <div class="mb-4">
@@ -57,4 +74,28 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const expenseDetails = document.getElementById('expense_details');
+        const expenseCategory = document.getElementById('expense_category');
+        
+        // Auto-categorize expenses based on details
+        expenseDetails.addEventListener('blur', function() {
+            const details = expenseDetails.value.toLowerCase();
+            
+            if (details.includes('wage') || details.includes('salary') || details.includes('payment')) {
+                expenseCategory.value = 'wage';
+            } else if (details.includes('project manager') || details.includes('pm') || details.includes('management fee')) {
+                expenseCategory.value = 'project_manager';
+            } else if (details.includes('material') || details.includes('supplies') || details.includes('equipment')) {
+                expenseCategory.value = 'material';
+            } else {
+                expenseCategory.value = 'miscellaneous';
+            }
+        });
+    });
+</script>
 {% endblock %}

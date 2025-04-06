@@ -9,7 +9,7 @@
                 <h5 class="card-title mb-0">Add Work Record for {{ property_name }}</h5>
             </div>
             <div class="card-body">
-                <form method="post">
+                <form method="post" enctype="multipart/form-data">
                     <div class="mb-3">
                         <label for="work_description" class="form-label">Work Description</label>
                         <input type="text" class="form-control" id="work_description" name="work_description" required>
@@ -27,6 +27,23 @@
                             <span class="input-group-text">$</span>
                             <input type="number" class="form-control" id="work_cost" name="work_cost" step="0.01" min="0">
                         </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="expense_type" class="form-label">Expense Type</label>
+                        <select class="form-select" id="expense_type" name="expense_type">
+                            <option value="material">Material</option>
+                            <option value="wage">Wage</option>
+                            <option value="project_manager">Project Manager</option>
+                            <option value="miscellaneous">Miscellaneous</option>
+                        </select>
+                        <div class="form-text">Select the type of expense for this work</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="work_image" class="form-label">Work Image</label>
+                        <input type="file" class="form-control" id="work_image" name="work_image" accept="image/*">
+                        <div class="form-text">Upload an image of the work (optional)</div>
                     </div>
                     
                     <div class="mb-4">

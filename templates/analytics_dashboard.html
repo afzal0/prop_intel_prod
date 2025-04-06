@@ -1,0 +1,1474 @@
+{% extends "layout.html" %}
+{% block title %}Analytics Dashboard - PropIntel{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+<style>
+    .dashboard-container {
+        padding: 1.5rem 0;
+    }
+    
+    .dashboard-title {
+        margin-bottom: 1.5rem;
+    }
+    
+    .filter-card {
+        border-radius: 10px;
+        margin-bottom: 1.5rem;
+    }
+    
+    .filter-card .card-body {
+        padding: 1.25rem;
+    }
+    
+    .visualization-card {
+        border-radius: 10px;
+        overflow: hidden;
+        margin-bottom: 1.5rem;
+        height: 100%;
+        transition: all 0.3s ease;
+    }
+    
+    .visualization-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    }
+    
+    .visualization-card .card-header {
+        padding: 1rem 1.25rem;
+        background-color: #f8f9fa;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    }
+    
+    .visualization-card .card-body {
+        padding: 1.25rem;
+    }
+    
+    .chart-container {
+        height: 300px;
+        position: relative;
+    }
+    
+    .expense-breakdown {
+        height: 300px;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .expense-cat {
+        display: flex;
+        align-items: center;
+        margin-bottom: 0.75rem;
+    }
+    
+    .expense-cat-label {
+        min-width: 120px;
+    }
+    
+    .expense-cat-bar {
+        height: 25px;
+        border-radius: 5px;
+        margin: 0 10px;
+        flex-grow: 1;
+    }
+    
+    .expense-cat-value {
+        min-width: 80px;
+        text-align: right;
+    }
+    
+    .heatmap-container {
+        height: 300px;
+        overflow: hidden;
+    }
+    
+    .nav-pills .nav-link {
+        border-radius: 8px;
+        padding: 0.5rem 1rem;
+        font-weight: 500;
+        color: var(--dark-color);
+    }
+    
+    .nav-pills .nav-link.active {
+        background-color: var(--primary-color);
+        color: white;
+    }
+    
+    .metric-value {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 0.25rem;
+        background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+    
+    .metric-label {
+        font-size: 0.9rem;
+        color: var(--dark-color);
+        opacity: 0.7;
+    }
+    
+    .comparison-indicator {
+        font-size: 0.8rem;
+        font-weight: 600;
+        padding: 0.2rem 0.5rem;
+        border-radius: 25px;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+    }
+    
+    .comparison-indicator.positive {
+        background-color: rgba(40, 167, 69, 0.1);
+        color: #28a745;
+    }
+    
+    .comparison-indicator.negative {
+        background-color: rgba(220, 53, 69, 0.1);
+        color: #dc3545;
+    }
+    
+    .heatmap-day {
+        width: 25px;
+        height: 25px;
+        margin: 2px;
+        border-radius: 3px;
+        display: inline-block;
+    }
+    
+    .heatmap-legend {
+        display: flex;
+        justify-content: center;
+        margin-top: 10px;
+    }
+    
+    .heatmap-legend-item {
+        width: 15px;
+        height: 15px;
+        margin: 0 3px;
+        border-radius: 2px;
+    }
+    
+    .legend-text {
+        font-size: 0.75rem;
+        color: var(--dark-color);
+        opacity: 0.7;
+        margin: 0 5px;
+    }
+    
+    /* Map styles */
+    #property-map {
+        height: 1000px;
+        width: 100%;
+        border-radius: 5px;
+    }
+    
+    .property-popup {
+        max-width: 250px;
+    }
+    
+    .property-popup h6 {
+        margin-bottom: 5px;
+        font-weight: 600;
+    }
+    
+    .property-popup p {
+        margin-bottom: 8px;
+        font-size: 0.9rem;
+    }
+    
+    .property-popup .btn {
+        margin-top: 5px;
+    }
+    
+    .property-item {
+        cursor: pointer;
+        transition: all 0.3s ease;
+        padding: 10px 15px;
+        border-bottom: 1px solid rgba(0,0,0,0.05);
+        border-left: 3px solid transparent;
+    }
+    
+    .property-item:hover {
+        background-color: #f8f9fa;
+        transform: translateX(5px);
+    }
+    
+    .property-item.active {
+        background-color: rgba(67, 97, 238, 0.1);
+        border-left: 3px solid var(--primary-color);
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    
+    .property-item.over-budget {
+        border-left: 3px solid #dc3545;
+    }
+    
+    .map-property-list {
+        max-height: 300px;
+        overflow-y: auto;
+    }
+    
+    /* Tooltip styles */
+    #tooltip {
+        position: absolute;
+        display: none;
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 5px 10px;
+        border-radius: 5px;
+        font-size: 12px;
+        pointer-events: none;
+        z-index: 1000;
+    }
+    
+    /* Loading overlay */
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255, 255, 255, 0.7);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s;
+    }
+    
+    .loading-overlay.active {
+        opacity: 1;
+        visibility: visible;
+    }
+    
+    .loading-spinner {
+        width: 50px;
+        height: 50px;
+        border: 5px solid #f3f3f3;
+        border-top: 5px solid var(--primary-color);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Loading Overlay -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-spinner"></div>
+</div>
+
+<div class="dashboard-container">
+    <div class="container-fluid">
+        <!-- Dashboard Header -->
+        <div class="row align-items-center dashboard-title">
+            <div class="col-md-8">
+                <h1 class="h2 mb-0">Analytics Dashboard</h1>
+                <p class="text-muted mb-0">Visualize your property portfolio performance</p>
+            </div>
+            <div class="col-md-4 text-end">
+                <button class="btn btn-outline-primary me-2" id="exportData">
+                    <i class="fas fa-download me-2"></i>Export
+                </button>
+                <button class="btn btn-primary" id="refreshData">
+                    <i class="fas fa-sync-alt me-2"></i>Refresh
+                </button>
+            </div>
+        </div>
+        
+        <!-- Filters -->
+        <div class="card filter-card shadow-sm">
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-lg-3 col-md-6">
+                        <label for="dateRange" class="form-label">Date Range</label>
+                        <select class="form-select" id="dateRange">
+                            <option value="30" {% if selected_date_range == 30 %}selected{% endif %}>Last 30 Days</option>
+                            <option value="90" {% if selected_date_range == 90 %}selected{% endif %}>Last 90 Days</option>
+                            <option value="180" {% if selected_date_range == 180 %}selected{% endif %}>Last 6 Months</option>
+                            <option value="365" {% if selected_date_range == 365 %}selected{% endif %}>Last Year</option>
+                            <option value="all" {% if selected_date_range == 'all' %}selected{% endif %}>All Time</option>
+                        </select>
+                    </div>
+                    <div class="col-lg-3 col-md-6">
+                        <label for="propertyFilter" class="form-label">Properties</label>
+                        <select class="form-select" id="propertyFilter">
+                            <option value="all" {% if selected_property == 'all' %}selected{% endif %}>All Properties</option>
+                            {% for property in properties %}
+                            <option value="{{ property.property_id }}" {% if selected_property == property.property_id %}selected{% endif %}>{{ property.property_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-lg-3 col-md-6">
+                        <label for="categoryFilter" class="form-label">Expense Category</label>
+                        <select class="form-select" id="categoryFilter">
+                            <option value="all" selected>All Categories</option>
+                            <option value="wage">Wage</option>
+                            <option value="project_manager">Project Manager</option>
+                            <option value="material">Material</option>
+                            <option value="miscellaneous">Miscellaneous</option>
+                        </select>
+                    </div>
+                    <div class="col-lg-3 col-md-6">
+                        <label for="visualizationType" class="form-label">Chart Type</label>
+                        <select class="form-select" id="visualizationType">
+                            <option value="bar" selected>Bar Chart</option>
+                            <option value="line">Line Chart</option>
+                            <option value="pie">Pie Chart</option>
+                            <option value="doughnut">Doughnut Chart</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Key Metrics -->
+        <div class="row g-3 mb-4">
+            <div class="col-xl-3 col-md-6">
+                <div class="card visualization-card shadow-sm">
+                    <div class="card-body">
+                        <h6 class="card-subtitle mb-3 text-muted">Total Income</h6>
+                        <div class="metric-value" id="totalIncome">{{ total_income|format_currency }}</div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="metric-label" id="incomeLabel">All Properties</span>
+                            <span class="comparison-indicator positive" id="incomeChange">
+                                <i class="fas fa-arrow-up"></i> {{ income_change_percent }}%
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-3 col-md-6">
+                <div class="card visualization-card shadow-sm">
+                    <div class="card-body">
+                        <h6 class="card-subtitle mb-3 text-muted">Total Expenses</h6>
+                        <div class="metric-value" id="totalExpenses">{{ total_expenses|format_currency }}</div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="metric-label" id="expensesLabel">All Properties</span>
+                            <span class="comparison-indicator {{ 'negative' if expense_change_percent > 0 else 'positive' }}" id="expenseChange">
+                                <i class="fas fa-arrow-{{ 'up' if expense_change_percent > 0 else 'down' }}"></i> {{ expense_change_percent|abs }}%
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-3 col-md-6">
+                <div class="card visualization-card shadow-sm">
+                    <div class="card-body">
+                        <h6 class="card-subtitle mb-3 text-muted">Net Profit</h6>
+                        <div class="metric-value" id="netProfit">{{ net_profit|format_currency }}</div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="metric-label" id="profitLabel">All Properties</span>
+                            <span class="comparison-indicator {{ 'positive' if profit_change_percent > 0 else 'negative' }}" id="profitChange">
+                                <i class="fas fa-arrow-{{ 'up' if profit_change_percent > 0 else 'down' }}"></i> {{ profit_change_percent|abs }}%
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-3 col-md-6">
+                <div class="card visualization-card shadow-sm">
+                    <div class="card-body">
+                        <h6 class="card-subtitle mb-3 text-muted">Work Records</h6>
+                        <div class="metric-value" id="workRecords">{{ total_work_records }}</div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="metric-label" id="workLabel">All Properties</span>
+                            <span class="comparison-indicator positive" id="workChange">
+                                <i class="fas fa-arrow-up"></i> {{ work_change_percent }}%
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Map and Property List -->
+        <div class="row g-3 mb-4">
+            <!-- Property Map -->
+            <div class="col-lg-8">
+                <div class="card visualization-card shadow-sm">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h6 class="card-title mb-0">Property Map</h6>
+                        <div class="btn-group btn-group-sm" role="group">
+                            <button type="button" class="btn btn-outline-primary active" data-map-layer="standard">Standard</button>
+                            <button type="button" class="btn btn-outline-primary" data-map-layer="satellite">Satellite</button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="property-map"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Property List -->
+            <div class="col-lg-4">
+                <div class="card visualization-card shadow-sm">
+                    <div class="card-header">
+                        <h6 class="card-title mb-0">Properties</h6>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="map-property-list" id="property-list">
+                            {% for property in properties %}
+                            <div class="property-item{% if selected_property == property.property_id %} active{% endif %}" data-property-id="{{ property.property_id }}">
+                                <h6 class="mb-1">{{ property.property_name }}</h6>
+                                <small class="text-muted">{{ property.property_address }}, {{ property.property_city }}, {{ property.property_state }} {{ property.property_zip }}</small>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Charts Row 1 -->
+        <div class="row g-3 mb-4">
+            <!-- Income vs Expenses -->
+            <div class="col-lg-8">
+                <div class="card visualization-card shadow-sm">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h6 class="card-title mb-0">Income vs Expenses</h6>
+                        <div class="btn-group btn-group-sm" role="group">
+                            <button type="button" class="btn btn-outline-primary active" data-period="monthly">Monthly</button>
+                            <button type="button" class="btn btn-outline-primary" data-period="quarterly">Quarterly</button>
+                            <button type="button" class="btn btn-outline-primary" data-period="yearly">Yearly</button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="incomeExpensesChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Expense Breakdown -->
+            <div class="col-lg-4">
+                <div class="card visualization-card shadow-sm">
+                    <div class="card-header">
+                        <h6 class="card-title mb-0">Expense Breakdown</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="expense-breakdown">
+                            <canvas id="expenseBreakdownChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Charts Row 2 -->
+        <div class="row g-3 mb-4">
+            <!-- Work Activity Heatmap -->
+            <div class="col-lg-6">
+                <div class="card visualization-card shadow-sm">
+                    <div class="card-header">
+                        <h6 class="card-title mb-0">Work Activity Heatmap</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="heatmap-container" id="workHeatmap">
+                            <!-- Heatmap will be generated via JavaScript -->
+                            <div class="text-center py-5" id="heatmapLoading">Loading heatmap...</div>
+                        </div>
+                        <div class="heatmap-legend">
+                            <div class="heatmap-legend-item" style="background-color: rgba(67, 97, 238, 0.1);"></div>
+                            <span class="legend-text">Low</span>
+                            <div class="heatmap-legend-item" style="background-color: rgba(67, 97, 238, 0.3);"></div>
+                            <div class="heatmap-legend-item" style="background-color: rgba(67, 97, 238, 0.5);"></div>
+                            <div class="heatmap-legend-item" style="background-color: rgba(67, 97, 238, 0.7);"></div>
+                            <div class="heatmap-legend-item" style="background-color: rgba(67, 97, 238, 0.9);"></div>
+                            <span class="legend-text">High</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Property Performance -->
+            <div class="col-lg-6">
+                <div class="card visualization-card shadow-sm">
+                    <div class="card-header">
+                        <h6 class="card-title mb-0">Property Performance</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="propertyPerformanceChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Charts Row 3 -->
+        <div class="row g-3 mb-4">
+            <!-- Expense Trends -->
+            <div class="col-lg-6">
+                <div class="card visualization-card shadow-sm">
+                    <div class="card-header">
+                        <h6 class="card-title mb-0">Expense Category Trends</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="expenseTrendsChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Profit Margin -->
+            <div class="col-lg-6">
+                <div class="card visualization-card shadow-sm">
+                    <div class="card-header">
+                        <h6 class="card-title mb-0">Profit Margin Analysis</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="profitMarginChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Row 4: Upcoming Work & Business Insights -->
+        <div class="row g-3">
+            <!-- Upcoming Work -->
+            <div class="col-lg-6">
+                <div class="card visualization-card shadow-sm">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h6 class="card-title mb-0">Upcoming Work</h6>
+                        <a href="{{ url_for('properties') }}" class="btn btn-sm btn-outline-primary">View All</a>
+                    </div>
+                    <div class="card-body p-0">
+                        {% if pending_work %}
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Property</th>
+                                        <th>Description</th>
+                                        <th>Date</th>
+                                        <th>Cost</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for work in pending_work %}
+                                    <tr>
+                                        <td>{{ work.property_name }}</td>
+                                        <td>{{ work.work_description }}</td>
+                                        <td>{{ work.work_date.strftime('%b %d, %Y') if work.work_date else 'N/A' }}</td>
+                                        <td>${{ "%.2f"|format(work.work_cost) if work.work_cost else '0.00' }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <div class="text-center py-4">
+                            <p class="text-muted mb-0">No upcoming work scheduled</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Business Insights -->
+            <div class="col-lg-6">
+                <div class="card visualization-card shadow-sm">
+                    <div class="card-header">
+                        <h6 class="card-title mb-0">Business Insights</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="insights-container">
+                            {% if property_expenses %}
+                            <h6 class="mb-3">Top Expense Categories by Property</h6>
+                            <div class="table-responsive mb-4">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Property</th>
+                                            <th>Total Expenses</th>
+                                            <th>Main Categories</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for prop in property_expenses[:5] %}
+                                        <tr>
+                                            <td>{{ prop.property_name }}</td>
+                                            <td>${{ "%.2f"|format(prop.total_expenses) }}</td>
+                                            <td>{{ prop.categories or 'None' }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% endif %}
+                            
+                            <h6 class="mb-3">Key Performance Indicators</h6>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <div class="card bg-light">
+                                        <div class="card-body py-2">
+                                            <div class="d-flex justify-content-between">
+                                                <small class="text-muted">Profit Margin</small>
+                                                {% set profit_margin = (total_income - total_expenses - total_work_cost) / total_income * 100 if total_income > 0 else 0 %}
+                                                <span class="badge {{ 'bg-success' if profit_margin > 20 else 'bg-warning' if profit_margin > 10 else 'bg-danger' }}">
+                                                    {{ "%.1f"|format(profit_margin) }}%
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="card bg-light">
+                                        <div class="card-body py-2">
+                                            <div class="d-flex justify-content-between">
+                                                <small class="text-muted">Avg. Cost per Work</small>
+                                                {% set avg_work_cost = total_work_cost / total_work_records if total_work_records > 0 else 0 %}
+                                                <span>${{ "%.2f"|format(avg_work_cost) }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="card bg-light">
+                                        <div class="card-body py-2">
+                                            <div class="d-flex justify-content-between">
+                                                <small class="text-muted">ROI</small>
+                                                {% set roi = (total_income / (total_expenses + total_work_cost) * 100) if (total_expenses + total_work_cost) > 0 else 0 %}
+                                                <span>{{ "%.1f"|format(roi) }}%</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="card bg-light">
+                                        <div class="card-body py-2">
+                                            <div class="d-flex justify-content-between">
+                                                <small class="text-muted">Net Profit per Property</small>
+                                                {% set avg_profit = net_profit / properties|length if properties|length > 0 else 0 %}
+                                                <span>${{ "%.2f"|format(avg_profit) }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-12 mt-3">
+                                    <a href="{{ url_for('budget_planner') }}" class="btn btn-sm btn-outline-primary w-100">
+                                        <i class="fas fa-money-bill-wave me-2"></i>Open Budget Planner
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tooltip -->
+<div id="tooltip"></div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+<script>
+    // Data from Flask
+    const incomeData = {{ income_data|safe }};
+    const expenseData = {{ expense_data|safe }};
+    const workCostData = {{ work_cost_data|safe }};
+    const labels = {{ labels|safe }};
+    const expenseCategories = {{ expense_categories|safe }};
+    const propertyPerformance = {{ property_performance|safe }};
+    const workHeatmapData = {{ work_heatmap_data|safe }};
+    const expenseTrendsData = {{ expense_trends|safe }};
+    const profitMarginData = {{ profit_margin|safe }};
+    const geojsonData = {{ geojson|safe }};
+    
+    // Charts references
+    let incomeExpensesChart;
+    let expenseBreakdownChart;
+    let propertyPerformanceChart;
+    let expenseTrendsChart;
+    let profitMarginChart;
+    
+    // Map references
+    let map;
+    let mapLayers = {};
+    let propertyMarkers = {};
+    let propertiesLayer;
+    
+    // Initialize dashboard when DOM is loaded
+    document.addEventListener('DOMContentLoaded', function() {
+        initializeCharts();
+        initializeMap();
+        setupEventListeners();
+        generateHeatmap();
+    });
+    
+    function initializeCharts() {
+        // Income vs Expenses Chart
+        const incomeExpensesCtx = document.getElementById('incomeExpensesChart').getContext('2d');
+        incomeExpensesChart = new Chart(incomeExpensesCtx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Income',
+                        data: incomeData,
+                        backgroundColor: 'rgba(40, 167, 69, 0.7)',
+                        borderColor: 'rgba(40, 167, 69, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Expenses',
+                        data: expenseData,
+                        backgroundColor: 'rgba(220, 53, 69, 0.7)',
+                        borderColor: 'rgba(220, 53, 69, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Work Costs',
+                        data: workCostData,
+                        backgroundColor: 'rgba(255, 193, 7, 0.7)',
+                        borderColor: 'rgba(255, 193, 7, 1)',
+                        borderWidth: 1
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const value = context.raw;
+                                return context.dataset.label + ': $' + value.toLocaleString();
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return '$' + value.toLocaleString();
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Expense Breakdown Chart
+        const expenseBreakdownCtx = document.getElementById('expenseBreakdownChart').getContext('2d');
+        expenseBreakdownChart = new Chart(expenseBreakdownCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Wage', 'Project Manager', 'Material', 'Miscellaneous'],
+                datasets: [{
+                    data: [
+                        expenseCategories.wage,
+                        expenseCategories.project_manager,
+                        expenseCategories.material,
+                        expenseCategories.miscellaneous
+                    ],
+                    backgroundColor: [
+                        'rgba(40, 167, 69, 0.7)',
+                        'rgba(23, 162, 184, 0.7)',
+                        'rgba(67, 97, 238, 0.7)',
+                        'rgba(108, 117, 125, 0.7)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const value = context.raw;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = Math.round((value / total) * 100);
+                                return context.label + ': $' + value.toLocaleString() + ' (' + percentage + '%)';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Property Performance Chart
+        const propertyPerformanceCtx = document.getElementById('propertyPerformanceChart').getContext('2d');
+        propertyPerformanceChart = new Chart(propertyPerformanceCtx, {
+            type: 'bar',
+            data: {
+                labels: propertyPerformance.map(p => p.name),
+                datasets: [
+                    {
+                        label: 'Income',
+                        data: propertyPerformance.map(p => p.income),
+                        backgroundColor: 'rgba(40, 167, 69, 0.7)',
+                        borderColor: 'rgba(40, 167, 69, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Expenses',
+                        data: propertyPerformance.map(p => p.expenses),
+                        backgroundColor: 'rgba(220, 53, 69, 0.7)',
+                        borderColor: 'rgba(220, 53, 69, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Work Costs',
+                        data: propertyPerformance.map(p => p.work_cost),
+                        backgroundColor: 'rgba(255, 193, 7, 0.7)',
+                        borderColor: 'rgba(255, 193, 7, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Profit',
+                        data: propertyPerformance.map(p => p.profit),
+                        backgroundColor: 'rgba(67, 97, 238, 0.7)',
+                        borderColor: 'rgba(67, 97, 238, 1)',
+                        borderWidth: 1
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const value = context.raw;
+                                return context.dataset.label + ': $' + value.toLocaleString();
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return '$' + value.toLocaleString();
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Expense Trends Chart
+        const expenseTrendsCtx = document.getElementById('expenseTrendsChart').getContext('2d');
+        expenseTrendsChart = new Chart(expenseTrendsCtx, {
+            type: 'line',
+            data: {
+                labels: expenseTrendsData.labels,
+                datasets: [
+                    {
+                        label: 'Wage',
+                        data: expenseTrendsData.wage,
+                        borderColor: 'rgba(40, 167, 69, 1)',
+                        backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    },
+                    {
+                        label: 'Project Manager',
+                        data: expenseTrendsData.project_manager,
+                        borderColor: 'rgba(23, 162, 184, 1)',
+                        backgroundColor: 'rgba(23, 162, 184, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    },
+                    {
+                        label: 'Material',
+                        data: expenseTrendsData.material,
+                        borderColor: 'rgba(67, 97, 238, 1)',
+                        backgroundColor: 'rgba(67, 97, 238, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    },
+                    {
+                        label: 'Miscellaneous',
+                        data: expenseTrendsData.miscellaneous,
+                        borderColor: 'rgba(108, 117, 125, 1)',
+                        backgroundColor: 'rgba(108, 117, 125, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const value = context.raw;
+                                return context.dataset.label + ': $' + value.toLocaleString();
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return '$' + value.toLocaleString();
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Profit Margin Chart
+        const profitMarginCtx = document.getElementById('profitMarginChart').getContext('2d');
+        profitMarginChart = new Chart(profitMarginCtx, {
+            type: 'line',
+            data: {
+                labels: profitMarginData.labels,
+                datasets: [
+                    {
+                        label: 'Profit Margin %',
+                        data: profitMarginData.margins,
+                        borderColor: 'rgba(67, 97, 238, 1)',
+                        backgroundColor: 'rgba(67, 97, 238, 0.1)',
+                        tension: 0.4,
+                        fill: true,
+                        yAxisID: 'y'
+                    },
+                    {
+                        label: 'Profit Amount',
+                        data: profitMarginData.profit,
+                        borderColor: 'rgba(255, 193, 7, 1)',
+                        backgroundColor: 'rgba(255, 193, 7, 0.1)',
+                        borderDash: [5, 5],
+                        tension: 0.4,
+                        fill: false,
+                        yAxisID: 'y1'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const value = context.raw;
+                                if (context.dataset.label.includes('Margin')) {
+                                    return context.dataset.label + ': ' + value.toFixed(1) + '%';
+                                } else {
+                                    return context.dataset.label + ': $' + value.toLocaleString();
+                                }
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        position: 'left',
+                        title: {
+                            display: true,
+                            text: 'Margin %'
+                        },
+                        ticks: {
+                            callback: function(value) {
+                                return value + '%';
+                            }
+                        }
+                    },
+                    y1: {
+                        beginAtZero: true,
+                        position: 'right',
+                        grid: {
+                            drawOnChartArea: false
+                        },
+                        title: {
+                            display: true,
+                            text: 'Amount ($)'
+                        },
+                        ticks: {
+                            callback: function(value) {
+                                return '$' + value.toLocaleString();
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
+    function initializeMap() {
+        // Create map with default view
+        map = L.map('property-map', {
+            zoomControl: true,
+            scrollWheelZoom: true
+        }).setView([40.7128, -74.0060], 12);
+        
+        // Add tile layers
+        mapLayers.standard = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+        
+        mapLayers.satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+            attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+        });
+        
+        // Add properties to map
+        addPropertiesToMap();
+    }
+    
+    function addPropertiesToMap() {
+        // Clear existing layers if any
+        if (propertiesLayer) {
+            map.removeLayer(propertiesLayer);
+        }
+        
+        propertyMarkers = {}; // Reset markers
+        
+        // Create GeoJSON layer with custom markers/polygons and popups
+        propertiesLayer = L.geoJSON(geojsonData, {
+            pointToLayer: function(feature, latlng) {
+                // Only called for Point geometries
+                // Create custom icon based on budget status
+                const isOverBudget = feature.properties.is_over_budget;
+                const iconColor = isOverBudget ? 'red' : 'blue';
+                const customIcon = L.divIcon({
+                    className: `custom-marker-${iconColor}`,
+                    html: `<div style="background-color: ${isOverBudget ? '#dc3545' : '#0d6efd'}; width: 32px; height: 32px; border-radius: 50%; display: flex; justify-content: center; align-items: center; color: white; font-weight: bold; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.3);">
+                            <i class="fas fa-home"></i>
+                          </div>`,
+                    iconSize: [32, 32],
+                    iconAnchor: [16, 16],
+                    popupAnchor: [0, -16]
+                });
+                
+                const marker = L.marker(latlng, {icon: customIcon});
+                return marker;
+            },
+            
+            style: function(feature) {
+                // Style for Polygon geometries (buildings)
+                // Determine if property might be over budget
+                const isOverBudget = feature.properties.is_over_budget;
+                
+                return {
+                    fillColor: isOverBudget ? '#dc3545' : '#0d6efd',
+                    color: '#ffffff',
+                    weight: 2,
+                    opacity: 1,
+                    fillOpacity: 0.7
+                };
+            },
+            
+            onEachFeature: function(feature, layer) {
+                // Save reference to layer for later use
+                propertyMarkers[feature.properties.id] = layer;
+                
+                // Prepare financial data for popup
+                const income = parseFloat(feature.properties.income || 0).toLocaleString('en-US', {style: 'currency', currency: 'USD'});
+                const expenses = parseFloat(feature.properties.expenses || 0).toLocaleString('en-US', {style: 'currency', currency: 'USD'});
+                const workCost = parseFloat(feature.properties.work_cost || 0).toLocaleString('en-US', {style: 'currency', currency: 'USD'});
+                const totalCost = parseFloat((feature.properties.expenses || 0) + (feature.properties.work_cost || 0)).toLocaleString('en-US', {style: 'currency', currency: 'USD'});
+                
+                // Create popup content
+                const popupContent = `
+                    <div class="property-popup">
+                        <h6>${feature.properties.name}</h6>
+                        <p><i class="fas fa-map-marker-alt me-2 text-primary"></i>${feature.properties.address}</p>
+                        <div class="financial-summary mb-2">
+                            <div class="d-flex justify-content-between mb-1">
+                                <small>Income:</small>
+                                <span class="text-success">${income}</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-1">
+                                <small>Expenses:</small>
+                                <span class="text-danger">${expenses}</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-1">
+                                <small>Work Costs:</small>
+                                <span class="text-warning">${workCost}</span>
+                            </div>
+                            <div class="d-flex justify-content-between fw-bold ${feature.properties.is_over_budget ? 'text-danger' : 'text-success'}">
+                                <small>Total Costs:</small>
+                                <span>${totalCost}</span>
+                            </div>
+                        </div>
+                        <a href="${feature.properties.url}" class="btn btn-sm btn-primary w-100">View Details</a>
+                    </div>
+                `;
+                
+                // Bind popup to layer (marker or polygon)
+                layer.bindPopup(popupContent);
+                
+                // Add hover effects for polygons
+                if (feature.geometry.type === 'Polygon') {
+                    layer.on('mouseover', function() {
+                        this.setStyle({
+                            weight: 3,
+                            color: '#fff',
+                            fillOpacity: 0.9
+                        });
+                    });
+                    
+                    layer.on('mouseout', function() {
+                        propertiesLayer.resetStyle(this);
+                    });
+                }
+                
+                // Highlight layer when clicked
+                layer.on('click', function() {
+                    selectProperty(feature.properties.id);
+                });
+                
+                // Add over-budget flag to property list items if needed
+                if (feature.properties.is_over_budget) {
+                    const propertyListItem = document.querySelector(`.property-item[data-property-id="${feature.properties.id}"]`);
+                    if (propertyListItem) {
+                        propertyListItem.classList.add('over-budget');
+                        propertyListItem.setAttribute('title', 'This property is over budget');
+                    }
+                }
+            }
+        }).addTo(map);
+        
+        // Fit map to bounds if there are properties
+        if (propertiesLayer.getBounds().isValid()) {
+            map.fitBounds(propertiesLayer.getBounds());
+        }
+    }
+    
+    function selectProperty(propertyId) {
+        // Update property filter dropdown
+        const propertyFilter = document.getElementById('propertyFilter');
+        propertyFilter.value = propertyId;
+        
+        // Update property list selection
+        const propertyItems = document.querySelectorAll('.property-item');
+        propertyItems.forEach(item => {
+            if (item.getAttribute('data-property-id') === propertyId) {
+                item.classList.add('active');
+                // Add a highlight animation
+                item.style.transition = 'background-color 0.5s ease';
+                const originalBackground = item.style.backgroundColor;
+                item.style.backgroundColor = '#4361ee';
+                item.style.color = 'white';
+                
+                setTimeout(() => {
+                    item.style.backgroundColor = originalBackground;
+                    item.style.color = '';
+                }, 700);
+                
+                // Scroll to selected property in list
+                item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                
+                // Zoom to the property on the map
+                const layer = propertyMarkers[propertyId];
+                if (layer) {
+                    // Check if it's a polygon or a point
+                    if (layer.getLatLng) {
+                        // It's a marker
+                        map.setView(layer.getLatLng(), 18);
+                    } else if (layer.getBounds) {
+                        // It's a polygon
+                        map.fitBounds(layer.getBounds(), { padding: [50, 50], maxZoom: 18 });
+                    }
+                    layer.openPopup();
+                }
+            } else {
+                item.classList.remove('active');
+            }
+        });
+        
+        // Update data based on selection
+        updateDashboardData();
+    }
+    
+    function setupEventListeners() {
+        // Property selection from list
+        const propertyItems = document.querySelectorAll('.property-item');
+        propertyItems.forEach(item => {
+            item.addEventListener('click', function() {
+                const propertyId = this.getAttribute('data-property-id');
+                selectProperty(propertyId);
+            });
+        });
+        
+        // Map layer toggle
+        const mapLayerButtons = document.querySelectorAll('[data-map-layer]');
+        mapLayerButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                // Remove active class from all buttons
+                mapLayerButtons.forEach(btn => btn.classList.remove('active'));
+                // Add active class to clicked button
+                this.classList.add('active');
+                
+                // Update map layer
+                const layerType = this.getAttribute('data-map-layer');
+                if (layerType === 'standard') {
+                    map.removeLayer(mapLayers.satellite);
+                    map.addLayer(mapLayers.standard);
+                } else if (layerType === 'satellite') {
+                    map.removeLayer(mapLayers.standard);
+                    map.addLayer(mapLayers.satellite);
+                }
+            });
+        });
+        
+        // Period selector for Income vs Expenses chart
+        const periodButtons = document.querySelectorAll('[data-period]');
+        periodButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                // Remove active class from all buttons
+                periodButtons.forEach(btn => btn.classList.remove('active'));
+                // Add active class to clicked button
+                this.classList.add('active');
+                
+                // Update chart based on selected period
+                const period = this.getAttribute('data-period');
+                // This would normally aggregate data based on the period
+                console.log(`Switching to ${period} view`);
+            });
+        });
+        
+        // Filter change events
+        document.getElementById('dateRange').addEventListener('change', updateDashboardData);
+        document.getElementById('propertyFilter').addEventListener('change', function() {
+            const propertyId = this.value;
+            
+            // Update property list selection
+            const propertyItems = document.querySelectorAll('.property-item');
+            propertyItems.forEach(item => {
+                if (item.getAttribute('data-property-id') === propertyId || (propertyId === 'all' && item.getAttribute('data-property-id'))) {
+                    item.classList.add('active');
+                } else {
+                    item.classList.remove('active');
+                }
+            });
+            
+            // If a specific property is selected, focus the map on that property
+            if (propertyId !== 'all') {
+                const layer = propertyMarkers[propertyId];
+                if (layer) {
+                    // Check if it's a polygon or a point
+                    if (layer.getLatLng) {
+                        // It's a marker
+                        map.setView(layer.getLatLng(), 18);
+                    } else if (layer.getBounds) {
+                        // It's a polygon
+                        map.fitBounds(layer.getBounds(), { padding: [50, 50], maxZoom: 18 });
+                    }
+                    layer.openPopup();
+                }
+            } else {
+                // If "All Properties" is selected, fit the map to show all properties
+                if (propertiesLayer && propertiesLayer.getBounds().isValid()) {
+                    map.fitBounds(propertiesLayer.getBounds());
+                }
+            }
+            
+            updateDashboardData();
+        });
+        document.getElementById('categoryFilter').addEventListener('change', updateDashboardData);
+        document.getElementById('visualizationType').addEventListener('change', updateChartType);
+        
+        // Button actions
+        document.getElementById('refreshData').addEventListener('click', function() {
+            updateDashboardData();
+        });
+        
+        document.getElementById('exportData').addEventListener('click', function() {
+            alert('This would export the current data to CSV/Excel');
+        });
+    }
+    
+    function updateDashboardData() {
+        // Get current filter values
+        const propertyId = document.getElementById('propertyFilter').value;
+        const dateRange = document.getElementById('dateRange').value;
+        const categoryFilter = document.getElementById('categoryFilter').value;
+        
+        // Show loading indicator
+        showLoading();
+        
+        // Build URL with query parameters
+        const url = `/analytics/data?property_id=${propertyId}&date_range=${dateRange}&category=${categoryFilter}`;
+        
+        // In a real app, fetch updated data from the server
+        // For this demo, we'll simulate a delay and show success message
+        setTimeout(function() {
+            hideLoading();
+            
+            // Show a notification
+            showNotification('Data refreshed successfully!', 'success');
+            
+            // Update the browser URL without reloading the page
+            const newUrl = `/analytics?property_id=${propertyId}&date_range=${dateRange}`;
+            window.history.pushState({ path: newUrl }, '', newUrl);
+            
+            // Update property filter label
+            const propertyName = propertyId === 'all' ? 'All Properties' : 
+                document.querySelector(`.property-item[data-property-id="${propertyId}"] h6`).textContent;
+            
+            document.getElementById('incomeLabel').textContent = propertyName;
+            document.getElementById('expensesLabel').textContent = propertyName;
+            document.getElementById('profitLabel').textContent = propertyName;
+            document.getElementById('workLabel').textContent = propertyName;
+        }, 800);
+    }
+    
+    function updateChartType() {
+        const chartType = document.getElementById('visualizationType').value;
+        
+        // Update chart types
+        if (incomeExpensesChart) {
+            incomeExpensesChart.config.type = chartType === 'line' ? 'line' : 'bar';
+            incomeExpensesChart.update();
+        }
+        
+        if (propertyPerformanceChart) {
+            propertyPerformanceChart.config.type = chartType;
+            propertyPerformanceChart.update();
+        }
+        
+        showNotification(`Chart type changed to ${chartType}!`, 'info');
+    }
+    
+    function generateHeatmap() {
+        const heatmapContainer = document.getElementById('workHeatmap');
+        heatmapContainer.innerHTML = ''; // Clear loading message
+        
+        // Generate month labels
+        const monthsRow = document.createElement('div');
+        monthsRow.className = 'd-flex justify-content-between mb-2';
+        
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        months.forEach(month => {
+            const monthLabel = document.createElement('div');
+            monthLabel.className = 'text-center';
+            monthLabel.style.width = '25px';
+            monthLabel.style.fontSize = '10px';
+            monthLabel.textContent = month;
+            monthsRow.appendChild(monthLabel);
+        });
+        
+        heatmapContainer.appendChild(monthsRow);
+        
+        // Generate day labels and heatmap cells
+        const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+        
+        daysOfWeek.forEach((day, dayIndex) => {
+            const dayRow = document.createElement('div');
+            dayRow.className = 'd-flex align-items-center mb-2';
+            
+            const dayLabel = document.createElement('div');
+            dayLabel.className = 'me-2';
+            dayLabel.style.width = '30px';
+            dayLabel.style.fontSize = '10px';
+            dayLabel.textContent = day;
+            dayRow.appendChild(dayLabel);
+            
+            // Create the heatmap cells for each month
+            for (let month = 0; month < 12; month++) {
+                // Find the heatmap data for this day/month combination
+                const heatmapEntry = workHeatmapData.find(entry => 
+                    entry.day === day && entry.month === months[month]
+                );
+                
+                const intensity = heatmapEntry ? heatmapEntry.intensity : 0;
+                const count = heatmapEntry ? heatmapEntry.count : 0;
+                
+                const cell = document.createElement('div');
+                cell.className = 'heatmap-day';
+                cell.style.backgroundColor = `rgba(67, 97, 238, ${intensity.toFixed(1)})`;
+                
+                // Add tooltip data
+                cell.setAttribute('data-month', months[month]);
+                cell.setAttribute('data-day', day);
+                cell.setAttribute('data-value', count);
+                
+                // Add event listeners for tooltip
+                cell.addEventListener('mouseover', showHeatmapTooltip);
+                cell.addEventListener('mouseout', hideHeatmapTooltip);
+                
+                dayRow.appendChild(cell);
+            }
+            
+            heatmapContainer.appendChild(dayRow);
+        });
+    }
+    
+    function showHeatmapTooltip(e) {
+        const tooltip = document.getElementById('tooltip');
+        const month = e.target.getAttribute('data-month');
+        const day = e.target.getAttribute('data-day');
+        const value = e.target.getAttribute('data-value');
+        
+        tooltip.innerHTML = `${day}, ${month}: ${value} work items`;
+        tooltip.style.display = 'block';
+        tooltip.style.left = (e.pageX + 10) + 'px';
+        tooltip.style.top = (e.pageY + 10) + 'px';
+    }
+    
+    function hideHeatmapTooltip() {
+        const tooltip = document.getElementById('tooltip');
+        tooltip.style.display = 'none';
+    }
+    
+    function showLoading() {
+        document.getElementById('loadingOverlay').classList.add('active');
+    }
+    
+    function hideLoading() {
+        document.getElementById('loadingOverlay').classList.remove('active');
+    }
+    
+    function showNotification(message, type) {
+        // Check if flash-messages container exists, create if not
+        let flashContainer = document.querySelector('.flash-messages');
+        if (!flashContainer) {
+            flashContainer = document.createElement('div');
+            flashContainer.className = 'flash-messages position-fixed top-0 end-0 p-3';
+            flashContainer.style.zIndex = '1050';
+            document.body.appendChild(flashContainer);
+        }
+        
+        // Create alert element
+        const alert = document.createElement('div');
+        alert.className = `alert alert-${type} alert-dismissible fade show`;
+        alert.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        `;
+        flashContainer.appendChild(alert);
+        
+        // Auto-dismiss after 3 seconds
+        setTimeout(() => {
+            alert.classList.remove('show');
+            setTimeout(() => alert.remove(), 150);
+        }, 3000);
+    }
+</script>
+{% endblock %}

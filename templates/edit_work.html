@@ -1,0 +1,83 @@
+{% extends "layout.html" %}
+{% block title %}Edit Work Record - PropIntel{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">Edit Work Record for {{ property_name }}</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label for="work_description" class="form-label">Work Description</label>
+                        <input type="text" class="form-control" id="work_description" name="work_description" value="{{ work.work_description or '' }}" required>
+                        <div class="form-text">Brief description of the work performed</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="work_date" class="form-label">Date</label>
+                        <input type="date" class="form-control" id="work_date" name="work_date" value="{{ work.work_date.strftime('%Y-%m-%d') if work.work_date else '' }}" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="work_cost" class="form-label">Cost</label>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            <input type="number" class="form-control" id="work_cost" name="work_cost" step="0.01" min="0" value="{{ work.work_cost or 0 }}">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="expense_type" class="form-label">Expense Type</label>
+                        <select class="form-select" id="expense_type" name="expense_type" disabled>
+                            <option value="miscellaneous" selected>Miscellaneous</option>
+                            <option value="material">Material</option>
+                            <option value="wage">Wage</option>
+                            <option value="project_manager">Project Manager</option>
+                        </select>
+                        <div class="form-text">Expense type cannot be changed directly</div>
+                        <input type="hidden" name="expense_type" value="miscellaneous">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="work_image" class="form-label">Work Image</label>
+                        {% if work.image_path %}
+                        <div class="mb-2">
+                            <img src="/{{ work.image_path }}" alt="Current work image" class="img-thumbnail" style="max-height: 100px;">
+                            <div class="form-text">Current image</div>
+                        </div>
+                        {% endif %}
+                        <input type="file" class="form-control" id="work_image" name="work_image" accept="image/*">
+                        <div class="form-text">Upload a new image of the work (optional, leave empty to keep current)</div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="payment_method" class="form-label">Payment Method</label>
+                        <select class="form-select" id="payment_method" name="payment_method">
+                            <option value="">-- Select --</option>
+                            <option value="Cash" {{ 'selected' if work.payment_method == 'Cash' else '' }}>Cash</option>
+                            <option value="Bank Transfer" {{ 'selected' if work.payment_method == 'Bank Transfer' else '' }}>Bank Transfer</option>
+                            <option value="Credit Card" {{ 'selected' if work.payment_method == 'Credit Card' else '' }}>Credit Card</option>
+                            <option value="Debit Card" {{ 'selected' if work.payment_method == 'Debit Card' else '' }}>Debit Card</option>
+                            <option value="Check" {{ 'selected' if work.payment_method == 'Check' else '' }}>Check</option>
+                            <option value="Direct Debit" {{ 'selected' if work.payment_method == 'Direct Debit' else '' }}>Direct Debit</option>
+                            <option value="Other" {{ 'selected' if work.payment_method == 'Other' else '' }}>Other</option>
+                        </select>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i> Update Work Record
+                        </button>
+                        <a href="{{ url_for('property_detail', property_id=property_id) }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-2"></i> Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

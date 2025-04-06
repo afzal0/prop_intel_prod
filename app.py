@@ -19,6 +19,7 @@ import secrets
 import string
 import ipaddress
 from flask import make_response
+from analytics_dashboard import analytics_dashboard
 
 # Import our data extraction script
 import property_data_extractor as extractor
@@ -49,7 +50,7 @@ app.secret_key = os.environ.get('SECRET_KEY', 'propintel_secret_key')
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['PROPERTY_IMAGES'] = 'static/images/properties'
 app.config['WORK_IMAGES'] = 'static/images/work'
-app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif'}
+app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif','pdf'}
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB limit
 app.config['SESSION_COOKIE_SECURE'] = os.environ.get('FLASK_ENV') != 'development'
 app.config['SESSION_COOKIE_HTTPONLY'] = True
@@ -59,6 +60,8 @@ app.config["SESSION_TYPE"] = "filesystem"
 app.config["SESSION_FILE_DIR"] = os.path.join(os.path.dirname(os.path.abspath(__file__)), "flask_session")
 app.config["PERMANENT_SESSION_LIFETIME"] = datetime.timedelta(days=31)
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static/images')
+MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB max upload size
 
 # Add this to top of app.py
 from flask_session import Session 
@@ -76,6 +79,7 @@ MELBOURNE_CENTER = [-37.8136, 144.9631]
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
 
+
 secret_key_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'secret_key.txt')
 if os.path.exists(secret_key_path):
     with open(secret_key_path, 'r') as f:
@@ -85,6 +89,22 @@ else:
     with open(secret_key_path, 'w') as f:
         f.write(app.secret_key)
 
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        # Debug session
+        print(f"login_required: g.user = {g.user}")
+        
+        if g.user is None:
+            # Store the original URL in session to return after login
+            next_url = request.url
+            session['next_url'] = next_url
+            
+            flash('Please log in to access this page', 'warning')
+            print(f"login_required: redirecting to login, next_url = {next_url}")
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated_function
 
 @app.template_filter('format_currency')
 def format_currency_filter(value):
@@ -171,15 +191,13 @@ def optimize_image(image_data, max_size=(1200, 1200), quality=85):
         return image_data
 
 
+
+
 @app.before_request
 def before_request():
     """Load user before each request"""
     # Initialize g.user
     g.user = None
-    
-    # Debug session data
-    print(f"before_request: session = {session}")
-    print(f"before_request: path = {request.path}")
     
     # Skip session check for static files
     if request.path.startswith("/static/"):
@@ -188,7 +206,6 @@ def before_request():
     # If user_id is in session, try to load user
     if "user_id" in session:
         user_id = session["user_id"]
-        print(f"before_request: user_id = {user_id}")
         
         # Handle special case for guest user
         if user_id == "guest":
@@ -199,24 +216,21 @@ def before_request():
                 "full_name": "Guest User",
                 "role": "guest"
             }
-            print("before_request: loaded guest user")
             return
         
-        # Handle special case for admin user
-        if user_id == "1" or user_id == 1:
+        # Handle special case for admin user - make sure user_id is compared correctly
+        if user_id == "1":
             g.user = {
-                "user_id": 1,
+                "user_id": "1",  # Keep as string for consistent comparison
                 "username": "admin",
                 "email": "admin@propintel.com",
                 "full_name": "System Administrator",
                 "role": "admin"
             }
-            print("before_request: loaded admin user")
             return
         
-        # Convert user_id to integer for database queries
+        # For regular users, try to get user from database
         try:
-            # For regular users, try to get user from database
             conn = get_db_connection()
             try:
                 with conn.cursor(cursor_factory=RealDictCursor) as cur:
@@ -225,53 +239,192 @@ def before_request():
                         FROM propintel.users 
                         WHERE user_id = %s AND is_active = TRUE
                     """, (int(user_id),))
-                    user = cur.fetchone()
                     
+                    user = cur.fetchone()
                     if user:
+                        # Convert user_id to string for consistent comparison
+                        user['user_id'] = str(user['user_id'])
                         g.user = user
-                        print(f"before_request: loaded user from database: {user['username']}")
                     else:
                         # User not found or not active, clear session
-                        print(f"before_request: user {user_id} not found or not active, clearing session")
                         session.pop('user_id', None)
-                        session.pop('is_guest', None)
             except Exception as db_error:
-                print(f"before_request: database error: {db_error}")
                 # Special handling for admin ID 1 when database fails
-                if str(user_id) == '1':
+                if user_id == '1':
                     g.user = {
-                        'user_id': 1,
+                        'user_id': '1',  # Keep as string for consistent comparison
                         'username': 'admin',
                         'email': 'admin@propintel.com',
                         'full_name': 'System Administrator',
                         'role': 'admin'
                     }
-                    print("before_request: loaded admin user as fallback after database error")
             finally:
                 conn.close()
-        except (ValueError, TypeError) as e:
-            print(f"before_request: error converting user_id: {e}")
+        except (ValueError, TypeError):
             # Clear invalid session data
             session.clear()
-    else:
-        print("before_request: no user_id in session")
+
+# Fix for login function
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    """User login page with improved admin login handling"""
+    # If already logged in, redirect to index
+    if g.user:
+        return redirect(url_for('index'))
+        
+    if request.method == 'POST':
+        username = request.form.get('username', '').strip()
+        password = request.form.get('password', '')
+        remember = 'remember' in request.form
+        
+        # Guest login
+        if username.lower() == 'guest':
+            # Clear existing session
+            session.clear()
+            
+            # Set guest user data
+            session['user_id'] = 'guest'
+            session.permanent = True
+            
+            # Create response with redirect
+            resp = make_response(redirect(url_for('index')))
+            flash('Logged in as guest', 'info')
+            return resp
+        
+        # Admin login - store user_id as string and double check credentials
+        if username.lower() == 'admin':
+            # First check database for admin user
+            conn = None
+            try:
+                conn = get_db_connection()
+                with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                    cur.execute("""
+                        SELECT user_id, password_hash FROM propintel.users 
+                        WHERE username = 'admin' AND is_active = TRUE
+                    """)
+                    admin_user = cur.fetchone()
+                    
+                    if admin_user:
+                        # Verify password using bcrypt
+                        import bcrypt
+                        password_match = bcrypt.checkpw(
+                            password.encode('utf-8'), 
+                            admin_user['password_hash'].encode('utf-8')
+                        )
+                        
+                        if password_match:
+                            # Clear existing session
+                            session.clear()
+                            # Store user_id as string
+                            session['user_id'] = str(admin_user['user_id'])
+                            session.permanent = remember
+                            flash('Welcome back, System Administrator!', 'success')
+                            return redirect(url_for('index'))
+            except Exception:
+                # Database check failed, fall back to hardcoded credentials
+                pass
+            finally:
+                if conn:
+                    conn.close()
+            
+            # Fallback to hardcoded admin credentials
+            if password == 'admin123':
+                # Clear existing session
+                session.clear()
+                # Store user_id as string
+                session['user_id'] = '1'
+                session.permanent = remember
+                flash('Welcome back, System Administrator!', 'success')
+                return redirect(url_for('index'))
+        
+        # Regular login (for database users)
+        conn = None
+        try:
+            conn = get_db_connection()
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute("""
+                    SELECT user_id, username, email, full_name, role, password_hash, is_active
+                    FROM propintel.users
+                    WHERE username = %s
+                """, (username,))
+                
+                user = cur.fetchone()
+                
+                if user and user['is_active']:
+                    # Verify password using bcrypt
+                    import bcrypt
+                    password_match = bcrypt.checkpw(
+                        password.encode('utf-8'), 
+                        user['password_hash'].encode('utf-8')
+                    )
+                    
+                    if password_match:
+                        # Clear existing session
+                        session.clear()
+                        # Store user_id as string
+                        session['user_id'] = str(user['user_id'])
+                        session.permanent = remember
+                        
+                        # Update last login timestamp
+                        cur.execute("""
+                            UPDATE propintel.users
+                            SET last_login = CURRENT_TIMESTAMP
+                            WHERE user_id = %s
+                        """, (user['user_id'],))
+                        conn.commit()
+                        
+                        # Success message
+                        flash(f"Welcome back, {user['full_name']}!", 'success')
+                        
+                        # Redirect to next_url if it exists
+                        next_url = session.pop('next_url', None)
+                        if next_url:
+                            return redirect(next_url)
+                        return redirect(url_for('index'))
+        except Exception as e:
+            flash(f"Login error: {str(e)}", 'danger')
+        finally:
+            if conn:
+                conn.close()
+        
+        # Login failed
+        flash('Invalid username or password', 'danger')
+    
+    return render_template('login.html')
+
+# Login required decorator
 
 # Login required decorator
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        # Debug session
-        print(f"login_required: session = {session}")
-        print(f"login_required: g.user = {g.user}")
-        
         if g.user is None:
             # Store the original URL in session to return after login
             next_url = request.url
             session['next_url'] = next_url
             
             flash('Please log in to access this page', 'warning')
-            print(f"login_required: redirecting to login, next_url = {next_url}")
             return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+# Admin required decorator
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        # Ensure g.user exists and is properly loaded
+        if g.user is None:
+            # Store the URL for redirect after login
+            session['next_url'] = request.url
+            flash('Please log in to access this page', 'warning')
+            return redirect(url_for('login'))
+            
+        # Verify role is admin (case-insensitive)
+        if g.user.get('role', '').lower() != 'admin':
+            flash('Administrator access required', 'danger')
+            return redirect(url_for('index'))
+            
         return f(*args, **kwargs)
     return decorated_function
 
@@ -327,6 +480,8 @@ def get_db_connection():
         params = extractor.get_db_config()
         conn = psycopg2.connect(**params)
         return conn
+
+
 
 @app.route('/')
 def index():
@@ -710,12 +865,12 @@ def set_session_cookie(response, session_data, max_age=None):
 
 
 
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    """User login page with direct cookie handling"""
-    # If already logged in, redirect to index
-    if g.user:
-        return redirect(url_for('index'))
+# DUPLICATE ROUTE: # REMOVED DUPLICATE LOGIN FUNCTION
+
+#     """User login page with direct cookie handling"""
+#     # If already logged in, redirect to index
+#     if g.user:
+#         return redirect(url_for('index'))
         
     if request.method == 'POST':
         username = request.form.get('username', '')
@@ -1347,6 +1502,7 @@ def properties():
     project_manager = request.args.get('project_manager', '')
     sort_by = request.args.get('sort', 'property_id')
     sort_dir = request.args.get('dir', 'asc')
+    export_excel = request.args.get('export', '')
     
     # Validate sort parameters to prevent SQL injection
     valid_sort_fields = ['property_id', 'property_name', 'project_name', 'status', 'due_date', 
@@ -1469,6 +1625,60 @@ def properties():
     finally:
         conn.close()
     
+    # Handle Excel export request
+    if export_excel:
+        import pandas as pd
+        from io import BytesIO
+        from flask import send_file
+        
+        # Create a Pandas dataframe from properties
+        df_data = [{
+            'Property Name': p['property_name'],
+            'Address': p['address'],
+            'Location': p['location'] or '',
+            'Status': p['status'] or '',
+            'Project Type': p['project_type'] or '',
+            'Project Manager': p['project_manager'] or '',
+            'Total Income': float(p['total_income']) if p['total_income'] else 0,
+            'Total Expenses': float(p['total_expenses']) if p['total_expenses'] else 0,
+            'Profit': float(p['profit']) if p['profit'] else 0,
+            'Number of Work Items': p['work_count'],
+            'Number of Income Records': p['income_count'],
+            'Number of Expense Records': p['expense_count']
+        } for p in properties]
+        
+        df = pd.DataFrame(df_data)
+        
+        # Create an Excel file in memory
+        output = BytesIO()
+        with pd.ExcelWriter(output, engine='openpyxl') as writer:
+            df.to_excel(writer, sheet_name='Properties', index=False)
+            
+            # Auto-adjust columns width
+            worksheet = writer.sheets['Properties']
+            for idx, col in enumerate(df.columns):
+                max_len = max(df[col].astype(str).map(len).max(), len(col) + 2)
+                worksheet.column_dimensions[worksheet.cell(1, idx + 1).column_letter].width = max_len
+        
+        output.seek(0)
+        
+        # Set filename based on filters
+        filename = 'PropIntel_Properties'
+        if search:
+            filename += f'_search_{search}'
+        if status_filter:
+            filename += f'_status_{status_filter}'
+        if project_type:
+            filename += f'_type_{project_type}'
+        filename += '.xlsx'
+        
+        return send_file(
+            output,
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            download_name=filename,
+            as_attachment=True
+        )
+    
     return render_template('properties.html', 
                           properties=properties, 
                           search=search,
@@ -1480,19 +1690,54 @@ def properties():
                           project_types=project_types,
                           project_managers=project_managers,
                           statuses=statuses)
+@app.route('/analytics')
+@login_required
+def analytics():
+    return analytics_dashboard()
 
+@app.route('/analytics/data')
+@login_required
+def analytics_data():
+    """API endpoint to fetch analytics dashboard data based on filters"""
+    from analytics_dashboard import update_dashboard_data
+    return update_dashboard_data()
+
+@app.route('/budget-planner')
+@login_required
+def budget_planner():
+    """Budget planning page"""
+    conn = None
+    try:
+        conn = get_db_connection()
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            # Get list of properties
+            cur.execute("""
+                SELECT property_id, property_name 
+                FROM propintel.properties
+                WHERE is_hidden IS NOT TRUE
+                ORDER BY property_name
+            """)
+            properties = cur.fetchall()
+    except Exception as e:
+        flash(f"Error: {e}", "danger")
+        return redirect(url_for('index'))
+    finally:
+        if conn:
+            conn.close()
+            
+    return render_template('budget_planner.html', properties=properties)
 @app.route('/property/<int:property_id>')
 def property_detail(property_id):
-    """View details for a specific property"""
-    conn = get_db_connection()
+    """Detailed view of a property"""
+    export_excel = request.args.get('export', '')
+    
+    conn = None
     try:
+        conn = get_db_connection()
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
-            # Get property details with owner info
+            # Get property details
             cur.execute("""
-                SELECT p.*, u.username as owner_username, u.full_name as owner_name
-                FROM propintel.properties p
-                LEFT JOIN propintel.users u ON p.user_id = u.user_id
-                WHERE p.property_id = %s
+                SELECT * FROM propintel.properties WHERE property_id = %s
             """, (property_id,))
             property_data = cur.fetchone()
             
@@ -1500,236 +1745,403 @@ def property_detail(property_id):
                 flash('Property not found', 'danger')
                 return redirect(url_for('properties'))
             
-            # Check access control - only owner and admin can view hidden properties
-            if property_data['is_hidden'] and (not g.user or 
-                                              (g.user['role'] != 'admin' and 
-                                               g.user['user_id'] != property_data['user_id'])):
-                flash('This property is not available', 'warning')
-                return redirect(url_for('properties'))
+            # Initialize variables with defaults
+            property_images = []
+            work_records = []
+            work_images = []
+            income_records = []
+            expense_records = []
+            income_total = 0
+            expense_total = 0
+            work_total = 0
+            net_total = 0
+            trend_labels = []
+            income_data = []
+            expense_data = []
             
-            # Check user permission - regular users can only view their own properties
-            if g.user and g.user['role'] != 'admin' and g.user['user_id'] != 'guest':
-                if g.user['user_id'] != property_data['user_id']:
-                    flash('You do not have permission to view this property', 'danger')
-                    return redirect(url_for('properties'))
+            # Safe default for expense categories
+            expense_categories = {
+                'wage_total': 0,
+                'pm_total': 0,
+                'material_total': 0,
+                'misc_total': 0
+            }
             
-            # Get property images
-            cur.execute("""
-                SELECT image_id, image_path, description, upload_date
-                FROM propintel.property_images
-                WHERE property_id = %s
-                ORDER BY upload_date DESC
-            """, (property_id,))
-            property_images = cur.fetchall()
+            # Get property images if the table exists
+            try:
+                cur.execute("""
+                    SELECT * FROM propintel.property_images 
+                    WHERE property_id = %s AND image_type = 'property'
+                    ORDER BY upload_date DESC
+                """, (property_id,))
+                property_images = cur.fetchall() or []
+            except (psycopg2.Error, Exception):
+                # Table might not exist, continue without images
+                pass
             
             # Get work records
-            cur.execute("""
-                SELECT w.*, u.username as created_by
-                FROM propintel.work w
-                LEFT JOIN propintel.users u ON w.user_id = u.user_id
-                WHERE w.property_id = %s
-                ORDER BY w.work_date DESC
-            """, (property_id,))
-            work_records = cur.fetchall()
+            try:
+                cur.execute("""
+                    SELECT * FROM propintel.work 
+                    WHERE property_id = %s
+                    ORDER BY work_date DESC
+                """, (property_id,))
+                work_records = cur.fetchall() or []
+                
+                # Try to add image paths to work records
+                try:
+                    for idx, record in enumerate(work_records):
+                        work_desc = record.get('work_description', '')
+                        if work_desc:
+                            cur.execute("""
+                                SELECT image_path FROM propintel.property_images 
+                                WHERE property_id = %s AND image_type = 'work' 
+                                    AND description LIKE %s
+                                LIMIT 1
+                            """, (property_id, f"%{work_desc}%"))
+                            image_result = cur.fetchone()
+                            if image_result:
+                                work_records[idx]['image_path'] = image_result['image_path']
+                except Exception:
+                    # Ignore errors adding image paths
+                    pass
+            except Exception:
+                # Continue without work records if there's an error
+                pass
             
-            # Get work images
-            if work_records:
-                work_ids = [w['work_id'] for w in work_records]
-                placeholders = ','.join(['%s'] * len(work_ids))
-                
-                cur.execute(f"""
-                    SELECT image_id, work_id, image_path, description, upload_date
-                    FROM propintel.property_images
-                    WHERE property_id = %s AND image_type = 'work' 
-                    AND work_id IN ({placeholders})
+            # Get work images if possible
+            try:
+                cur.execute("""
+                    SELECT * FROM propintel.property_images 
+                    WHERE property_id = %s AND image_type = 'work'
                     ORDER BY upload_date DESC
-                """, [property_id] + work_ids)
-                
-                # Group images by work_id
-                work_images = {}
-                for img in cur.fetchall():
-                    work_id = img['work_id']
-                    if work_id not in work_images:
-                        work_images[work_id] = []
-                    work_images[work_id].append(img)
-                
-                # Add images to work records
-                for work in work_records:
-                    work_id = work['work_id']
-                    if work_id in work_images:
-                        work['images'] = work_images[work_id]
-                    else:
-                        work['images'] = []
+                """, (property_id,))
+                work_images = cur.fetchall() or []
+            except Exception:
+                # Continue without work images
+                pass
             
             # Get income records
-            cur.execute("""
-                SELECT mi.*, u.username as created_by
-                FROM propintel.money_in mi
-                LEFT JOIN propintel.users u ON mi.user_id = u.user_id
-                WHERE mi.property_id = %s
-                ORDER BY mi.income_date DESC
-            """, (property_id,))
-            income_records = cur.fetchall()
+            try:
+                cur.execute("""
+                    SELECT * FROM propintel.money_in 
+                    WHERE property_id = %s
+                    ORDER BY income_date DESC
+                """, (property_id,))
+                income_records = cur.fetchall() or []
+                
+                # Calculate income total
+                income_total = sum(record.get('income_amount', 0) or 0 for record in income_records)
+            except Exception:
+                # Continue without income records
+                pass
             
             # Get expense records
-            cur.execute("""
-                SELECT mo.*, u.username as created_by
-                FROM propintel.money_out mo
-                LEFT JOIN propintel.users u ON mo.user_id = u.user_id
-                WHERE mo.property_id = %s
-                ORDER BY mo.expense_date DESC
-            """, (property_id,))
-            expense_records = cur.fetchall()
+            try:
+                cur.execute("""
+                    SELECT * FROM propintel.money_out 
+                    WHERE property_id = %s
+                    ORDER BY expense_date DESC
+                """, (property_id,))
+                expense_records = cur.fetchall() or []
+                
+                # Calculate expense total
+                expense_total = sum(record.get('expense_amount', 0) or 0 for record in expense_records)
+                
+                # Try to add receipt images to expense records
+                try:
+                    for idx, record in enumerate(expense_records):
+                        expense_details = record.get('expense_details', '')
+                        if expense_details:
+                            cur.execute("""
+                                SELECT image_path FROM propintel.property_images 
+                                WHERE property_id = %s AND image_type = 'receipt' 
+                                    AND description LIKE %s
+                                LIMIT 1
+                            """, (property_id, f"%{expense_details}%"))
+                            image_result = cur.fetchone()
+                            if image_result:
+                                expense_records[idx]['image_path'] = image_result['image_path']
+                except Exception:
+                    # Ignore errors adding image paths
+                    pass
+            except Exception:
+                # Continue without expense records
+                pass
+            
+            # Calculate work total
+            try:
+                work_total = sum(record.get('work_cost', 0) or 0 for record in work_records)
+            except Exception:
+                # Continue without work total
+                work_total = 0
+            
+            # Calculate net total
+            net_total = income_total - expense_total
+            
+            # Try to categorize expenses
+            try:
+                # First try SQL categorization
+                try:
+                    cur.execute("""
+                        SELECT
+                            COALESCE(SUM(CASE WHEN expense_category = 'wage' OR 
+                                                expense_details ILIKE '%wage%' OR 
+                                                expense_details ILIKE '%salary%' 
+                                        THEN expense_amount ELSE 0 END), 0) as wage_total,
+                            COALESCE(SUM(CASE WHEN expense_category = 'project_manager' OR 
+                                                expense_details ILIKE '%project manager%' OR 
+                                                expense_details ILIKE '%pm %' 
+                                        THEN expense_amount ELSE 0 END), 0) as pm_total,
+                            COALESCE(SUM(CASE WHEN expense_category = 'material' OR 
+                                                expense_details ILIKE '%material%' OR 
+                                                expense_details ILIKE '%supplies%' 
+                                        THEN expense_amount ELSE 0 END), 0) as material_total,
+                            COALESCE(SUM(CASE WHEN (expense_category IS NULL OR expense_category = 'miscellaneous') AND 
+                                                expense_details NOT ILIKE '%wage%' AND 
+                                                expense_details NOT ILIKE '%salary%' AND
+                                                expense_details NOT ILIKE '%project manager%' AND
+                                                expense_details NOT ILIKE '%pm %' AND
+                                                expense_details NOT ILIKE '%material%' AND
+                                                expense_details NOT ILIKE '%supplies%'
+                                        THEN expense_amount ELSE 0 END), 0) as misc_total
+                        FROM propintel.money_out
+                        WHERE property_id = %s
+                    """, (property_id,))
+                    
+                    category_result = cur.fetchone()
+                    if category_result:
+                        # Make sure all keys exist
+                        if all(k in category_result for k in ['wage_total', 'pm_total', 'material_total', 'misc_total']):
+                            expense_categories = category_result
+                except Exception:
+                    # SQL categorization failed, try manual categorization
+                    pass
+                
+                # Fall back to manual categorization if SQL version failed
+                if not all(k in expense_categories for k in ['wage_total', 'pm_total', 'material_total', 'misc_total']):
+                    expense_categories = {
+                        'wage_total': 0,
+                        'pm_total': 0,
+                        'material_total': 0,
+                        'misc_total': 0
+                    }
+                    
+                    for record in expense_records:
+                        try:
+                            amount = record.get('expense_amount', 0) or 0
+                            details = (record.get('expense_details', '') or '').lower()
+                            
+                            if 'wage' in details or 'salary' in details:
+                                expense_categories['wage_total'] += amount
+                            elif 'project manager' in details or 'pm ' in details:
+                                expense_categories['pm_total'] += amount
+                            elif 'material' in details or 'supplies' in details:
+                                expense_categories['material_total'] += amount
+                            else:
+                                expense_categories['misc_total'] += amount
+                        except Exception:
+                            # Skip this record on error
+                            continue
+            except Exception:
+                # If all categorization fails, use empty categories
+                expense_categories = {
+                    'wage_total': 0,
+                    'pm_total': 0,
+                    'material_total': 0,
+                    'misc_total': 0
+                }
             
             # Get monthly trend data for charts
-            cur.execute("""
-                SELECT 
-                    TO_CHAR(income_date, 'YYYY-MM') as month,
-                    SUM(income_amount) as total
-                FROM propintel.money_in
-                WHERE property_id = %s
-                GROUP BY TO_CHAR(income_date, 'YYYY-MM')
-                ORDER BY month
-            """, (property_id,))
-            income_trends = cur.fetchall()
-            
-            cur.execute("""
-                SELECT 
-                    TO_CHAR(expense_date, 'YYYY-MM') as month,
-                    SUM(expense_amount) as total
-                FROM propintel.money_out
-                WHERE property_id = %s
-                GROUP BY TO_CHAR(expense_date, 'YYYY-MM')
-                ORDER BY month
-            """, (property_id,))
-            expense_trends = cur.fetchall()
-            
-            # Get user settings for map theme
-            map_theme = 'light'  # Default
-            if g.user and g.user['user_id'] != 'guest':
-                cur.execute("""
-                    SELECT map_theme FROM propintel.user_settings
-                    WHERE user_id = %s
-                """, (g.user['user_id'],))
-                settings = cur.fetchone()
-                if settings and settings['map_theme']:
-                    map_theme = settings['map_theme']
-            
-            # Calculate totals - use stored values if available
-            if property_data['total_income'] is not None and property_data['total_expenses'] is not None:
-                income_total = float(property_data['total_income'])
-                expense_total = float(property_data['total_expenses'])
-            else:
-                income_total = sum(float(record['income_amount'] or 0) for record in income_records)
-                expense_total = sum(float(record['expense_amount'] or 0) for record in expense_records)
+            try:
+                trend_months = {}
+                for record in income_records:
+                    try:
+                        month_key = record['income_date'].strftime('%Y-%m')
+                        if month_key not in trend_months:
+                            trend_months[month_key] = {'income': 0, 'expense': 0}
+                        trend_months[month_key]['income'] += record.get('income_amount', 0) or 0
+                    except Exception:
+                        # Skip this record on error
+                        continue
                 
-            work_total = sum(float(record['work_cost'] or 0) for record in work_records)
-            net_total = income_total - expense_total - work_total
+                for record in expense_records:
+                    try:
+                        month_key = record['expense_date'].strftime('%Y-%m')
+                        if month_key not in trend_months:
+                            trend_months[month_key] = {'income': 0, 'expense': 0}
+                        trend_months[month_key]['expense'] += record.get('expense_amount', 0) or 0
+                    except Exception:
+                        # Skip this record on error
+                        continue
+                
+                # Sort months for chart display
+                sorted_months = sorted(trend_months.keys())
+                trend_labels = [month for month in sorted_months]
+                income_data = [trend_months[month]['income'] for month in sorted_months]
+                expense_data = [trend_months[month]['expense'] for month in sorted_months]
+            except Exception:
+                # If trend data fails, use empty lists
+                trend_labels = []
+                income_data = []
+                expense_data = []
             
-            # Check if user can edit this property
-            can_edit = False
-            if g.user:
-                if g.user['role'] == 'admin' or g.user['user_id'] == property_data['user_id']:
-                    can_edit = True
+            # Default map coordinates if property doesn't have lat/long
+            try:
+                map_lat = property_data.get('latitude') if property_data.get('latitude') else 40.7128
+                map_lng = property_data.get('longitude') if property_data.get('longitude') else -74.0060
+            except Exception:
+                map_lat = 40.7128
+                map_lng = -74.0060
+            
     except Exception as e:
-        flash(f"Error loading property details: {e}", "danger")
+        flash(f"Error: {e}", "danger")
         return redirect(url_for('properties'))
     finally:
-        conn.close()
+        if conn:
+            conn.close()
     
-    # Use property coords if available, otherwise default to Melbourne
-    map_lat = property_data['latitude'] if property_data['latitude'] else MELBOURNE_CENTER[0]
-    map_lng = property_data['longitude'] if property_data['longitude'] else MELBOURNE_CENTER[1]
+    # Ensure all variables exist before rendering
+    wage_expense_total = expense_categories.get('wage_total', 0) or 0
+    pm_expense_total = expense_categories.get('pm_total', 0) or 0
+    material_expense_total = expense_categories.get('material_total', 0) or 0
+    misc_expense_total = expense_categories.get('misc_total', 0) or 0
     
-    # Prepare trend data for charts
-    trend_labels = []
-    income_data = []
-    expense_data = []
+    # Handle Excel export request
+    if export_excel:
+        import pandas as pd
+        from io import BytesIO
+        from flask import send_file
+        
+        # Create Excel workbook with multiple sheets
+        output = BytesIO()
+        with pd.ExcelWriter(output, engine='openpyxl') as writer:
+            # Property Details Sheet
+            property_df = pd.DataFrame([{
+                'Property Name': property_data.get('property_name', ''),
+                'Address': property_data.get('address', ''),
+                'Location': property_data.get('location', ''),
+                'Status': property_data.get('status', ''),
+                'Project Type': property_data.get('project_type', ''),
+                'Project Manager': property_data.get('project_manager', ''),
+                'Total Income': float(income_total),
+                'Total Expenses': float(expense_total),
+                'Work Costs': float(work_total),
+                'Net Profit': float(net_total)
+            }])
+            property_df.to_excel(writer, sheet_name='Property Details', index=False)
+            
+            # Income Records Sheet
+            if income_records:
+                income_df = pd.DataFrame([{
+                    'Date': record.get('income_date'),
+                    'Amount': float(record.get('income_amount', 0)) if record.get('income_amount') else 0,
+                    'Source': record.get('income_source', ''),
+                    'Details': record.get('income_details', '')
+                } for record in income_records])
+                income_df.to_excel(writer, sheet_name='Income Records', index=False)
+            
+            # Expense Records Sheet
+            if expense_records:
+                expense_df = pd.DataFrame([{
+                    'Date': record.get('expense_date'),
+                    'Amount': float(record.get('expense_amount', 0)) if record.get('expense_amount') else 0,
+                    'Category': record.get('expense_category', ''),
+                    'Details': record.get('expense_details', '')
+                } for record in expense_records])
+                expense_df.to_excel(writer, sheet_name='Expense Records', index=False)
+            
+            # Work Records Sheet
+            if work_records:
+                work_df = pd.DataFrame([{
+                    'Date': record.get('work_date'),
+                    'Cost': float(record.get('work_cost', 0)) if record.get('work_cost') else 0,
+                    'Description': record.get('work_description', ''),
+                    'Worker': record.get('worker_name', '')
+                } for record in work_records])
+                work_df.to_excel(writer, sheet_name='Work Records', index=False)
+            
+            # Auto-adjust columns width
+            for sheet_name in writer.sheets:
+                worksheet = writer.sheets[sheet_name]
+                for idx, col in enumerate(worksheet.columns):
+                    max_length = 0
+                    for cell in col:
+                        if cell.value:
+                            try:
+                                if len(str(cell.value)) > max_length:
+                                    max_length = len(str(cell.value))
+                            except:
+                                pass
+                    adjusted_width = (max_length + 2)
+                    worksheet.column_dimensions[worksheet.cell(1, idx + 1).column_letter].width = adjusted_width
+        
+        output.seek(0)
+        
+        filename = f"PropIntel_Property_{property_data.get('property_name', property_id)}.xlsx"
+        filename = filename.replace(' ', '_').replace('/', '_')
+        
+        return send_file(
+            output,
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            download_name=filename,
+            as_attachment=True
+        )
     
-    # Combine all months from both income and expense records
-    all_months = set()
-    for record in income_trends:
-        all_months.add(record['month'])
-    for record in expense_trends:
-        all_months.add(record['month'])
-    
-    # Sort months chronologically
-    all_months = sorted(list(all_months))
-    
-    # Create datasets with 0 for missing months
-    income_by_month = {record['month']: float(record['total']) for record in income_trends}
-    expense_by_month = {record['month']: float(record['total']) for record in expense_trends}
-    
-    for month in all_months:
-        trend_labels.append(month)
-        income_data.append(income_by_month.get(month, 0))
-        expense_data.append(expense_by_month.get(month, 0))
-    
-    # Prepare work timeline data
-    timeline_data = []
-    for record in work_records:
-        if record['work_date']:
-            timeline_data.append({
-                'id': record['work_id'],
-                'description': record['work_description'],
-                'date': record['work_date'].strftime('%Y-%m-%d'),
-                'cost': float(record['work_cost'] or 0),
-                'status': record['status']
-            })
-    
-    return render_template('property_detail.html', 
-                          property=property_data,
-                          work_records=work_records,
-                          income_records=income_records,
-                          expense_records=expense_records,
-                          property_images=property_images,
-                          work_total=work_total,
-                          income_total=income_total,
-                          expense_total=expense_total,
-                          net_total=net_total,
-                          map_lat=map_lat,
-                          map_lng=map_lng,
-                          map_theme=map_theme,
-                          trend_labels=json.dumps(trend_labels),
-                          income_data=json.dumps(income_data),
-                          expense_data=json.dumps(expense_data),
-                          timeline_data=json.dumps(timeline_data),
-                          can_edit=can_edit)
+    # Pass all data to template
+    return render_template(
+        'property_detail.html', 
+        property=property_data,
+        property_images=property_images,
+        work_records=work_records,
+        work_images=work_images,
+        income_records=income_records, 
+        expense_records=expense_records,
+        income_total=income_total,
+        expense_total=expense_total,
+        work_total=work_total,
+        net_total=net_total,
+        trend_labels=trend_labels,
+        income_data=income_data,
+        expense_data=expense_data,
+        map_lat=map_lat,
+        map_lng=map_lng,
+        wage_expense_total=wage_expense_total,
+        pm_expense_total=pm_expense_total,
+        material_expense_total=material_expense_total,
+        misc_expense_total=misc_expense_total
+    )
+
 
 @app.route('/map')
 def map_view():
-    """View all properties on a map"""
+    """View all properties on a map with building polygons from OpenStreetMap"""
+    from analytics_dashboard import prepare_property_geojson
+    
     conn = get_db_connection()
     try:
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            # Get property data with financial information for budget analysis
             cur.execute("""
-                SELECT property_id, property_name, address, latitude, longitude
-                FROM propintel.properties
-                WHERE latitude IS NOT NULL AND longitude IS NOT NULL
+                SELECT p.property_id, p.property_name, p.address, p.location, p.latitude, p.longitude,
+                       COALESCE(SUM(mi.income_amount), 0) as total_income,
+                       COALESCE(SUM(mo.expense_amount), 0) as total_expenses,
+                       COALESCE(SUM(w.work_cost), 0) as work_cost,
+                       COUNT(w.work_id) as work_count,
+                       COUNT(mi.money_in_id) as income_count,
+                       COUNT(mo.money_out_id) as expense_count
+                FROM propintel.properties p
+                LEFT JOIN propintel.money_in mi ON p.property_id = mi.property_id
+                LEFT JOIN propintel.money_out mo ON p.property_id = mo.property_id
+                LEFT JOIN propintel.work w ON p.property_id = w.property_id
+                WHERE p.latitude IS NOT NULL AND p.longitude IS NOT NULL
+                GROUP BY p.property_id, p.property_name, p.address, p.location, p.latitude, p.longitude
             """)
             properties = cur.fetchall()
             
-            # Convert to GeoJSON format
-            features = []
-            for prop in properties:
-                features.append({
-                    'type': 'Feature',
-                    'geometry': {
-                        'type': 'Point',
-                        'coordinates': [prop['longitude'], prop['latitude']]
-                    },
-                    'properties': {
-                        'id': prop['property_id'],
-                        'name': prop['property_name'],
-                        'address': prop['address'],
-                        'url': url_for('property_detail', property_id=prop['property_id'])
-                    }
-                })
+            # Use the prepare_property_geojson function with polygon fetching enabled
+            geojson = prepare_property_geojson(properties, fetch_polygons=True)
             
-            geojson = {
-                'type': 'FeatureCollection',
-                'features': features
-            }
     except Exception as e:
         flash(f"Error loading map: {e}", "danger")
         geojson = {"type": "FeatureCollection", "features": []}
@@ -1737,7 +2149,7 @@ def map_view():
         conn.close()
     
     return render_template('map.html', 
-                          geojson=json.dumps(geojson),
+                          geojson=standard_json.dumps(geojson, cls=DecimalJSONEncoder),
                           center_lat=MELBOURNE_CENTER[0],
                           center_lng=MELBOURNE_CENTER[1])
 
@@ -1785,28 +2197,19 @@ def property_locations_api():
 @app.route('/property/new', methods=['GET', 'POST'])
 @login_required
 def new_property():
-    """Add a new property"""
-    if session.get('is_guest'):
+    """Add a new property with image upload"""
+    if g.user['user_id'] == 'guest':
         flash('Guest users cannot add properties', 'warning')
         return redirect(url_for('properties'))
         
     if request.method == 'POST':
         # Basic details
         property_name = request.form.get('property_name', '').strip()
-        project_name = request.form.get('project_name', '').strip()
         address = request.form.get('address', '').strip()
-        location = request.form.get('location', '').strip()
+        project_manager = request.form.get('property_manager', '').strip()
         
         # Project details
-        status = request.form.get('status', 'Active')
-        project_type = request.form.get('project_type', '').strip()
-        project_manager = request.form.get('project_manager', '').strip()
-        due_date_str = request.form.get('due_date', '')
-        
-        # Financial details (optional)
         purchase_date_str = request.form.get('purchase_date', '')
-        purchase_price = request.form.get('purchase_price', '')
-        current_value = request.form.get('current_value', '')
         notes = request.form.get('notes', '')
         
         # Validate required fields
@@ -1815,13 +2218,6 @@ def new_property():
             return redirect(url_for('new_property'))
         
         # Parse dates
-        due_date = None
-        if due_date_str:
-            try:
-                due_date = datetime.datetime.strptime(due_date_str, '%Y-%m-%d').date()
-            except ValueError:
-                flash('Invalid due date format', 'warning')
-        
         purchase_date = None
         if purchase_date_str:
             try:
@@ -1829,115 +2225,338 @@ def new_property():
             except ValueError:
                 flash('Invalid purchase date format', 'warning')
         
-        # Parse numeric values
-        try:
-            purchase_price = float(purchase_price) if purchase_price else None
-            current_value = float(current_value) if current_value else None
-        except ValueError:
-            flash('Invalid numeric value format', 'warning')
-            purchase_price = None
-            current_value = None
+        # Handle property image upload
+        property_image_path = None
+        if 'property_image' in request.files:
+            property_image = request.files['property_image']
+            if property_image and property_image.filename != '' and allowed_file(property_image.filename):
+                # Create a secure filename
+                filename = secure_filename(property_image.filename)
+                # Add timestamp to avoid name collisions
+                timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+                new_filename = f"{timestamp}_{filename}"
+                # Save the image
+                property_dir = os.path.join(UPLOAD_FOLDER, 'properties')
+                os.makedirs(property_dir, exist_ok=True)
+                file_path = os.path.join(property_dir, new_filename)
+                property_image.save(file_path)
+                # Store the relative path for database
+                property_image_path = f"images/properties/{new_filename}"
         
-        conn = get_db_connection()
+        conn = None
         try:
-            # Use geopy to get coordinates if not provided
-            latitude = None
-            longitude = None
-            
-            from geopy.geocoders import Nominatim
-            geolocator = Nominatim(user_agent="propintel-app")
-            
-            try:
-                location_obj = geolocator.geocode(address)
-                if location_obj:
-                    latitude = location_obj.latitude
-                    longitude = location_obj.longitude
-            except Exception as e:
-                flash(f"Error geocoding address: {e}", "warning")
-            
-            # Get user ID from session
-            user_id = g.user['user_id'] if g.user and g.user['user_id'] != 'guest' else None
-            
-            with conn.cursor() as cur:
-                # Insert property record
+            conn = get_db_connection()
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                # Insert new property
                 cur.execute("""
                     INSERT INTO propintel.properties 
-                    (user_id, property_name, project_name, status, address, location,
-                     project_type, project_manager, due_date, latitude, longitude,
-                     purchase_date, purchase_price, current_value, notes)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    (user_id, property_name, address, project_manager, purchase_date, notes)
+                    VALUES (%s, %s, %s, %s, %s, %s)
                     RETURNING property_id
-                """, (user_id, property_name, project_name, status, address, location,
-                      project_type, project_manager, due_date, latitude, longitude,
-                      purchase_date, purchase_price, current_value, notes))
+                """, (
+                    g.user['user_id'], property_name, address, project_manager, 
+                    purchase_date, notes
+                ))
                 
-                property_id = cur.fetchone()[0]
+                new_property_id = cur.fetchone()['property_id']
                 
-                # Process uploaded images
-                if 'property_images' in request.files:
-                    images = request.files.getlist('property_images')
-                    
-                    for image in images:
-                        if image and image.filename and allowed_file(image.filename):
-                            # Create secure filename
-                            filename = secure_random_filename(image.filename)
-                            file_path = os.path.join(app.config['PROPERTY_IMAGES'], filename)
-                            
-                            # Read, optimize and save the image
-                            image_data = image.read()
-                            optimized_data = optimize_image(image_data)
-                            
-                            with open(file_path, 'wb') as f:
-                                f.write(optimized_data)
-                            
-                            # Save image record in database
-                            relative_path = os.path.join('images/properties', filename)
-                            cur.execute("""
-                                INSERT INTO propintel.property_images
-                                (property_id, user_id, image_path, image_type, description, upload_date)
-                                VALUES (%s, %s, %s, %s, %s, CURRENT_TIMESTAMP)
-                            """, (property_id, user_id, relative_path, 'property', f"Image for {property_name}"))
+                # If we have an image, save it to the property_images table
+                if property_image_path:
+                    cur.execute("""
+                        INSERT INTO propintel.property_images
+                        (property_id, user_id, image_path, image_type, description)
+                        VALUES (%s, %s, %s, %s, %s)
+                    """, (
+                        new_property_id, g.user['user_id'], property_image_path, 
+                        'property', f"Main image for {property_name}"
+                    ))
                 
                 conn.commit()
-                log_action('create', 'properties', property_id, f"Created property: {property_name}")
-                
-                flash(f"Property '{property_name}' created successfully", "success")
-                return redirect(url_for('property_detail', property_id=property_id))
+                flash(f"Property '{property_name}' added successfully", 'success')
+                return redirect(url_for('property_detail', property_id=new_property_id))
         except Exception as e:
             conn.rollback()
-            flash(f"Error creating property: {e}", "danger")
+            flash(f"Error: {e}", "danger")
+            return redirect(url_for('new_property'))
         finally:
+            if conn:
+                conn.close()
+                
+    return render_template('property_form.html')
+
+
+@app.route('/property/<int:property_id>/work/<int:work_id>/edit', methods=['GET', 'POST'])
+@login_required
+def edit_work(property_id, work_id):
+    """Edit an existing work record"""
+    if g.user['user_id'] == 'guest':
+        flash('Guest users cannot edit work records', 'warning')
+        return redirect(url_for('property_detail', property_id=property_id))
+        
+    conn = None
+    try:
+        conn = get_db_connection()
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            # Get property name
+            cur.execute("""
+                SELECT property_name FROM propintel.properties WHERE property_id = %s
+            """, (property_id,))
+            property_data = cur.fetchone()
+            
+            # Get work record to edit
+            cur.execute("""
+                SELECT * FROM propintel.work WHERE work_id = %s AND property_id = %s
+            """, (work_id, property_id))
+            work = cur.fetchone()
+            
+            if not work:
+                flash('Work record not found', 'danger')
+                return redirect(url_for('property_detail', property_id=property_id))
+            
+            # Get current image if any
+            try:
+                cur.execute("""
+                    SELECT image_path FROM propintel.property_images 
+                    WHERE property_id = %s AND image_type = 'work' 
+                        AND description LIKE %s
+                    LIMIT 1
+                """, (property_id, f"%{work.get('work_description', '')}%"))
+                image_result = cur.fetchone()
+                if image_result:
+                    work['image_path'] = image_result['image_path']
+            except Exception:
+                # Ignore errors getting image path
+                pass
+            
+            if request.method == 'POST':
+                work_description = request.form.get('work_description')
+                work_date = request.form.get('work_date')
+                work_cost = request.form.get('work_cost')
+                expense_type = request.form.get('expense_type')
+                payment_method = request.form.get('payment_method')
+                
+                # Update work record
+                cur.execute("""
+                    UPDATE propintel.work
+                    SET work_description = %s, work_date = %s,
+                        work_cost = %s, payment_method = %s,
+                        updated_at = NOW()
+                    WHERE work_id = %s AND property_id = %s
+                """, (
+                    work_description, work_date, work_cost,
+                    payment_method, work_id, property_id
+                ))
+                
+                # Handle image upload
+                if 'work_image' in request.files and request.files['work_image'].filename:
+                    image_file = request.files['work_image']
+                    
+                    if image_file and allowed_file(image_file.filename):
+                        # Create unique filename
+                        filename = secure_filename(image_file.filename)
+                        unique_filename = f"{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}_{filename}"
+                        filepath = os.path.join(app.config['WORK_IMAGES'], unique_filename)
+                        
+                        image_file.save(filepath)
+                        
+                        # Store image data in database
+                        try:
+                            cur.execute("""
+                                INSERT INTO propintel.property_images
+                                (property_id, image_path, description, image_type, upload_date)
+                                VALUES (%s, %s, %s, 'work', NOW())
+                            """, (property_id, filepath, work_description))
+                        except Exception as e:
+                            # If image table doesn't exist, continue without storing image path
+                            print(f"Error storing image reference: {e}")
+                
+                conn.commit()
+                flash('Work record updated successfully', 'success')
+                return redirect(url_for('property_detail', property_id=property_id))
+    
+    except Exception as e:
+        flash(f"Error: {e}", "danger")
+        return redirect(url_for('property_detail', property_id=property_id))
+    finally:
+        if conn:
             conn.close()
     
-    # Get project types and project managers for dropdown options
-    conn = get_db_connection()
+    # Default: show edit form
+    return render_template('edit_work.html', 
+                          property_id=property_id,
+                          property_name=property_data.get('property_name', 'Property'),
+                          work=work)
+
+@app.route('/property/<int:property_id>/expense/<int:expense_id>/edit', methods=['GET', 'POST'])
+@login_required
+def edit_expense(property_id, expense_id):
+    """Edit an existing expense record"""
+    if g.user['user_id'] == 'guest':
+        flash('Guest users cannot edit expense records', 'warning')
+        return redirect(url_for('property_detail', property_id=property_id))
+        
+    conn = None
     try:
+        conn = get_db_connection()
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
-            cur.execute("SELECT DISTINCT project_type FROM propintel.properties WHERE project_type IS NOT NULL ORDER BY project_type")
-            project_types = [row['project_type'] for row in cur.fetchall()]
+            # Get property name
+            cur.execute("""
+                SELECT property_name FROM propintel.properties WHERE property_id = %s
+            """, (property_id,))
+            property_data = cur.fetchone()
             
-            cur.execute("SELECT DISTINCT project_manager FROM propintel.properties WHERE project_manager IS NOT NULL ORDER BY project_manager")
-            project_managers = [row['project_manager'] for row in cur.fetchall()]
+            # Get expense record to edit
+            cur.execute("""
+                SELECT * FROM propintel.money_out WHERE money_out_id = %s AND property_id = %s
+            """, (expense_id, property_id))
+            expense = cur.fetchone()
             
-            cur.execute("SELECT DISTINCT status FROM propintel.properties WHERE status IS NOT NULL ORDER BY status")
-            statuses = [row['status'] for row in cur.fetchall()]
+            if not expense:
+                flash('Expense record not found', 'danger')
+                return redirect(url_for('property_detail', property_id=property_id))
             
-    except Exception as e:
-        project_types = []
-        project_managers = []
-        statuses = ['Active', 'Completed', 'On Hold', 'Cancelled']
-    finally:
-        conn.close()
+            # Get current image if any
+            try:
+                cur.execute("""
+                    SELECT image_path FROM propintel.property_images 
+                    WHERE property_id = %s AND image_type = 'receipt' 
+                        AND description LIKE %s
+                    LIMIT 1
+                """, (property_id, f"%{expense.get('expense_details', '')}%"))
+                image_result = cur.fetchone()
+                if image_result:
+                    expense['image_path'] = image_result['image_path']
+            except Exception:
+                # Ignore errors getting image path
+                pass
+            
+            if request.method == 'POST':
+                expense_details = request.form.get('expense_details')
+                expense_date = request.form.get('expense_date')
+                expense_amount = request.form.get('expense_amount')
+                expense_category = request.form.get('expense_category')
+                payment_method = request.form.get('payment_method')
+                
+                # Update expense record
+                cur.execute("""
+                    UPDATE propintel.money_out
+                    SET expense_details = %s, expense_date = %s,
+                        expense_amount = %s, expense_category = %s,
+                        payment_method = %s, updated_at = NOW()
+                    WHERE money_out_id = %s AND property_id = %s
+                """, (
+                    expense_details, expense_date, expense_amount,
+                    expense_category, payment_method,
+                    expense_id, property_id
+                ))
+                
+                # Handle image upload
+                if 'expense_image' in request.files and request.files['expense_image'].filename:
+                    image_file = request.files['expense_image']
+                    
+                    if image_file and allowed_file(image_file.filename):
+                        # Create unique filename
+                        filename = secure_filename(image_file.filename)
+                        unique_filename = f"{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}_{filename}"
+                        filepath = os.path.join(app.config['PROPERTY_IMAGES'], unique_filename)
+                        
+                        image_file.save(filepath)
+                        
+                        # Store image data in database
+                        try:
+                            cur.execute("""
+                                INSERT INTO propintel.property_images
+                                (property_id, image_path, description, image_type, upload_date)
+                                VALUES (%s, %s, %s, 'receipt', NOW())
+                            """, (property_id, filepath, expense_details))
+                        except Exception as e:
+                            # If image table doesn't exist, continue without storing image path
+                            print(f"Error storing image reference: {e}")
+                
+                conn.commit()
+                flash('Expense record updated successfully', 'success')
+                return redirect(url_for('property_detail', property_id=property_id))
     
-    return render_template('property_form.html', 
-                          project_types=project_types, 
-                          project_managers=project_managers,
-                          statuses=statuses)
+    except Exception as e:
+        flash(f"Error: {e}", "danger")
+        return redirect(url_for('property_detail', property_id=property_id))
+    finally:
+        if conn:
+            conn.close()
+    
+    # Default: show edit form
+    return render_template('edit_expense.html', 
+                          property_id=property_id,
+                          property_name=property_data.get('property_name', 'Property'),
+                          expense=expense)
+
+@app.route('/property/<int:property_id>/income/<int:income_id>/edit', methods=['GET', 'POST'])
+@login_required
+def edit_income(property_id, income_id):
+    """Edit an existing income record"""
+    if g.user['user_id'] == 'guest':
+        flash('Guest users cannot edit income records', 'warning')
+        return redirect(url_for('property_detail', property_id=property_id))
+        
+    conn = None
+    try:
+        conn = get_db_connection()
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            # Get property name
+            cur.execute("""
+                SELECT property_name FROM propintel.properties WHERE property_id = %s
+            """, (property_id,))
+            property_data = cur.fetchone()
+            
+            # Get income record to edit
+            cur.execute("""
+                SELECT * FROM propintel.money_in WHERE money_in_id = %s AND property_id = %s
+            """, (income_id, property_id))
+            income = cur.fetchone()
+            
+            if not income:
+                flash('Income record not found', 'danger')
+                return redirect(url_for('property_detail', property_id=property_id))
+            
+            if request.method == 'POST':
+                income_details = request.form.get('income_details')
+                income_date = request.form.get('income_date')
+                income_amount = request.form.get('income_amount')
+                payment_method = request.form.get('payment_method')
+                
+                # Update income record
+                cur.execute("""
+                    UPDATE propintel.money_in
+                    SET income_details = %s, income_date = %s,
+                        income_amount = %s, payment_method = %s,
+                        updated_at = NOW()
+                    WHERE money_in_id = %s AND property_id = %s
+                """, (
+                    income_details, income_date, income_amount,
+                    payment_method, income_id, property_id
+                ))
+                
+                conn.commit()
+                flash('Income record updated successfully', 'success')
+                return redirect(url_for('property_detail', property_id=property_id))
+    
+    except Exception as e:
+        flash(f"Error: {e}", "danger")
+        return redirect(url_for('property_detail', property_id=property_id))
+    finally:
+        if conn:
+            conn.close()
+    
+    # Default: show edit form
+    return render_template('edit_income.html', 
+                          property_id=property_id,
+                          property_name=property_data.get('property_name', 'Property'),
+                          income=income)
 
 @app.route('/property/<int:property_id>/work/new', methods=['GET', 'POST'])
 @login_required
 def new_work(property_id):
-    """Add a new work record to a property"""
+    """Add a new work record with image upload"""
     if g.user['user_id'] == 'guest':
         flash('Guest users cannot add work records', 'warning')
         return redirect(url_for('property_detail', property_id=property_id))
@@ -1977,6 +2596,7 @@ def new_work(property_id):
         work_cost = request.form.get('work_cost')
         payment_method = request.form.get('payment_method', '').strip()
         status = request.form.get('status', 'Pending')
+        expense_type = request.form.get('expense_type', 'miscellaneous')
         
         if not work_description or not work_date:
             flash('Work description and date are required', 'danger')
@@ -1989,65 +2609,107 @@ def new_work(property_id):
             flash('Invalid date or cost format', 'danger')
             return redirect(url_for('new_work', property_id=property_id))
         
+        # Handle work image upload
+        work_image_path = None
+        if 'work_image' in request.files:
+            work_image = request.files['work_image']
+            if work_image and work_image.filename != '' and allowed_file(work_image.filename):
+                # Create a secure filename
+                filename = secure_filename(work_image.filename)
+                # Add timestamp to avoid name collisions
+                timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+                new_filename = f"{timestamp}_{filename}"
+                # Save the image
+                work_dir = os.path.join(UPLOAD_FOLDER, 'work')
+                os.makedirs(work_dir, exist_ok=True)
+                file_path = os.path.join(work_dir, new_filename)
+                work_image.save(file_path)
+                # Store the relative path for database
+                work_image_path = f"images/work/{new_filename}"
+        
         conn = None
         try:
             conn = get_db_connection()
-            with conn.cursor() as cur:
-                # Insert work record with user ID
-                cur.execute("""
-                    INSERT INTO propintel.work 
-                    (property_id, user_id, work_description, work_date, work_cost, payment_method, status)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s)
-                    RETURNING work_id
-                """, (property_id, g.user['user_id'], work_description, work_date, work_cost, payment_method, status))
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                # Check if expense_type column exists
+                try:
+                    # Insert work record
+                    cur.execute("""
+                        INSERT INTO propintel.work 
+                        (property_id, user_id, work_description, work_date, work_cost, 
+                         payment_method, status, expense_type)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                        RETURNING work_id
+                    """, (
+                        property_id, g.user['user_id'], work_description, work_date, 
+                        work_cost, payment_method, status, expense_type
+                    ))
+                except psycopg2.Error:
+                    # If expense_type column doesn't exist, insert without it
+                    cur.execute("""
+                        INSERT INTO propintel.work 
+                        (property_id, user_id, work_description, work_date, work_cost, 
+                         payment_method, status)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s)
+                        RETURNING work_id
+                    """, (
+                        property_id, g.user['user_id'], work_description, work_date, 
+                        work_cost, payment_method, status
+                    ))
                 
-                work_id = cur.fetchone()[0]
+                work_id = cur.fetchone()['work_id']
                 
-                # Process uploaded images
-                if 'work_images' in request.files:
-                    images = request.files.getlist('work_images')
-                    
-                    for image in images:
-                        if image and image.filename and allowed_file(image.filename):
-                            # Create secure filename
-                            filename = secure_random_filename(image.filename)
-                            file_path = os.path.join(app.config['WORK_IMAGES'], filename)
-                            
-                            # Read, optimize and save the image
-                            image_data = image.read()
-                            optimized_data = optimize_image(image_data)
-                            
-                            with open(file_path, 'wb') as f:
-                                f.write(optimized_data)
-                            
-                            # Save image record in database
-                            relative_path = os.path.join('images/work', filename)
-                            cur.execute("""
-                                INSERT INTO propintel.property_images
-                                (property_id, user_id, work_id, image_path, image_type, description, upload_date)
-                                VALUES (%s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP)
-                            """, (property_id, g.user['user_id'], work_id, relative_path, 'work', f"Image for work {work_id}"))
+                # If we have an image, save it to the property_images table
+                if work_image_path:
+                    # Check if property_images table exists
+                    try:
+                        cur.execute("""
+                            INSERT INTO propintel.property_images
+                            (property_id, user_id, image_path, image_type, description)
+                            VALUES (%s, %s, %s, %s, %s)
+                        """, (
+                            property_id, g.user['user_id'], work_image_path, 
+                            'work', f"Image for work: {work_description}"
+                        ))
+                    except psycopg2.Error:
+                        # If table doesn't exist, log it but continue
+                        print("Warning: Could not save work image - property_images table may not exist")
+                
+                # Also create an expense record based on the work
+                try:
+                    cur.execute("""
+                        INSERT INTO propintel.money_out
+                        (property_id, user_id, expense_details, expense_date, expense_amount, 
+                         payment_method, expense_category)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s)
+                    """, (
+                        property_id, g.user['user_id'], work_description, work_date,
+                        work_cost, payment_method, expense_type
+                    ))
+                except psycopg2.Error:
+                    # If expense_category column doesn't exist, insert without it
+                    cur.execute("""
+                        INSERT INTO propintel.money_out
+                        (property_id, user_id, expense_details, expense_date, expense_amount, 
+                         payment_method)
+                        VALUES (%s, %s, %s, %s, %s, %s)
+                    """, (
+                        property_id, g.user['user_id'], work_description, work_date,
+                        work_cost, payment_method
+                    ))
                 
                 conn.commit()
-                log_action('create', 'work', work_id, f"Added work record to property {property_id}")
-                
-                flash("Work record added successfully", "success")
+                flash('Work record added successfully', 'success')
                 return redirect(url_for('property_detail', property_id=property_id))
         except Exception as e:
-            if conn:
-                conn.rollback()
-            flash(f"Error adding work record: {e}", "danger")
+            conn.rollback()
+            flash(f"Error: {e}", "danger")
+            return redirect(url_for('new_work', property_id=property_id))
         finally:
             if conn:
                 conn.close()
     
-    # Get status options
-    statuses = ['Pending', 'In Progress', 'Completed', 'Cancelled']
-    
-    return render_template('work_form.html', 
-                          property_id=property_id, 
-                          property_name=property_name,
-                          statuses=statuses)
+    return render_template('work_form.html', property_id=property_id, property_name=property_name)
 
 @app.route('/property/<int:property_id>/income/new', methods=['GET', 'POST'])
 @login_required
@@ -2143,13 +2805,14 @@ def new_income(property_id):
 @app.route('/property/<int:property_id>/expense/new', methods=['GET', 'POST'])
 @login_required
 def new_expense(property_id):
-    """Add a new expense record to a property"""
-    if session.get('is_guest'):
+    """Add a new expense record with receipt image"""
+    if g.user['user_id'] == 'guest':
         flash('Guest users cannot add expense records', 'warning')
         return redirect(url_for('property_detail', property_id=property_id))
         
-    conn = get_db_connection()
+    conn = None
     try:
+        conn = get_db_connection()
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
             # Get property with owner info
             cur.execute("""
@@ -2163,7 +2826,7 @@ def new_expense(property_id):
                 flash('Property not found', 'danger')
                 return redirect(url_for('properties'))
             
-            # Check if user has permission to add expenses to this property
+            # Check if user has permission to add expense to this property
             if g.user['role'] != 'admin' and g.user['user_id'] != property_data['user_id']:
                 flash('You do not have permission to add expenses to this property', 'danger')
                 return redirect(url_for('property_detail', property_id=property_id))
@@ -2173,17 +2836,18 @@ def new_expense(property_id):
         flash(f"Error: {e}", "danger")
         return redirect(url_for('property_detail', property_id=property_id))
     finally:
-        conn.close()
+        if conn:
+            conn.close()
     
     if request.method == 'POST':
         expense_details = request.form.get('expense_details', '').strip()
         expense_date = request.form.get('expense_date')
         expense_amount = request.form.get('expense_amount')
         payment_method = request.form.get('payment_method', '').strip()
-        expense_category = request.form.get('expense_category', '').strip()
+        expense_category = request.form.get('expense_category', 'miscellaneous')
         
         if not expense_date or not expense_amount:
-            flash('Date and amount are required', 'danger')
+            flash('Expense date and amount are required', 'danger')
             return redirect(url_for('new_expense', property_id=property_id))
         
         try:
@@ -2193,43 +2857,94 @@ def new_expense(property_id):
             flash('Invalid date or amount format', 'danger')
             return redirect(url_for('new_expense', property_id=property_id))
         
-        conn = get_db_connection()
+        # Handle expense receipt image upload
+        expense_image_path = None
+        if 'expense_image' in request.files:
+            expense_image = request.files['expense_image']
+            if expense_image and expense_image.filename != '' and allowed_file(expense_image.filename):
+                # Create a secure filename
+                filename = secure_filename(expense_image.filename)
+                # Add timestamp to avoid name collisions
+                timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+                new_filename = f"{timestamp}_{filename}"
+                # Save the image
+                receipts_dir = os.path.join(UPLOAD_FOLDER, 'receipts')
+                os.makedirs(receipts_dir, exist_ok=True)
+                file_path = os.path.join(receipts_dir, new_filename)
+                expense_image.save(file_path)
+                # Store the relative path for database
+                expense_image_path = f"images/receipts/{new_filename}"
+        
+        # Auto-categorize the expense if not specified
+        if not expense_category:
+            lower_details = expense_details.lower()
+            if 'wage' in lower_details or 'salary' in lower_details or 'payment' in lower_details:
+                expense_category = 'wage'
+            elif 'project manager' in lower_details or 'pm ' in lower_details:
+                expense_category = 'project_manager'
+            elif 'material' in lower_details or 'supplies' in lower_details:
+                expense_category = 'material'
+            else:
+                expense_category = 'miscellaneous'
+        
+        conn = None
         try:
-            with conn.cursor() as cur:
-                cur.execute("""
-                    INSERT INTO propintel.money_out 
-                    (property_id, user_id, expense_details, expense_date, expense_amount, payment_method, expense_category)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s)
-                    RETURNING money_out_id
-                """, (property_id, g.user['user_id'], expense_details, expense_date, expense_amount, payment_method, expense_category))
+            conn = get_db_connection()
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                # Insert expense record
+                try:
+                    cur.execute("""
+                        INSERT INTO propintel.money_out 
+                        (property_id, user_id, expense_details, expense_date, expense_amount, 
+                         payment_method, expense_category)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s)
+                        RETURNING money_out_id
+                    """, (
+                        property_id, g.user['user_id'], expense_details, expense_date, 
+                        expense_amount, payment_method, expense_category
+                    ))
+                except psycopg2.Error:
+                    # If expense_category column doesn't exist, insert without it
+                    cur.execute("""
+                        INSERT INTO propintel.money_out 
+                        (property_id, user_id, expense_details, expense_date, expense_amount, 
+                         payment_method)
+                        VALUES (%s, %s, %s, %s, %s, %s)
+                        RETURNING money_out_id
+                    """, (
+                        property_id, g.user['user_id'], expense_details, expense_date, 
+                        expense_amount, payment_method
+                    ))
                 
-                expense_id = cur.fetchone()[0]
+                expense_id = cur.fetchone()['money_out_id']
+                
+                # If we have an image, save it to the property_images table
+                if expense_image_path:
+                    try:
+                        cur.execute("""
+                            INSERT INTO propintel.property_images
+                            (property_id, user_id, image_path, image_type, description)
+                            VALUES (%s, %s, %s, %s, %s)
+                        """, (
+                            property_id, g.user['user_id'], expense_image_path, 
+                            'receipt', f"Receipt for expense: {expense_details}"
+                        ))
+                    except psycopg2.Error:
+                        # If table doesn't exist, log it but continue
+                        print("Warning: Could not save expense image - property_images table may not exist")
+                
                 conn.commit()
-                
-                log_action('create', 'money_out', expense_id, f"Added expense record to property {property_id}")
-                flash("Expense record added successfully", "success")
+                flash('Expense record added successfully', 'success')
                 return redirect(url_for('property_detail', property_id=property_id))
         except Exception as e:
             conn.rollback()
-            flash(f"Error adding expense record: {e}", "danger")
+            flash(f"Error: {e}", "danger")
+            return redirect(url_for('new_expense', property_id=property_id))
         finally:
-            conn.close()
+            if conn:
+                conn.close()
     
-    # Get expense categories for dropdown
-    conn = get_db_connection()
-    try:
-        with conn.cursor(cursor_factory=RealDictCursor) as cur:
-            cur.execute("SELECT DISTINCT expense_category FROM propintel.money_out WHERE expense_category IS NOT NULL ORDER BY expense_category")
-            categories = [row['expense_category'] for row in cur.fetchall()]
-    except Exception as e:
-        categories = []
-    finally:
-        conn.close()
-    
-    return render_template('expense_form.html', 
-                          property_id=property_id, 
-                          property_name=property_name,
-                          categories=categories)
+    return render_template('expense_form.html', property_id=property_id, property_name=property_name)
 
 @app.route('/search')
 def search():

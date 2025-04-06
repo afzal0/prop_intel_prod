@@ -21,6 +21,9 @@
                         <a href="{{ url_for('new_expense', property_id=property.property_id) }}" class="list-group-item list-group-item-action">
                             <i class="fas fa-file-invoice-dollar me-2"></i> Add Expense Record
                         </a>
+                        <a href="{{ url_for('property_detail', property_id=property.property_id, export='true') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-file-excel me-2"></i> Export to Excel
+                        </a>
                         <a href="{{ url_for('properties') }}" class="list-group-item list-group-item-action">
                             <i class="fas fa-arrow-left me-2"></i> Back to Properties
                         </a>
@@ -109,15 +112,9 @@
                         </p>
                         {% endif %}
                         
-                        {% if property.purchase_price %}
+                        {% if property.project_manager %}
                         <p class="mb-2">
-                            <i class="fas fa-tag me-2 text-primary"></i> <strong>Purchase Price:</strong> {{ property.purchase_price|format_currency }}
-                        </p>
-                        {% endif %}
-                        
-                        {% if property.current_value %}
-                        <p class="mb-2">
-                            <i class="fas fa-chart-line me-2 text-primary"></i> <strong>Current Value:</strong> {{ property.current_value|format_currency }}
+                            <i class="fas fa-user-tie me-2 text-primary"></i> <strong>Property Manager:</strong> {{ property.project_manager }}
                         </p>
                         {% endif %}
                         
@@ -125,6 +122,21 @@
                         <p class="mb-2">
                             <i class="fas fa-sticky-note me-2 text-primary"></i> <strong>Notes:</strong> {{ property.notes }}
                         </p>
+                        {% endif %}
+                        
+                        {% if property_images %}
+                        <div class="mt-3">
+                            <h6 class="mb-2"><i class="fas fa-image me-2 text-primary"></i> <strong>Property Images:</strong></h6>
+                            <div class="row g-2">
+                                {% for image in property_images %}
+                                <div class="col-6 col-md-4">
+                                    <a href="{{ url_for('static', filename=image.image_path) }}" target="_blank">
+                                        <img src="{{ url_for('static', filename=image.image_path) }}" alt="Property Image" class="img-thumbnail w-100" style="height: 150px; object-fit: cover;">
+                                    </a>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
                         {% endif %}
                     </div>
                     <div class="col-md-4">
@@ -200,10 +212,15 @@
                                         <td>{{ record.income_details }}</td>
                                         <td class="text-success">{{ record.income_amount|format_currency }}</td>
                                         <td>{{ record.payment_method }}</td>
+                                        <td>
+                                            <a href="{{ url_for('edit_income', income_id=record.money_in_id, property_id=property.property_id) }}" class="btn btn-sm btn-outline-success" title="Edit Income">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                        </td>
                                     </tr>
                                     {% else %}
                                     <tr>
-                                        <td colspan="4" class="text-center py-3">No income records found</td>
+                                        <td colspan="5" class="text-center py-3">No income records found</td>
                                     </tr>
                                     {% endfor %}
                                 </tbody>
@@ -211,6 +228,7 @@
                                     <tr>
                                         <th colspan="2" class="text-end">Total:</th>
                                         <th class="text-success">{{ income_total|format_currency }}</th>
+                                        <th></th>
                                         <th></th>
                                     </tr>
                                 </tfoot>
@@ -231,37 +249,112 @@
                     </div>
                     <div class="card-body p-0">
                         <div class="table-responsive">
-                            <table class="table table-hover mb-0">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th>Date</th>
-                                        <th>Details</th>
-                                        <th>Amount</th>
-                                        <th>Payment Method</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for record in expense_records %}
-                                    <tr>
-                                        <td>{{ record.expense_date|format_date }}</td>
-                                        <td>{{ record.expense_details }}</td>
-                                        <td class="text-danger">{{ record.expense_amount|format_currency }}</td>
-                                        <td>{{ record.payment_method }}</td>
-                                    </tr>
-                                    {% else %}
-                                    <tr>
-                                        <td colspan="4" class="text-center py-3">No expense records found</td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                                <tfoot class="table-light">
-                                    <tr>
-                                        <th colspan="2" class="text-end">Total:</th>
-                                        <th class="text-danger">{{ expense_total|format_currency }}</th>
-                                        <th></th>
-                                    </tr>
-                                </tfoot>
-                            </table>
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Details</th>
+                                            <th>Category</th>
+                                            <th>Amount</th>
+                                            <th>Payment Method</th>
+                                            <th>Image</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for record in expense_records %}
+                                        <tr>
+                                            <td>{{ record.expense_date|format_date }}</td>
+                                            <td>{{ record.expense_details }}</td>
+                                            <td>
+                                                {% if record.expense_category %}
+                                                    <span class="badge bg-{{ 'primary' if record.expense_category == 'material' else 'success' if record.expense_category == 'wage' else 'info' if record.expense_category == 'project_manager' else 'secondary' }}">
+                                                        {{ record.expense_category|title }}
+                                                    </span>
+                                                {% else %}
+                                                    {% if "wage" in record.expense_details.lower() %}
+                                                        <span class="badge bg-success">Wage</span>
+                                                    {% elif "project manager" in record.expense_details.lower() or "pm" in record.expense_details.lower() %}
+                                                        <span class="badge bg-info">Project Manager</span>
+                                                    {% else %}
+                                                        <span class="badge bg-secondary">Miscellaneous</span>
+                                                    {% endif %}
+                                                {% endif %}
+                                            </td>
+                                            <td class="text-danger">{{ record.expense_amount|format_currency }}</td>
+                                            <td>{{ record.payment_method }}</td>
+                                            <td>
+                                                {% if record.image_path %}
+                                                <a href="{{ url_for('static', filename=record.image_path) }}" target="_blank" 
+                                                   data-bs-toggle="tooltip" title="View receipt image">
+                                                    <i class="fas fa-file-invoice"></i>
+                                                </a>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <a href="{{ url_for('edit_expense', expense_id=record.money_out_id, property_id=property.property_id) }}" class="btn btn-sm btn-outline-danger" title="Edit Expense">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        {% else %}
+                                        <tr>
+                                            <td colspan="7" class="text-center py-3">No expense records found</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                    <tfoot class="table-light">
+                                        <tr>
+                                            <th colspan="3" class="text-end">Total:</th>
+                                            <th class="text-danger">{{ expense_total|format_currency }}</th>
+                                            <th colspan="3"></th>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                            
+                            <!-- Expense Breakdown -->
+                            <div class="card mt-3">
+                                <div class="card-header">
+                                    <h6 class="mb-0">Expense Breakdown</h6>
+                                </div>
+                                <div class="card-body p-0">
+                                    <div class="row g-0">
+                                        <div class="col-md-6">
+                                            <canvas id="expenseCategoryChart" height="200"></canvas>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="table-responsive">
+                                                <table class="table table-sm table-borderless mb-0">
+                                                    <tbody>
+                                                        <tr>
+                                                            <td><span class="badge bg-success">Wage</span></td>
+                                                            <td>{{ wage_expense_total|format_currency }}</td>
+                                                            <td>{{ ((wage_expense_total / expense_total) * 100)|round|int if expense_total else 0 }}%</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td><span class="badge bg-info">Project Manager</span></td>
+                                                            <td>{{ pm_expense_total|format_currency }}</td>
+                                                            <td>{{ ((pm_expense_total / expense_total) * 100)|round|int if expense_total else 0 }}%</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td><span class="badge bg-primary">Material</span></td>
+                                                            <td>{{ material_expense_total|format_currency }}</td>
+                                                            <td>{{ ((material_expense_total / expense_total) * 100)|round|int if expense_total else 0 }}%</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td><span class="badge bg-secondary">Miscellaneous</span></td>
+                                                            <td>{{ misc_expense_total|format_currency }}</td>
+                                                            <td>{{ ((misc_expense_total / expense_total) * 100)|round|int if expense_total else 0 }}%</td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -278,37 +371,84 @@
                     </div>
                     <div class="card-body p-0">
                         <div class="table-responsive">
-                            <table class="table table-hover mb-0">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th>Date</th>
-                                        <th>Description</th>
-                                        <th>Cost</th>
-                                        <th>Payment Method</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for record in work_records %}
-                                    <tr>
-                                        <td>{{ record.work_date|format_date }}</td>
-                                        <td>{{ record.work_description }}</td>
-                                        <td class="text-info">{{ record.work_cost|format_currency }}</td>
-                                        <td>{{ record.payment_method }}</td>
-                                    </tr>
-                                    {% else %}
-                                    <tr>
-                                        <td colspan="4" class="text-center py-3">No work records found</td>
-                                    </tr>
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Description</th>
+                                            <th>Type</th>
+                                            <th>Cost</th>
+                                            <th>Payment Method</th>
+                                            <th>Image</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for record in work_records %}
+                                        <tr>
+                                            <td>{{ record.work_date|format_date }}</td>
+                                            <td>{{ record.work_description }}</td>
+                                            <td>
+                                                {% if record.expense_type %}
+                                                    {{ record.expense_type|title }}
+                                                {% else %}
+                                                    {% if "wage" in record.work_description.lower() %}
+                                                        Wage
+                                                    {% elif "project manager" in record.work_description.lower() or "pm" in record.work_description.lower() %}
+                                                        Project Manager
+                                                    {% else %}
+                                                        Miscellaneous
+                                                    {% endif %}
+                                                {% endif %}
+                                            </td>
+                                            <td class="text-info">{{ record.work_cost|format_currency }}</td>
+                                            <td>{{ record.payment_method }}</td>
+                                            <td>
+                                                {% if record.image_path %}
+                                                <a href="{{ url_for('static', filename=record.image_path) }}" target="_blank" 
+                                                   data-bs-toggle="tooltip" title="View work image">
+                                                    <i class="fas fa-image"></i>
+                                                </a>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <a href="{{ url_for('edit_work', work_id=record.work_id, property_id=property.property_id) }}" class="btn btn-sm btn-outline-primary" title="Edit Work Record">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        {% else %}
+                                        <tr>
+                                            <td colspan="7" class="text-center py-3">No work records found</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                    <tfoot class="table-light">
+                                        <tr>
+                                            <th colspan="3" class="text-end">Total:</th>
+                                            <th class="text-info">{{ work_total|format_currency }}</th>
+                                            <th colspan="3"></th>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                            
+                            {% if work_images %}
+                            <div class="mt-3">
+                                <h6 class="mb-2">Work Images:</h6>
+                                <div class="row g-2">
+                                    {% for image in work_images %}
+                                    <div class="col-6 col-md-3 col-lg-2">
+                                        <a href="{{ url_for('static', filename=image.image_path) }}" target="_blank">
+                                            <img src="{{ url_for('static', filename=image.image_path) }}" alt="Work Image" 
+                                                 class="img-thumbnail w-100" style="height: 100px; object-fit: cover;">
+                                        </a>
+                                    </div>
                                     {% endfor %}
-                                </tbody>
-                                <tfoot class="table-light">
-                                    <tr>
-                                        <th colspan="2" class="text-end">Total:</th>
-                                        <th class="text-info">{{ work_total|format_currency }}</th>
-                                        <th></th>
-                                    </tr>
-                                </tfoot>
-                            </table>
+                                </div>
+                            </div>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
@@ -398,7 +538,7 @@
                     beginAtZero: true,
                     ticks: {
                         callback: function(value) {
-                            return ' + value.toLocaleString();
+                            return '$' + value.toLocaleString();
                         }
                     }
                 }
@@ -407,7 +547,7 @@
                 tooltip: {
                     callbacks: {
                         label: function(context) {
-                            return context.dataset.label + ':  + context.raw.toLocaleString();
+                            return context.dataset.label + ': $' + context.raw.toLocaleString();
                         }
                     }
                 }
@@ -423,6 +563,57 @@
             const tabTrigger = new bootstrap.Tab(tab);
             tabTrigger.show();
         }
+    }
+    
+    // Initialize Tooltips
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+    
+    // Expense Category Chart
+    const expenseCategoryCtx = document.getElementById('expenseCategoryChart');
+    if (expenseCategoryCtx) {
+        const expenseCategoryChart = new Chart(expenseCategoryCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Wage', 'Project Manager', 'Material', 'Miscellaneous'],
+                datasets: [{
+                    data: [
+                        {{ wage_expense_total or 0 }}, 
+                        {{ pm_expense_total or 0 }}, 
+                        {{ material_expense_total or 0 }}, 
+                        {{ misc_expense_total or 0 }}
+                    ],
+                    backgroundColor: [
+                        'rgba(40, 167, 69, 0.8)',  // Wage - Green
+                        'rgba(23, 162, 184, 0.8)', // Project Manager - Info
+                        'rgba(67, 97, 238, 0.8)',  // Material - Primary
+                        'rgba(108, 117, 125, 0.8)' // Misc - Secondary
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const value = context.raw;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = Math.round((value / total) * 100);
+                                return context.label + ': $' + value.toLocaleString() + ' (' + percentage + '%)';
+                            }
+                        }
+                    }
+                }
+            }
+        });
     }
 </script>
 {% endblock %}
