@@ -1,0 +1,138 @@
+<\!DOCTYPE html>
+<html>
+<head>
+    <title>Simple Victorian Map</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { 
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+        .map-container {
+            width: 100%;
+            height: 500px;
+            margin: 20px 0;
+            border: 1px solid #ccc;
+            position: relative;
+            overflow: hidden;
+        }
+        .btn {
+            display: inline-block;
+            padding: 8px 15px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        img {
+            max-width: 100%;
+            height: auto;
+        }
+        .cards {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .card {
+            padding: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            width: 30%;
+            min-width: 250px;
+        }
+        h1, h2 {
+            color: #333;
+        }
+        .search-box {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #eee;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+        select, input {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Victorian LGAs Map</h1>
+        <p>This page provides information about Local Government Areas (LGAs) in Victoria.</p>
+        
+        <a href="/builders-hub" class="btn">Return to Builder's Hub</a>
+        
+        <div class="map-container">
+            <\!-- Static map representation of Victoria -->
+            <img src="https://upload.wikimedia.org/wikipedia/commons/1/10/Australia_Victoria_locator_map.svg" 
+                 alt="Map of Victoria" style="display: block; margin: 0 auto; max-height: 100%;">
+        </div>
+        
+        <div class="search-box">
+            <h2>Search LGA Documents</h2>
+            <form action="/builders-hub" method="get">
+                <label for="lga-select">Select LGA:</label>
+                <select id="lga-select" name="lga_id">
+                    <option value="">-- All LGAs --</option>
+                    <\!-- List top LGAs directly -->
+                    <option value="20910">Melbourne</option>
+                    <option value="21890">Port Phillip</option>
+                    <option value="24600">Yarra</option>
+                    <option value="21110">Monash</option>
+                    <option value="25900">Bayside</option>
+                    <option value="26980">Wyndham</option>
+                    <option value="26730">Maribyrnong</option>
+                    <\!-- More could be added statically -->
+                </select>
+                
+                <label for="doc-type">Document Type:</label>
+                <select id="doc-type" name="type">
+                    <option value="">All Types</option>
+                    <option value="permit">Building Permits</option>
+                    <option value="regulation">Regulations</option>
+                    <option value="form">Forms</option>
+                    <option value="other">Other</option>
+                </select>
+                
+                <button type="submit" class="btn">Search Documents</button>
+            </form>
+        </div>
+        
+        <h2>Popular LGAs</h2>
+        <div class="cards">
+            <div class="card">
+                <h3>Melbourne</h3>
+                <p>Area: 37.7 sq km</p>
+                <p>Central business district and surrounding inner suburbs.</p>
+                <a href="/builders-hub?lga_id=20910" class="btn">View Documents</a>
+            </div>
+            
+            <div class="card">
+                <h3>Port Phillip</h3>
+                <p>Area: 20.7 sq km</p>
+                <p>Coastal area including St Kilda and South Melbourne.</p>
+                <a href="/builders-hub?lga_id=21890" class="btn">View Documents</a>
+            </div>
+            
+            <div class="card">
+                <h3>Yarra</h3>
+                <p>Area: 19.5 sq km</p>
+                <p>Inner east area including Richmond and Fitzroy.</p>
+                <a href="/builders-hub?lga_id=24600" class="btn">View Documents</a>
+            </div>
+        </div>
+        
+        <h2>Understanding LGAs</h2>
+        <p>Local Government Areas (LGAs) in Victoria are the third tier of government in Australia, after federal and state governments. These areas are responsible for community services, local planning, and building regulations.</p>
+        <p>Building permits and regulations often vary by LGA, making it important to check the specific requirements for your area before beginning construction.</p>
+    </div>
+</body>
+</html>

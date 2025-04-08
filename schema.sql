@@ -1,6 +1,9 @@
 -- Create schema
 CREATE SCHEMA IF NOT EXISTS propintel;
 
+-- Make sure PostGIS extension is installed
+CREATE EXTENSION IF NOT EXISTS postgis;
+
 -- Users table
 CREATE TABLE IF NOT EXISTS propintel.users (
     user_id SERIAL PRIMARY KEY,
@@ -117,6 +120,49 @@ CREATE TABLE IF NOT EXISTS propintel.audit_log (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- LGA (Local Government Areas) table to store shapefile data
+CREATE TABLE IF NOT EXISTS propintel.lgas (
+    lga_id SERIAL PRIMARY KEY,
+    lga_code VARCHAR(50) NOT NULL,
+    lga_name VARCHAR(255) NOT NULL,
+    state_code VARCHAR(10),
+    state_name VARCHAR(50),
+    area_sqkm NUMERIC(10, 2),
+    geom GEOMETRY(MULTIPOLYGON, 4326),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Documents table for builder's hub
+CREATE TABLE IF NOT EXISTS propintel.documents (
+    document_id SERIAL PRIMARY KEY,
+    lga_id INTEGER REFERENCES propintel.lgas(lga_id),
+    user_id INTEGER REFERENCES propintel.users(user_id),
+    document_name VARCHAR(255) NOT NULL,
+    document_type VARCHAR(50), -- 'permit', 'regulation', 'form', etc.
+    description TEXT,
+    file_path VARCHAR(255) NOT NULL,
+    file_size INTEGER,
+    is_public BOOLEAN DEFAULT TRUE,
+    download_count INTEGER DEFAULT 0,
+    address TEXT,
+    latitude NUMERIC(10, 6),
+    longitude NUMERIC(10, 6),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Work heatmap data to store precalculated density
+CREATE TABLE IF NOT EXISTS propintel.work_heatmap (
+    heatmap_id SERIAL PRIMARY KEY,
+    latitude NUMERIC(10, 6) NOT NULL,
+    longitude NUMERIC(10, 6) NOT NULL,
+    intensity INTEGER NOT NULL,
+    property_id INTEGER REFERENCES propintel.properties(property_id),
+    work_count INTEGER DEFAULT 0,
+    last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Create function to update timestamp
 CREATE OR REPLACE FUNCTION update_modified_column()
 RETURNS TRIGGER AS $$
@@ -154,6 +200,22 @@ CREATE TRIGGER update_users_modtime
 
 CREATE TRIGGER update_user_settings_modtime
     BEFORE UPDATE ON propintel.user_settings
+    FOR EACH ROW
+    EXECUTE FUNCTION update_modified_column();
+    
+-- Triggers for new tables
+CREATE TRIGGER update_lgas_modtime
+    BEFORE UPDATE ON propintel.lgas
+    FOR EACH ROW
+    EXECUTE FUNCTION update_modified_column();
+
+CREATE TRIGGER update_documents_modtime
+    BEFORE UPDATE ON propintel.documents
+    FOR EACH ROW
+    EXECUTE FUNCTION update_modified_column();
+    
+CREATE TRIGGER update_work_heatmap_modtime
+    BEFORE UPDATE ON propintel.work_heatmap
     FOR EACH ROW
     EXECUTE FUNCTION update_modified_column();
 

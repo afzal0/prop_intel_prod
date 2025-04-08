@@ -11,3 +11,5 @@ key.txt.pub
 secret_key.txt
 *_credentials.txt
 *_credentials.json
+db_connect.py
+extras

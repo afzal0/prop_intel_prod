@@ -2,6 +2,10 @@
 {% block title %}Property Map - PropIntel{% endblock %}
 
 {% block extra_head %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+
 <style>
     #full-map {
         height: calc(100vh - 150px);
@@ -27,6 +31,15 @@
     .property-item.active {
         background-color: #e9ecef;
     }
+    
+    .map-controls {
+        background-color: rgba(255, 255, 255, 0.9);
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+    
+    .badge {
+        font-size: 0.7rem;
+    }
 </style>
 {% endblock %}
 
@@ -43,6 +56,34 @@
         <div class="card">
             <div class="card-body p-0">
                 <div id="full-map"></div>
+                
+                <!-- Map Controls -->
+                <div class="card map-controls" style="position: absolute; top: 10px; right: 10px; z-index: 1000; width: auto;">
+                    <div class="card-body p-2">
+                        <div class="mb-2">
+                            <label class="form-label mb-1">Map Type</label>
+                            <div class="btn-group btn-group-sm d-flex" role="group" aria-label="Map Type">
+                                <button type="button" class="btn btn-outline-primary active" data-map-type="standard">Standard</button>
+                                <button type="button" class="btn btn-outline-primary" data-map-type="satellite">Satellite</button>
+                                <button type="button" class="btn btn-outline-primary" data-map-type="terrain">Terrain</button>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-2">
+                            <label class="form-label mb-1">Property Markers</label>
+                            <div class="btn-group btn-group-sm d-flex" role="group" aria-label="Marker Type">
+                                <button type="button" class="btn btn-outline-primary active" data-marker-type="standard">Standard</button>
+                                <button type="button" class="btn btn-outline-primary" data-marker-type="income">Income</button>
+                                <button type="button" class="btn btn-outline-primary" data-marker-type="expense">Expense</button>
+                            </div>
+                        </div>
+                        
+                        <div class="form-check form-switch mt-2">
+                            <input class="form-check-input" type="checkbox" id="workHeatmapToggle">
+                            <label class="form-check-label" for="workHeatmapToggle">Work Heatmap</label>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -70,20 +111,41 @@
     });
     
     function initializeMap() {
-        // Basic map setup
+        // Map and layers initialization
         const map = L.map('full-map', {
             zoomControl: true
         }).setView([{{ center_lat }}, {{ center_lng }}], 11);
         
-        // Add tile layer
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        }).addTo(map);
+        // Define base map layers
+        const baseMaps = {
+            "Standard": L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }),
+            "Satellite": L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+            }),
+            "Terrain": L.tileLayer('https://stamen-tiles-{s}.a.ssl.fastly.net/terrain/{z}/{x}/{y}{r}.png', {
+                attribution: 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a> &mdash; Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                subdomains: 'abcd',
+                minZoom: 0,
+                maxZoom: 18
+            })
+        };
+        
+        // Add default base layer
+        baseMaps["Standard"].addTo(map);
         
         // Parse GeoJSON data
         const propertiesData = {{ geojson|safe }};
         const propertyList = document.getElementById('property-list');
+        
+        // Initialize layers
+        let markersLayer = L.layerGroup().addTo(map);
+        let heatmapLayer = null;
+        
+        // Initialize marker collections
         const markers = {};
+        let currentMarkerType = 'standard';
         
         // Clear property list
         propertyList.innerHTML = '';
@@ -94,56 +156,137 @@
             return;
         }
         
-        // Process each property
+        // Function to create markers based on the selected type
+        function createMarkers(markerType) {
+            // Clear existing markers
+            markersLayer.clearLayers();
+            
+            // Process each property
+            propertiesData.features.forEach(function(feature) {
+                const property = feature.properties;
+                const coords = feature.geometry.coordinates;
+                let markerColor, markerIcon, markerSize;
+                
+                // Determine marker style based on type
+                switch(markerType) {
+                    case 'income':
+                        // Color based on income amount
+                        const incomeValue = property.income || 0;
+                        if (incomeValue > 20000) {
+                            markerColor = '#28a745'; // High income (green)
+                        } else if (incomeValue > 10000) {
+                            markerColor = '#17a2b8'; // Medium income (blue)
+                        } else {
+                            markerColor = '#ffc107'; // Low income (yellow)
+                        }
+                        markerIcon = 'fa-dollar-sign';
+                        markerSize = Math.min(Math.max(Math.sqrt(incomeValue / 1000) * 5, 16), 36);
+                        break;
+                        
+                    case 'expense':
+                        // Color based on expense ratio
+                        const income = property.income || 0;
+                        const expenses = property.expenses || 0;
+                        const ratio = income > 0 ? expenses / income : 0;
+                        
+                        if (ratio > 0.8) {
+                            markerColor = '#dc3545'; // High expenses (red)
+                        } else if (ratio > 0.5) {
+                            markerColor = '#fd7e14'; // Medium expenses (orange)
+                        } else {
+                            markerColor = '#28a745'; // Low expenses (green)
+                        }
+                        markerIcon = 'fa-wallet';
+                        markerSize = Math.min(Math.max(Math.sqrt(expenses / 1000) * 5, 16), 36);
+                        break;
+                        
+                    default: // standard
+                        // Color based on budget status
+                        markerColor = property.is_over_budget ? '#dc3545' : '#0d6efd';
+                        markerIcon = 'fa-home';
+                        markerSize = 24;
+                }
+                
+                // Create marker with appropriate styling
+                const marker = L.marker([coords[1], coords[0]], {
+                    icon: L.divIcon({
+                        html: `<div style="background-color: ${markerColor}; color: white; width: ${markerSize}px; height: ${markerSize}px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid white;"><i class="fas ${markerIcon}" style="font-size: ${markerSize/2}px"></i></div>`,
+                        className: '',
+                        iconSize: [markerSize, markerSize],
+                        iconAnchor: [markerSize/2, markerSize/2]
+                    })
+                });
+                
+                // Add popup with details based on marker type
+                let popupContent = `
+                    <div>
+                        <h6>${property.name}</h6>
+                        <p>${property.address}</p>
+                `;
+                
+                // Add financial data to popup based on marker type
+                if (markerType === 'income') {
+                    popupContent += `
+                        <p><strong>Income:</strong> $${(property.income || 0).toLocaleString()}</p>
+                        <p><strong>Income records:</strong> ${property.income_count || 0}</p>
+                    `;
+                } else if (markerType === 'expense') {
+                    popupContent += `
+                        <p><strong>Expenses:</strong> $${(property.expenses || 0).toLocaleString()}</p>
+                        <p><strong>Expense records:</strong> ${property.expense_count || 0}</p>
+                    `;
+                } else {
+                    popupContent += `
+                        <p><strong>Work records:</strong> ${property.work_count || 0}</p>
+                        <p><strong>Budget status:</strong> ${property.is_over_budget ? 'Over budget' : 'Under budget'}</p>
+                    `;
+                }
+                
+                popupContent += `<a href="${property.url}" class="btn btn-sm btn-primary">View Details</a></div>`;
+                marker.bindPopup(popupContent);
+                
+                // Add to layer group
+                marker.addTo(markersLayer);
+                
+                // Store marker reference
+                markers[property.id] = marker;
+            });
+        }
+        
+        // Initialize markers with standard style
+        createMarkers('standard');
+        
+        // Populate property list
         propertiesData.features.forEach(function(feature) {
             const property = feature.properties;
             const coords = feature.geometry.coordinates;
-            
-            // Create marker with colored icon based on budget status
-            const isOverBudget = property.is_over_budget;
-            const markerColor = isOverBudget ? '#dc3545' : '#0d6efd';
-            
-            // Create marker
-            const marker = L.marker([coords[1], coords[0]], {
-                icon: L.divIcon({
-                    html: `<div style="background-color: ${markerColor}; color: white; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid white;"><i class="fas fa-home"></i></div>`,
-                    className: '',
-                    iconSize: [24, 24],
-                    iconAnchor: [12, 12]
-                })
-            }).addTo(map);
-            
-            // Add popup
-            marker.bindPopup(`
-                <div>
-                    <h6>${property.name}</h6>
-                    <p>${property.address}</p>
-                    <a href="${property.url}" class="btn btn-sm btn-primary">View Details</a>
-                </div>
-            `);
-            
-            // Store marker reference
-            markers[property.id] = marker;
             
             // Create sidebar item
             const listItem = document.createElement('a');
             listItem.href = '#';
             listItem.className = 'list-group-item list-group-item-action property-item';
-            if (isOverBudget) {
+            if (property.is_over_budget) {
                 listItem.className += ' list-group-item-danger';
             }
+            
+            // Add property details
             listItem.innerHTML = `
                 <div class="d-flex w-100 justify-content-between">
                     <span>${property.name}</span>
                 </div>
                 <small class="text-muted">${property.address}</small>
+                <div class="mt-1 small">
+                    <span class="badge bg-primary">${property.work_count || 0} work</span>
+                    <span class="badge bg-success">$${(property.income || 0).toLocaleString()}</span>
+                    <span class="badge bg-danger">$${(property.expenses || 0).toLocaleString()}</span>
+                </div>
             `;
             
             // Add click event
             listItem.addEventListener('click', function(e) {
                 e.preventDefault();
                 map.setView([coords[1], coords[0]], 15);
-                marker.openPopup();
+                markers[property.id].openPopup();
                 
                 // Highlight active item
                 document.querySelectorAll('.property-item').forEach(item => {
@@ -164,6 +307,107 @@
             }));
             map.fitBounds(bounds);
         }
+        
+        // Initialize heatmap
+        function createHeatmap() {
+            // Remove existing heatmap if any
+            if (heatmapLayer) {
+                map.removeLayer(heatmapLayer);
+            }
+            
+            // Demo heatmap data - in production, this would come from the server
+            const heatData = [];
+            
+            // Generate heatmap data from work records
+            propertiesData.features.forEach(function(feature) {
+                const property = feature.properties;
+                const coords = feature.geometry.coordinates;
+                const workCount = property.work_count || 0;
+                
+                // Only add points with work
+                if (workCount > 0) {
+                    // Add main point with higher intensity
+                    heatData.push([coords[1], coords[0], workCount * 0.8]);
+                    
+                    // Add random nearby points for better visualization
+                    for (let i = 0; i < Math.min(workCount, 5); i++) {
+                        const lat = coords[1] + (Math.random() - 0.5) * 0.01;
+                        const lng = coords[0] + (Math.random() - 0.5) * 0.01;
+                        heatData.push([lat, lng, workCount * 0.2]);
+                    }
+                }
+            });
+            
+            // Create heatmap layer
+            heatmapLayer = L.heatLayer(heatData, {
+                radius: 25,
+                blur: 15,
+                maxZoom: 17,
+                gradient: {0.4: 'blue', 0.65: 'lime', 1: 'red'}
+            });
+        }
+        
+        // Event listeners for map controls
+        
+        // Map type buttons
+        document.querySelectorAll('[data-map-type]').forEach(button => {
+            button.addEventListener('click', function() {
+                const mapType = this.getAttribute('data-map-type');
+                
+                // Remove active class from all buttons
+                document.querySelectorAll('[data-map-type]').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                
+                // Add active class to clicked button
+                this.classList.add('active');
+                
+                // Remove all base layers
+                Object.values(baseMaps).forEach(layer => {
+                    if (map.hasLayer(layer)) {
+                        map.removeLayer(layer);
+                    }
+                });
+                
+                // Add selected base layer
+                baseMaps[mapType.charAt(0).toUpperCase() + mapType.slice(1)].addTo(map);
+            });
+        });
+        
+        // Marker type buttons
+        document.querySelectorAll('[data-marker-type]').forEach(button => {
+            button.addEventListener('click', function() {
+                const markerType = this.getAttribute('data-marker-type');
+                
+                // Remove active class from all buttons
+                document.querySelectorAll('[data-marker-type]').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                
+                // Add active class to clicked button
+                this.classList.add('active');
+                
+                // Update markers
+                currentMarkerType = markerType;
+                createMarkers(markerType);
+            });
+        });
+        
+        // Heatmap toggle
+        document.getElementById('workHeatmapToggle').addEventListener('change', function() {
+            if (this.checked) {
+                // Create and add heatmap if not already created
+                if (!heatmapLayer) {
+                    createHeatmap();
+                }
+                map.addLayer(heatmapLayer);
+            } else {
+                // Remove heatmap
+                if (heatmapLayer) {
+                    map.removeLayer(heatmapLayer);
+                }
+            }
+        });
     }
 </script>
 {% endblock %}

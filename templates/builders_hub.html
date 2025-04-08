@@ -1,0 +1,683 @@
+{% extends "layout.html" %}
+{% block title %}Builder's Hub - PropIntel{% endblock %}
+
+{% block extra_head %}
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.css" />
+
+<style>
+    .hub-map-container {
+        height: 500px;
+        width: 100%;
+        border-radius: 0.5rem;
+        overflow: hidden;
+        margin-bottom: 1.5rem;
+        position: relative;
+        background-color: #f0f0f0;
+        border: 1px solid #ddd;
+    }
+    
+    #builders-map {
+        height: 100%;
+        width: 100%;
+        z-index: 1;
+    }
+    
+    .map-loading {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: rgba(255, 255, 255, 0.8);
+        padding: 15px;
+        border-radius: 5px;
+        z-index: 1000;
+        display: none;
+    }
+    
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 9999;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        display: none;
+    }
+    
+    .loading-content {
+        background-color: white;
+        padding: 20px;
+        border-radius: 5px;
+        text-align: center;
+    }
+    
+    .document-item {
+        padding: 1rem;
+        border-radius: 0.5rem;
+        margin-bottom: 1rem;
+        background-color: #f8f9fa;
+        transition: all 0.3s ease;
+    }
+    
+    .document-type {
+        display: inline-block;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.375rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    
+    .document-type.permit { background-color: rgba(79, 70, 229, 0.1); color: #4f46e5; }
+    .document-type.regulation { background-color: rgba(245, 158, 11, 0.1); color: #f59e0b; }
+    .document-type.form { background-color: rgba(16, 185, 129, 0.1); color: #10b981; }
+    .document-type.other { background-color: rgba(107, 114, 128, 0.1); color: #6b7280; }
+    
+    .map-tooltip {
+        background-color: rgba(255, 255, 255, 0.9);
+        border: none;
+        border-radius: 0.5rem;
+        padding: 0.75rem;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        font-size: 0.875rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Global loading overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-content">
+            <div class="spinner-border text-primary mb-3" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mb-0">Processing, please wait...</p>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="h2 mb-0">Builder's Hub</h1>
+                <div>
+                    {% if g.user and g.user.role == 'admin' %}
+                    <a href="{{ url_for('document_upload') }}" class="btn btn-primary">
+                        <i class="fas fa-upload me-2"></i>Upload Documents
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            <p class="text-muted">Access building permits and regulations for Victorian Local Government Areas</p>
+        </div>
+    </div>
+    
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="hub-map-container">
+                        <!-- Loading indicator -->
+                        <div class="map-loading" id="map-loading">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="mt-2 mb-0">Loading map data...</p>
+                        </div>
+                        
+                        <!-- Map container -->
+                        <div id="builders-map"></div>
+                        
+                        <!-- Map Controls -->
+                        <div class="card position-absolute m-2" style="top: 10px; right: 10px; z-index: 1000; width: auto;">
+                            <div class="card-body p-2">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="showDocumentMarkers">
+                                    <label class="form-check-label" for="showDocumentMarkers">Show document locations</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-muted text-center">Click on a LGA to view available documents</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-lg-4 mb-4">
+            <div class="card search-card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Search</h5>
+                </div>
+                <div class="card-body">
+                    <form id="searchForm">
+                        <div class="mb-3">
+                            <label for="lgaSearch" class="form-label">LGA</label>
+                            <select class="form-select" id="lgaSearch">
+                                <option value="">All LGAs</option>
+                                {% for lga in lgas %}
+                                <option value="{{ lga.lga_id }}">{{ lga.lga_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="documentType" class="form-label">Document Type</label>
+                            <select class="form-select" id="documentType">
+                                <option value="">All Types</option>
+                                <option value="permit">Building Permits</option>
+                                <option value="regulation">Regulations</option>
+                                <option value="form">Forms</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="keywordSearch" class="form-label">Keyword</label>
+                            <input type="text" class="form-control" id="keywordSearch" placeholder="Search documents...">
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Search</button>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Document Categories</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                            Building Permits
+                            <span class="badge bg-primary rounded-pill">{{ stats.permit_count }}</span>
+                        </a>
+                        <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                            Regulations
+                            <span class="badge bg-primary rounded-pill">{{ stats.regulation_count }}</span>
+                        </a>
+                        <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                            Forms
+                            <span class="badge bg-primary rounded-pill">{{ stats.form_count }}</span>
+                        </a>
+                        <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                            Other Documents
+                            <span class="badge bg-primary rounded-pill">{{ stats.other_count }}</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-8">
+            <div id="selectedLgaInfo" class="mb-4" style="display: none;">
+                <div class="card">
+                    <div class="card-body">
+                        <h4 id="selectedLgaName" class="mb-3">Selected LGA</h4>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <div class="card h-100 text-center">
+                                    <div class="card-body">
+                                        <h6 class="card-subtitle text-muted mb-1">Documents</h6>
+                                        <div class="h2 mb-0" id="lgaDocCount">0</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="card h-100 text-center">
+                                    <div class="card-body">
+                                        <h6 class="card-subtitle text-muted mb-1">Area</h6>
+                                        <div class="h2 mb-0" id="lgaArea">0</div>
+                                        <small class="text-muted">sq km</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="card h-100 text-center">
+                                    <div class="card-body">
+                                        <h6 class="card-subtitle text-muted mb-1">Most Recent</h6>
+                                        <div class="h2 mb-0" id="lgaRecent">-</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="documentsList">
+                {% if documents %}
+                    <h4 class="mb-3">All Documents</h4>
+                    {% for doc in documents %}
+                    <div class="document-item" data-lga-id="{{ doc.lga_id }}" data-type="{{ doc.document_type }}">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h5 class="mb-1">{{ doc.document_name }}</h5>
+                                <p class="mb-2 text-muted">{{ doc.lga_name }}</p>
+                                <div class="document-type {{ doc.document_type }}">{{ doc.document_type|title }}</div>
+                            </div>
+                            <div class="text-end">
+                                <div class="mb-2 text-muted">{{ doc.created_at.strftime('%b %d, %Y') }}</div>
+                                <a href="{{ url_for('download_document_file', id=doc.document_id) }}" class="btn btn-sm btn-primary">
+                                    <i class="fas fa-download me-1"></i> Download
+                                </a>
+                            </div>
+                        </div>
+                        {% if doc.description %}
+                        <div class="mt-2">
+                            <small>{{ doc.description }}</small>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="alert alert-info">
+                        No documents available. {% if g.user and g.user.role == 'admin' %}<a href="{{ url_for('document_upload') }}">Upload documents</a> to get started.{% endif %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Leaflet JavaScript (must be loaded after the DOM) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.js"></script>
+
+<script>
+// Loading overlay functions
+function showLoading() {
+    console.log('Showing loading overlay');
+    var overlay = document.getElementById('loadingOverlay');
+    if (overlay) {
+        overlay.style.display = 'flex';
+    } else {
+        console.error('Loading overlay element not found');
+    }
+}
+
+function hideLoading() {
+    console.log('Hiding loading overlay');
+    var overlay = document.getElementById('loadingOverlay');
+    if (overlay) {
+        overlay.style.display = 'none';
+    } else {
+        console.error('Loading overlay element not found');
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Show map loading indicator
+    document.getElementById('map-loading').style.display = 'block';
+    
+    setTimeout(function() {
+        try {
+            initMap();
+        } catch (error) {
+            console.error('Error initializing map:', error);
+            document.getElementById('map-loading').style.display = 'none';
+            alert('There was an error loading the map. Please try again later.');
+        }
+    }, 500);
+    
+    // Setup other event listeners
+    setupEventListeners();
+});
+
+function initMap() {
+    console.log('Initializing map...');
+    
+    // Create the Leaflet map
+    var map = L.map('builders-map').setView([-37.8136, 144.9631], 8);
+    
+    // Add the OpenStreetMap tile layer
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        maxZoom: 19
+    }).addTo(map);
+    
+    // Create a layer for document markers
+    var documentMarkersLayer = L.layerGroup().addTo(map);
+    
+    // Get the GeoJSON data
+    var lgaData = {{ lga_geojson|safe }};
+    console.log("GeoJSON data loaded:", lgaData && lgaData.features ? lgaData.features.length + " features" : "No features");
+    
+    // Check if GeoJSON data is valid
+    if (!lgaData || !lgaData.features || lgaData.features.length === 0) {
+        console.error("Invalid or empty GeoJSON data");
+        // Try to load from API endpoint as fallback
+        fetch('/builders-hub?lga_geojson=true')
+            .then(response => response.json())
+            .then(data => {
+                console.log("Fetched GeoJSON data from API:", data && data.features ? data.features.length + " features" : "No features");
+                if (data && data.features && data.features.length > 0) {
+                    lgaData = data;
+                    addLgaLayer(lgaData);
+                }
+            })
+            .catch(error => {
+                console.error("Error fetching GeoJSON data:", error);
+            });
+    }
+    
+    // Add the LGA boundaries
+    var lgaLayer = addLgaLayer(lgaData);
+    
+    function addLgaLayer(data) {
+        return L.geoJSON(data, {
+        style: function(feature) {
+            // Style based on document count
+            var count = feature.properties.document_count || 0;
+            var color = '#e5e7eb'; // default - no documents
+            
+            if (count > 0) {
+                color = count > 20 ? '#4338ca' : // many
+                       count > 10 ? '#6366f1' : // medium
+                       count > 5 ? '#818cf8' : // few
+                       '#a5b4fc'; // very few
+            }
+            
+            return {
+                fillColor: color,
+                weight: 1,
+                opacity: 1,
+                color: 'white',
+                dashArray: '3',
+                fillOpacity: 0.7
+            };
+        },
+        onEachFeature: function(feature, layer) {
+            // Add tooltip on hover
+            if (feature.properties) {
+                var props = feature.properties;
+                var docCount = props.document_count || 0;
+                
+                layer.bindTooltip(
+                    '<div><strong>' + props.lga_name + '</strong><br>' +
+                    'Documents: ' + docCount + '</div>',
+                    {className: 'map-tooltip'}
+                );
+                
+                // Add click handler
+                layer.on('click', function(e) {
+                    if (props.lga_id) {
+                        // Select this LGA and show documents
+                        showLoading();
+                        setTimeout(function() {
+                            displayLgaDocuments(
+                                props.lga_id,
+                                props.lga_name,
+                                props.area_sqkm
+                            );
+                            // Delayed hiding of loading overlay to ensure UI updates
+                            setTimeout(function() {
+                                hideLoading();
+                            }, 300);
+                        }, 100); // Brief timeout for UI feedback
+                    }
+                });
+            }
+        }
+    }).addTo(map);
+    }
+    
+    console.log("LGA layer added to map");
+    
+    // Add click event for document marker toggle
+    document.getElementById('showDocumentMarkers').addEventListener('change', function() {
+        if (this.checked) {
+            // Show document markers for the selected LGA
+            var lgaId = document.getElementById('lgaSearch').value;
+            if (lgaId) {
+                showDocumentMarkers(lgaId, documentMarkersLayer);
+            }
+        } else {
+            // Clear all markers
+            documentMarkersLayer.clearLayers();
+        }
+    });
+    
+    // Store map and layers in global scope for access by other functions
+    window.map = map;
+    window.lgaLayer = lgaLayer;
+    window.documentMarkersLayer = documentMarkersLayer;
+    
+    // Hide the loading indicator
+    document.getElementById('map-loading').style.display = 'none';
+    console.log('Map initialization complete');
+    
+    // Try to fit to the LGA bounds
+    try {
+        if (lgaLayer.getBounds) {
+            map.fitBounds(lgaLayer.getBounds());
+            console.log("Fit map to LGA bounds");
+        }
+    } catch (e) {
+        console.error("Error fitting to bounds:", e);
+    }
+}
+
+function showDocumentMarkers(lgaId, markersLayer) {
+    console.log('Fetching document locations for LGA:', lgaId);
+    
+    // Clear existing markers
+    markersLayer.clearLayers();
+    
+    // Fetch document locations from API
+    fetch('/api/document-locations?lga_id=' + lgaId)
+        .then(function(response) {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(function(data) {
+            console.log('Received document locations:', data.length);
+            
+            // Add a marker for each document with coordinates
+            data.forEach(function(doc) {
+                if (doc.latitude && doc.longitude) {
+                    var marker = L.marker([doc.latitude, doc.longitude]);
+                    
+                    // Add popup with document info
+                    marker.bindPopup(
+                        '<div>' +
+                        '<h6>' + doc.document_name + '</h6>' +
+                        '<p><strong>Type:</strong> ' + (doc.document_type || 'Unknown') + '</p>' +
+                        '<a href="/download-document-file?id=' + doc.document_id + '" class="btn btn-sm btn-primary">Download</a>' +
+                        '</div>'
+                    );
+                    
+                    // Add marker to layer
+                    marker.addTo(markersLayer);
+                }
+            });
+        })
+        .catch(function(error) {
+            console.error('Error fetching document locations:', error);
+        });
+}
+
+function displayLgaDocuments(lgaId, lgaName, areaSqKm) {
+    console.log('Displaying documents for LGA:', lgaId, lgaName);
+    
+    // Show the LGA info section
+    document.getElementById('selectedLgaInfo').style.display = 'block';
+    
+    // Update LGA info
+    document.getElementById('selectedLgaName').textContent = lgaName || 'Selected LGA';
+    document.getElementById('lgaArea').textContent = areaSqKm ? Math.round(areaSqKm) : 'N/A';
+    
+    // Set the search dropdown to this LGA
+    document.getElementById('lgaSearch').value = lgaId;
+    
+    // Filter documents
+    filterDocuments(lgaId, '', '');
+    
+    // Show document markers if checkbox is checked
+    if (document.getElementById('showDocumentMarkers').checked) {
+        showDocumentMarkers(lgaId, window.documentMarkersLayer);
+    }
+    
+    // Scroll to the LGA info section
+    document.getElementById('selectedLgaInfo').scrollIntoView({behavior: 'smooth'});
+}
+
+function setupEventListeners() {
+    // Search form submission
+    document.getElementById('searchForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // Show loading overlay
+        showLoading();
+        
+        // Get form values
+        var lgaId = document.getElementById('lgaSearch').value;
+        var docType = document.getElementById('documentType').value;
+        var keyword = document.getElementById('keywordSearch').value;
+        
+        // Use setTimeout to allow the UI to update before filtering
+        setTimeout(function() {
+            filterDocuments(lgaId, docType, keyword);
+            
+            // If an LGA is selected, show its info
+            if (lgaId) {
+                var lgaOption = document.querySelector('#lgaSearch option[value="' + lgaId + '"]');
+                var lgaName = lgaOption ? lgaOption.textContent : 'Selected LGA';
+                
+                document.getElementById('selectedLgaInfo').style.display = 'block';
+                document.getElementById('selectedLgaName').textContent = lgaName;
+                
+                // Show document markers if checkbox is checked
+                if (document.getElementById('showDocumentMarkers').checked) {
+                    showDocumentMarkers(lgaId, window.documentMarkersLayer);
+                }
+            }
+            
+            // Hide loading overlay when done - with small delay to ensure UI is updated
+            setTimeout(function() {
+                hideLoading();
+            }, 300);
+        }, 100);
+    });
+    
+    // Document category links
+    document.querySelectorAll('.list-group-item').forEach(function(item) {
+        item.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Show loading overlay
+            showLoading();
+            
+            // Determine the document type
+            var text = this.textContent.trim().toLowerCase();
+            var docType = '';
+            
+            if (text.includes('permit')) {
+                docType = 'permit';
+            } else if (text.includes('regulation')) {
+                docType = 'regulation';
+            } else if (text.includes('form')) {
+                docType = 'form';
+            } else if (text.includes('other')) {
+                docType = 'other';
+            }
+            
+            // Use setTimeout to allow the UI to update before filtering
+            setTimeout(function() {
+                // Set the form field and filter
+                document.getElementById('documentType').value = docType;
+                filterDocuments('', docType, '');
+                
+                // Hide loading overlay when done - with small delay to ensure UI is updated
+                setTimeout(function() {
+                    hideLoading();
+                }, 300);
+            }, 100);
+        });
+    });
+}
+
+function filterDocuments(lgaId, docType, keyword) {
+    console.log('Filtering documents:', {lgaId: lgaId, docType: docType, keyword: keyword});
+    
+    // Get all document items
+    var documents = document.querySelectorAll('.document-item');
+    var visibleCount = 0;
+    
+    // Filter documents
+    documents.forEach(function(doc) {
+        var showDoc = true;
+        
+        // Filter by LGA
+        if (lgaId && doc.getAttribute('data-lga-id') !== lgaId) {
+            showDoc = false;
+        }
+        
+        // Filter by document type
+        if (docType && doc.getAttribute('data-type') !== docType) {
+            showDoc = false;
+        }
+        
+        // Filter by keyword
+        if (keyword && !doc.textContent.toLowerCase().includes(keyword.toLowerCase())) {
+            showDoc = false;
+        }
+        
+        // Show or hide document
+        doc.style.display = showDoc ? 'block' : 'none';
+        
+        // Count visible documents
+        if (showDoc) {
+            visibleCount++;
+        }
+    });
+    
+    // Update document count
+    document.getElementById('lgaDocCount').textContent = visibleCount;
+    
+    // Show "no results" message if needed
+    var documentsSection = document.getElementById('documentsList');
+    var noResultsMessage = documentsSection.querySelector('.no-results-message');
+    
+    if (visibleCount === 0) {
+        if (!noResultsMessage) {
+            noResultsMessage = document.createElement('div');
+            noResultsMessage.className = 'alert alert-info no-results-message mt-3';
+            noResultsMessage.textContent = 'No documents found for the selected criteria.';
+            documentsSection.appendChild(noResultsMessage);
+        } else {
+            noResultsMessage.style.display = 'block';
+        }
+    } else if (noResultsMessage) {
+        noResultsMessage.style.display = 'none';
+    }
+    
+    // Update recent date - find the most recent visible document
+    var mostRecentMonth = '-';
+    documents.forEach(function(doc) {
+        if (doc.style.display !== 'none') {
+            var dateElement = doc.querySelector('.text-end .text-muted');
+            if (dateElement) {
+                var dateText = dateElement.textContent.trim();
+                
+                // If this is the first or a more recent date, update mostRecentMonth
+                if (mostRecentMonth === '-' || new Date(dateText) > new Date(mostRecentMonth)) {
+                    var parts = dateText.split(' ');
+                    if (parts.length >= 1) {
+                        mostRecentMonth = parts[0]; // Get just the month
+                    }
+                }
+            }
+        }
+    });
+    
+    // Update the recent month display
+    document.getElementById('lgaRecent').textContent = mostRecentMonth;
+}
+</script>
+{% endblock %}

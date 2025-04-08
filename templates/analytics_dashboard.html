@@ -340,9 +340,9 @@
                         <div class="metric-value" id="totalIncome">{{ total_income|format_currency }}</div>
                         <div class="d-flex justify-content-between align-items-center">
                             <span class="metric-label" id="incomeLabel">All Properties</span>
-                            <span class="comparison-indicator positive" id="incomeChange">
-                                <i class="fas fa-arrow-up"></i> {{ income_change_percent }}%
-                            </span>
+                            <a href="#" id="viewAllIncomeLink" class="comparison-indicator positive" id="incomeChange">
+                                <i class="fas fa-arrow-up"></i> {{ income_change_percent }}% <i class="fas fa-search ms-1"></i>
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -544,7 +544,7 @@
                 <div class="card visualization-card shadow-sm">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <h6 class="card-title mb-0">Upcoming Work</h6>
-                        <a href="{{ url_for('properties') }}" class="btn btn-sm btn-outline-primary">View All</a>
+                        <a href="#" id="viewAllExpensesLink" class="btn btn-sm btn-outline-primary">View All</a>
                     </div>
                     <div class="card-body p-0">
                         {% if pending_work %}
@@ -675,6 +675,78 @@
 
 <!-- Tooltip -->
 <div id="tooltip"></div>
+
+<!-- Expense Details Modal -->
+<div class="modal fade" id="expenseDetailsModal" tabindex="-1" aria-labelledby="expenseDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="expenseDetailsModalLabel">Expense Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <input type="text" class="form-control" id="expenseSearchInput" placeholder="Search expenses...">
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover" id="expenseDetailsTable">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Property</th>
+                                <th>Category</th>
+                                <th>Description</th>
+                                <th>Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody id="expenseDetailsBody">
+                            <!-- Expense data rows will be added here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Income Details Modal -->
+<div class="modal fade" id="incomeDetailsModal" tabindex="-1" aria-labelledby="incomeDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="incomeDetailsModalLabel">Income Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <input type="text" class="form-control" id="incomeSearchInput" placeholder="Search income records...">
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover" id="incomeDetailsTable">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Property</th>
+                                <th>Source</th>
+                                <th>Details</th>
+                                <th>Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody id="incomeDetailsBody">
+                            <!-- Income data rows will be added here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
@@ -691,6 +763,9 @@
     const expenseTrendsData = {{ expense_trends|safe }};
     const profitMarginData = {{ profit_margin|safe }};
     const geojsonData = {{ geojson|safe }};
+    
+    // Key metrics
+    const total_expenses = {{ total_expenses|default(0) }};
     
     // Charts references
     let incomeExpensesChart;
@@ -1248,8 +1323,7 @@
                 
                 // Update chart based on selected period
                 const period = this.getAttribute('data-period');
-                // This would normally aggregate data based on the period
-                console.log(`Switching to ${period} view`);
+                updateChartPeriod(period);
             });
         });
         
@@ -1354,6 +1428,100 @@
         }
         
         showNotification(`Chart type changed to ${chartType}!`, 'info');
+    }
+    
+    function updateChartPeriod(period) {
+        if (!incomeExpensesChart) return;
+        
+        // Get the raw data
+        const rawLabels = labels;
+        const rawIncome = incomeData;
+        const rawExpense = expenseData;
+        const rawWorkCost = workCostData;
+        
+        let newLabels = [];
+        let newIncome = [];
+        let newExpense = [];
+        let newWorkCost = [];
+        
+        if (period === 'monthly') {
+            // Monthly is the default view, just use the raw data
+            newLabels = rawLabels;
+            newIncome = rawIncome;
+            newExpense = rawExpense;
+            newWorkCost = rawWorkCost;
+        } 
+        else if (period === 'quarterly') {
+            // Aggregate into quarters
+            const quarters = {};
+            
+            // Group data by quarter
+            for (let i = 0; i < rawLabels.length; i++) {
+                const monthDate = new Date(rawLabels[i]);
+                const quarter = Math.floor(monthDate.getMonth() / 3) + 1;
+                const year = monthDate.getFullYear();
+                const quarterKey = `Q${quarter} ${year}`;
+                
+                if (!quarters[quarterKey]) {
+                    quarters[quarterKey] = {
+                        income: 0,
+                        expense: 0,
+                        workCost: 0
+                    };
+                }
+                
+                quarters[quarterKey].income += (rawIncome[i] || 0);
+                quarters[quarterKey].expense += (rawExpense[i] || 0);
+                quarters[quarterKey].workCost += (rawWorkCost[i] || 0);
+            }
+            
+            // Convert to arrays for the chart
+            for (const [quarterKey, data] of Object.entries(quarters)) {
+                newLabels.push(quarterKey);
+                newIncome.push(data.income);
+                newExpense.push(data.expense);
+                newWorkCost.push(data.workCost);
+            }
+        } 
+        else if (period === 'yearly') {
+            // Aggregate into years
+            const years = {};
+            
+            // Group data by year
+            for (let i = 0; i < rawLabels.length; i++) {
+                const monthDate = new Date(rawLabels[i]);
+                const year = monthDate.getFullYear();
+                
+                if (!years[year]) {
+                    years[year] = {
+                        income: 0,
+                        expense: 0,
+                        workCost: 0
+                    };
+                }
+                
+                years[year].income += (rawIncome[i] || 0);
+                years[year].expense += (rawExpense[i] || 0);
+                years[year].workCost += (rawWorkCost[i] || 0);
+            }
+            
+            // Convert to arrays for the chart
+            for (const [year, data] of Object.entries(years)) {
+                newLabels.push(year);
+                newIncome.push(data.income);
+                newExpense.push(data.expense);
+                newWorkCost.push(data.workCost);
+            }
+        }
+        
+        // Update the chart data
+        incomeExpensesChart.data.labels = newLabels;
+        incomeExpensesChart.data.datasets[0].data = newIncome;
+        incomeExpensesChart.data.datasets[1].data = newExpense;
+        incomeExpensesChart.data.datasets[2].data = newWorkCost;
+        incomeExpensesChart.update();
+        
+        showNotification(`Chart period changed to ${period}!`, 'info');
     }
     
     function generateHeatmap() {
@@ -1469,6 +1637,265 @@
             alert.classList.remove('show');
             setTimeout(() => alert.remove(), 150);
         }, 3000);
+    }
+    
+    // Add click handlers to chart elements for showing expense/income details
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add click handler to expense-related charts
+        document.getElementById('incomeExpensesChart').addEventListener('click', function(evt) {
+            const activePoints = incomeExpensesChart.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, true);
+            
+            if (activePoints.length > 0) {
+                const firstPoint = activePoints[0];
+                const datasetIndex = firstPoint.datasetIndex;
+                const index = firstPoint.index;
+                const datasetLabel = incomeExpensesChart.data.datasets[datasetIndex].label;
+                const label = incomeExpensesChart.data.labels[index];
+                const value = incomeExpensesChart.data.datasets[datasetIndex].data[index];
+                
+                // Show appropriate modal based on dataset
+                if (datasetIndex == 0) {
+                    // Income (index 0)
+                    showIncomeList(label, datasetLabel, value);
+                } else if (datasetIndex == 1 || datasetIndex == 2) {
+                    // Expenses or Work Costs (index 1 or 2)
+                    showExpensesList(label, datasetLabel, value);
+                }
+            }
+        });
+        
+        // Add click handler to expense breakdown chart
+        document.getElementById('expenseBreakdownChart').addEventListener('click', function(evt) {
+            const activePoints = expenseBreakdownChart.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, true);
+            
+            if (activePoints.length > 0) {
+                const firstPoint = activePoints[0];
+                const index = firstPoint.index;
+                const label = expenseBreakdownChart.data.labels[index];
+                const value = expenseBreakdownChart.data.datasets[0].data[index];
+                
+                showExpensesList(`All Time (${label})`, label, value);
+            }
+        });
+        
+        // Add click handler for the "View All Expenses" link
+        document.getElementById('viewAllExpensesLink').addEventListener('click', function(e) {
+            e.preventDefault();
+            showExpensesList('All Expenses', 'All Categories', total_expenses);
+        });
+        
+        // Add click handler for the "View All Income" link
+        document.getElementById('viewAllIncomeLink').addEventListener('click', function(e) {
+            e.preventDefault();
+            showIncomeList('All Income', 'Income', total_income);
+        });
+        
+        // Search function for expense details modal
+        document.getElementById('expenseSearchInput').addEventListener('keyup', function() {
+            const searchText = this.value.toLowerCase();
+            const rows = document.querySelectorAll('#expenseDetailsBody tr');
+            
+            rows.forEach(row => {
+                const rowText = row.textContent.toLowerCase();
+                row.style.display = rowText.includes(searchText) ? '' : 'none';
+            });
+        });
+        
+        // Search function for income details modal
+        document.getElementById('incomeSearchInput').addEventListener('keyup', function() {
+            const searchText = this.value.toLowerCase();
+            const rows = document.querySelectorAll('#incomeDetailsBody tr');
+            
+            rows.forEach(row => {
+                const rowText = row.textContent.toLowerCase();
+                row.style.display = rowText.includes(searchText) ? '' : 'none';
+            });
+        });
+    });
+    
+    // Function to show expense details in modal
+    function showExpensesList(period, category, amount) {
+        // Set modal title
+        document.getElementById('expenseDetailsModalLabel').textContent = 
+            `${category} Details - ${period} ($${amount.toLocaleString()})`;
+        
+        // Fetch and populate expense data
+        const propertyId = document.getElementById('propertyFilter').value;
+        const dateRange = document.getElementById('dateRange').value;
+        
+        // In a real implementation, this would fetch data from the server
+        // For demo, we'll generate some sample data
+        const expenseDetailsBody = document.getElementById('expenseDetailsBody');
+        expenseDetailsBody.innerHTML = ''; // Clear previous data
+        
+        // Sample data - in a real implementation, this would come from an API call
+        const sampleData = generateSampleExpenses(category, 15);
+        
+        // Add rows to the table
+        sampleData.forEach(expense => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${expense.date}</td>
+                <td>${expense.property}</td>
+                <td>${expense.category}</td>
+                <td>${expense.description}</td>
+                <td class="text-end">$${expense.amount.toLocaleString()}</td>
+            `;
+            expenseDetailsBody.appendChild(row);
+        });
+        
+        // Show the modal
+        const modal = new bootstrap.Modal(document.getElementById('expenseDetailsModal'));
+        modal.show();
+    }
+    
+    // Helper function to generate sample expense data
+    // Function to show income details in modal
+    function showIncomeList(period, category, amount) {
+        // Set modal title
+        document.getElementById('incomeDetailsModalLabel').textContent = 
+            `${category} Details - ${period} ($${amount.toLocaleString()})`;
+        
+        // Fetch and populate income data
+        const propertyId = document.getElementById('propertyFilter').value;
+        const dateRange = document.getElementById('dateRange').value;
+        
+        // In a real implementation, this would fetch data from the server
+        // For demo, we'll generate some sample data
+        const incomeDetailsBody = document.getElementById('incomeDetailsBody');
+        incomeDetailsBody.innerHTML = ''; // Clear previous data
+        
+        // Sample data - in a real implementation, this would come from an API call
+        const sampleData = generateSampleIncome(15);
+        
+        // Add rows to the table
+        sampleData.forEach(income => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${income.date}</td>
+                <td>${income.property}</td>
+                <td>${income.source}</td>
+                <td>${income.details}</td>
+                <td class="text-end">$${income.amount.toLocaleString()}</td>
+            `;
+            incomeDetailsBody.appendChild(row);
+        });
+        
+        // Show the modal
+        const modal = new bootstrap.Modal(document.getElementById('incomeDetailsModal'));
+        modal.show();
+    }
+    
+    // Helper function to generate sample income data
+    function generateSampleIncome(count) {
+        const income = [];
+        const properties = document.getElementById('propertyFilter').options;
+        const sources = ['Rent', 'Lease', 'Sale', 'Investment', 'Other'];
+        const details = [
+            'Monthly rent payment', 'Quarterly lease', 'Property deposit', 
+            'Advance payment', 'Security deposit', 'Tenant fees',
+            'Sublease income', 'Property sale', 'Investment return',
+            'Insurance claim', 'Tax refund', 'Miscellaneous income'
+        ];
+        
+        // Generate some random dates in the past year
+        const now = new Date();
+        
+        for (let i = 0; i < count; i++) {
+            // Random date in the past 90 days
+            const date = new Date(now);
+            date.setDate(date.getDate() - Math.floor(Math.random() * 90));
+            
+            // Format the date
+            const formattedDate = date.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            });
+            
+            // Random property
+            const propertyIndex = Math.floor(Math.random() * properties.length);
+            const propertyName = properties[propertyIndex].text;
+            
+            // Random source
+            const source = sources[Math.floor(Math.random() * sources.length)];
+            
+            // Random description
+            const detail = details[Math.floor(Math.random() * details.length)];
+            
+            // Random amount between $1000 and $10000
+            const amount = Math.round(Math.random() * 9000 + 1000);
+            
+            income.push({
+                date: formattedDate,
+                property: propertyName,
+                source: source,
+                details: detail,
+                amount: amount
+            });
+        }
+        
+        // Sort by date (newest first)
+        income.sort((a, b) => new Date(b.date) - new Date(a.date));
+        
+        return income;
+    }
+    
+    function generateSampleExpenses(category, count) {
+        const expenses = [];
+        const properties = document.getElementById('propertyFilter').options;
+        const categories = ['Wage', 'Project Manager', 'Material', 'Miscellaneous'];
+        const descriptions = [
+            'Contractor payment', 'Weekly wages', 'Plumbing supplies', 
+            'Electrical work', 'Permits and fees', 'Landscaping', 
+            'Cleaning services', 'Roof repair', 'Paint supplies',
+            'Property management', 'Legal fees', 'Insurance'
+        ];
+        
+        // Generate some random dates in the past year
+        const now = new Date();
+        
+        for (let i = 0; i < count; i++) {
+            // Random date in the past 90 days
+            const date = new Date(now);
+            date.setDate(date.getDate() - Math.floor(Math.random() * 90));
+            
+            // Format the date
+            const formattedDate = date.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            });
+            
+            // Random property (or use the selected one)
+            const propertyIndex = Math.floor(Math.random() * properties.length);
+            const propertyName = properties[propertyIndex].text;
+            
+            // Either use the specified category or pick a random one with higher probability for the specified category
+            let expenseCategory = category;
+            if (category === 'Expenses' || category === 'Work Costs') {
+                expenseCategory = categories[Math.floor(Math.random() * categories.length)];
+            }
+            
+            // Random description
+            const description = descriptions[Math.floor(Math.random() * descriptions.length)];
+            
+            // Random amount between $100 and $5000
+            const amount = Math.round(Math.random() * 4900 + 100);
+            
+            expenses.push({
+                date: formattedDate,
+                property: propertyName,
+                category: expenseCategory,
+                description: description,
+                amount: amount
+            });
+        }
+        
+        // Sort by date (newest first)
+        expenses.sort((a, b) => new Date(b.date) - new Date(a.date));
+        
+        return expenses;
     }
 </script>
 {% endblock %}

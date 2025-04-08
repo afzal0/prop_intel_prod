@@ -158,27 +158,28 @@
                     <div class="col-md-4">
                         <label for="propertyFilter" class="form-label">Property</label>
                         <select id="propertyFilter" class="form-select">
-                            <option value="all" selected>All Properties</option>
+                            <option value="all" {% if request.args.get('property_id', 'all') == 'all' %}selected{% endif %}>All Properties</option>
                             {% for property in properties %}
-                            <option value="{{ property.property_id }}">{{ property.property_name }}</option>
+                            <option value="{{ property.property_id }}" {% if request.args.get('property_id') == property.property_id|string %}selected{% endif %}>{{ property.property_name }}</option>
                             {% endfor %}
                         </select>
                     </div>
                     <div class="col-md-4">
                         <label for="yearFilter" class="form-label">Year</label>
                         <select id="yearFilter" class="form-select">
-                            <option value="2025" selected>2025</option>
-                            <option value="2024">2024</option>
-                            <option value="2023">2023</option>
+                            {% set current_year = request.args.get('year', '2025')|int %}
+                            {% for year in range(current_year+1, current_year-4, -1) %}
+                            <option value="{{ year }}" {% if request.args.get('year', '2025')|int == year %}selected{% endif %}>{{ year }}</option>
+                            {% endfor %}
                         </select>
                     </div>
                     <div class="col-md-4">
                         <label for="statusFilter" class="form-label">Status</label>
                         <select id="statusFilter" class="form-select">
-                            <option value="all" selected>All Statuses</option>
-                            <option value="active">Active</option>
-                            <option value="completed">Completed</option>
-                            <option value="draft">Draft</option>
+                            <option value="all" {% if request.args.get('status', 'all') == 'all' %}selected{% endif %}>All Statuses</option>
+                            <option value="Pending" {% if request.args.get('status') == 'Pending' %}selected{% endif %}>Pending</option>
+                            <option value="Completed" {% if request.args.get('status') == 'Completed' %}selected{% endif %}>Completed</option>
+                            <option value="In Progress" {% if request.args.get('status') == 'In Progress' %}selected{% endif %}>In Progress</option>
                         </select>
                     </div>
                 </div>
@@ -231,70 +232,38 @@
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <h6 class="card-title mb-0">Active Budgets</h6>
                         <div class="budget-header-action">
-                            <a href="#" class="text-decoration-none">View All <i class="fas fa-chevron-right ms-1 small"></i></a>
+                            <a href="/budget-planner?property_id=all&status=Pending" class="text-decoration-none">View All <i class="fas fa-chevron-right ms-1 small"></i></a>
                         </div>
                     </div>
                     <div class="card-body p-0">
                         <div class="list-group list-group-flush">
-                            <div class="budget-item">
-                                <div class="d-flex justify-content-between align-items-start">
-                                    <div>
-                                        <div class="budget-item-title">Property A - Q1 Renovation</div>
-                                        <div class="budget-item-details">Jan 2025 - Mar 2025</div>
-                                        <div class="mt-2">
-                                            <span class="category-tag material">Material</span>
-                                            <span class="category-tag wage">Wage</span>
+                            {% if budget_data and budget_data.active_budgets %}
+                                {% for budget in budget_data.active_budgets %}
+                                <div class="budget-item">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <div class="budget-item-title">{{ budget.property_name }} - {{ budget.description }}</div>
+                                            <div class="budget-item-details">{{ budget.date|format_date }}</div>
+                                            <div class="mt-2">
+                                                <span class="category-tag material">Material</span>
+                                                <span class="category-tag wage">Wage</span>
+                                            </div>
+                                        </div>
+                                        <div class="text-end">
+                                            <div class="budget-item-amount text-primary">{{ budget.budget_amount|format_currency }}</div>
+                                            <small class="text-muted">{{ budget.spent_amount|format_currency }} spent ({{ budget.percentage|round|int }}%)</small>
                                         </div>
                                     </div>
-                                    <div class="text-end">
-                                        <div class="budget-item-amount text-primary">$15,000</div>
-                                        <small class="text-muted">$8,250 spent (55%)</small>
+                                    <div class="progress budget-progress">
+                                        <div class="progress-bar bg-primary" role="progressbar" style="width: {{ budget.percentage|round|int }}%" aria-valuenow="{{ budget.percentage|round|int }}" aria-valuemin="0" aria-valuemax="100"></div>
                                     </div>
                                 </div>
-                                <div class="progress budget-progress">
-                                    <div class="progress-bar bg-primary" role="progressbar" style="width: 55%" aria-valuenow="55" aria-valuemin="0" aria-valuemax="100"></div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="text-center p-4">
+                                    <p class="text-muted">No active budgets found</p>
                                 </div>
-                            </div>
-                            
-                            <div class="budget-item">
-                                <div class="d-flex justify-content-between align-items-start">
-                                    <div>
-                                        <div class="budget-item-title">Property B - Maintenance</div>
-                                        <div class="budget-item-details">Feb 2025 - Jun 2025</div>
-                                        <div class="mt-2">
-                                            <span class="category-tag material">Material</span>
-                                            <span class="category-tag project_manager">Project Manager</span>
-                                        </div>
-                                    </div>
-                                    <div class="text-end">
-                                        <div class="budget-item-amount text-primary">$8,000</div>
-                                        <small class="text-muted">$2,400 spent (30%)</small>
-                                    </div>
-                                </div>
-                                <div class="progress budget-progress">
-                                    <div class="progress-bar bg-primary" role="progressbar" style="width: 30%" aria-valuenow="30" aria-valuemin="0" aria-valuemax="100"></div>
-                                </div>
-                            </div>
-                            
-                            <div class="budget-item">
-                                <div class="d-flex justify-content-between align-items-start">
-                                    <div>
-                                        <div class="budget-item-title">Property C - Kitchen Update</div>
-                                        <div class="budget-item-details">Mar 2025 - Apr 2025</div>
-                                        <div class="mt-2">
-                                            <span class="category-tag material">Material</span>
-                                            <span class="category-tag wage">Wage</span>
-                                        </div>
-                                    </div>
-                                    <div class="text-end">
-                                        <div class="budget-item-amount text-primary">$12,500</div>
-                                        <small class="text-muted">$1,250 spent (10%)</small>
-                                    </div>
-                                </div>
-                                <div class="progress budget-progress">
-                                    <div class="progress-bar bg-primary" role="progressbar" style="width: 10%" aria-valuenow="10" aria-valuemin="0" aria-valuemax="100"></div>
-                                </div>
-                            </div>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
@@ -306,7 +275,7 @@
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <h6 class="card-title mb-0">Upcoming Planned Expenses</h6>
                         <div class="budget-header-action">
-                            <a href="#" class="text-decoration-none">View All <i class="fas fa-chevron-right ms-1 small"></i></a>
+                            <a href="/budget-planner?property_id=all&status=Pending" class="text-decoration-none">View All <i class="fas fa-chevron-right ms-1 small"></i></a>
                         </div>
                     </div>
                     <div class="card-body p-0">
@@ -322,41 +291,21 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr>
-                                        <td>Plumbing repairs</td>
-                                        <td>Property A</td>
-                                        <td>Apr 15, 2025</td>
-                                        <td>$1,200</td>
-                                        <td><span class="category-tag material">Material</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td>Interior painting</td>
-                                        <td>Property B</td>
-                                        <td>Apr 22, 2025</td>
-                                        <td>$3,500</td>
-                                        <td><span class="category-tag wage">Wage</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td>New appliances</td>
-                                        <td>Property C</td>
-                                        <td>May 1, 2025</td>
-                                        <td>$4,800</td>
-                                        <td><span class="category-tag material">Material</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td>Landscaping</td>
-                                        <td>Property A</td>
-                                        <td>May 10, 2025</td>
-                                        <td>$1,500</td>
-                                        <td><span class="category-tag miscellaneous">Miscellaneous</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td>HVAC maintenance</td>
-                                        <td>Property B</td>
-                                        <td>May 15, 2025</td>
-                                        <td>$850</td>
-                                        <td><span class="category-tag project_manager">Project Manager</span></td>
-                                    </tr>
+                                    {% if budget_data and budget_data.upcoming_expenses %}
+                                        {% for expense in budget_data.upcoming_expenses %}
+                                        <tr>
+                                            <td>{{ expense.description }}</td>
+                                            <td>{{ expense.property }}</td>
+                                            <td>{{ expense.date|format_date }}</td>
+                                            <td>{{ expense.amount|format_currency }}</td>
+                                            <td><span class="category-tag {{ expense.category }}">{{ expense.category|replace('_', ' ')|title }}</span></td>
+                                        </tr>
+                                        {% endfor %}
+                                    {% else %}
+                                        <tr>
+                                            <td colspan="5" class="text-center">No upcoming expenses found</td>
+                                        </tr>
+                                    {% endif %}
                                 </tbody>
                             </table>
                         </div>
@@ -496,16 +445,30 @@
     });
     
     function initializeCharts() {
+        // Get data from backend
+        const budgetData = {{ budget_data|tojson|safe }};
+        const months = budgetData.months || ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const monthlyBudget = budgetData.monthly_budget || Array(12).fill(0);
+        const monthlySpent = budgetData.monthly_spent || Array(12).fill(0);
+        
+        // Calculate projected values (only for future months)
+        const currentMonth = new Date().getMonth(); // 0-indexed (0 = Jan)
+        const projectedData = Array(12).fill(0);
+        
+        for (let i = currentMonth + 1; i < 12; i++) {
+            projectedData[i] = monthlyBudget[i];
+        }
+        
         // Budget Overview Chart
         const budgetOverviewCtx = document.getElementById('budgetOverviewChart').getContext('2d');
         const budgetOverviewChart = new Chart(budgetOverviewCtx, {
             type: 'bar',
             data: {
-                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                labels: months,
                 datasets: [
                     {
                         label: 'Budget',
-                        data: [12000, 15000, 18000, 20000, 16000, 14000, 13000, 15000, 17000, 19000, 16000, 14000],
+                        data: monthlyBudget,
                         backgroundColor: 'rgba(67, 97, 238, 0.3)',
                         borderColor: 'rgba(67, 97, 238, 1)',
                         borderWidth: 1,
@@ -515,14 +478,14 @@
                     },
                     {
                         label: 'Spent',
-                        data: [10000, 13500, 15000, 5000, 2000, 0, 0, 0, 0, 0, 0, 0],
+                        data: monthlySpent,
                         backgroundColor: 'rgba(40, 167, 69, 0.7)',
                         borderColor: 'rgba(40, 167, 69, 1)',
                         borderWidth: 1
                     },
                     {
                         label: 'Projected',
-                        data: [0, 0, 0, 0, 12000, 14000, 13000, 15000, 17000, 19000, 16000, 14000],
+                        data: projectedData,
                         backgroundColor: 'rgba(108, 117, 125, 0.3)',
                         borderColor: 'rgba(108, 117, 125, 1)',
                         borderWidth: 1,
@@ -558,12 +521,26 @@
         
         // Budget Allocation Chart
         const budgetAllocationCtx = document.getElementById('budgetAllocationChart').getContext('2d');
+        
+        // Get allocation data from backend
+        const allocationData = budgetData.allocation_data || {
+            wage: 0,
+            project_manager: 0,
+            material: 0,
+            miscellaneous: 0
+        };
+        
         const budgetAllocationChart = new Chart(budgetAllocationCtx, {
             type: 'pie',
             data: {
                 labels: ['Wage', 'Project Manager', 'Material', 'Miscellaneous'],
                 datasets: [{
-                    data: [35, 15, 40, 10],
+                    data: [
+                        allocationData.wage || 0,
+                        allocationData.project_manager || 0,
+                        allocationData.material || 0,
+                        allocationData.miscellaneous || 0
+                    ],
                     backgroundColor: [
                         'rgba(40, 167, 69, 0.7)',
                         'rgba(23, 162, 184, 0.7)',
@@ -681,8 +658,13 @@
         document.getElementById('statusFilter').addEventListener('change', updateBudgetData);
         
         function updateBudgetData() {
-            // In a real app, this would fetch updated data from the server
-            console.log('Updating budget data with new filters');
+            // Get selected values
+            const selectedProperty = document.getElementById('propertyFilter').value;
+            const selectedYear = document.getElementById('yearFilter').value;
+            const selectedStatus = document.getElementById('statusFilter').value;
+            
+            // Redirect to the same page with query parameters
+            window.location.href = `/budget-planner?property_id=${selectedProperty}&year=${selectedYear}&status=${selectedStatus}`;
         }
     }
 </script>

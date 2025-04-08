@@ -33,13 +33,13 @@ def get_db_config():
         
         # Default connection parameters
         default_params = {
-            "user": "prop_intel",
-            "password": "nyrty7-cytrit-qePkyf",
-            "host": "propintel.postgres.database.azure.com",
+            "user": "u15p78tmoefhv2",
+            "password": "p78dc6c2370076ee1ac7f23f370d707687e8400f94032cccdb35ddd1d7b37381f",
+            "host": "c1i13pt05ja4ag.cluster-czrs8kj4isg7.us-east-1.rds.amazonaws.com",
             "port": 5432,
-            "database": "postgres",
+            "database": "d1oncga6g47frr",
         }
-        
+
         # Try to read from config file
         if os.path.exists('db_config.ini'):
             try:

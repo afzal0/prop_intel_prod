@@ -1,0 +1,414 @@
+<\!DOCTYPE html>
+<html>
+<head>
+    <title>Victorian LGAs Map</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <\!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+        #map {
+            width: 100%;
+            height: 600px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+        h1 {
+            color: #333;
+        }
+        .controls {
+            margin-bottom: 15px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+        }
+        .legend {
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.2);
+        }
+        .legend div {
+            margin-bottom: 5px;
+        }
+        .color-box {
+            display: inline-block;
+            width: 15px;
+            height: 15px;
+            margin-right: 5px;
+            border: 1px solid #ccc;
+        }
+        .info-panel {
+            padding: 10px;
+            background: rgba(255,255,255,0.9);
+            border-radius: 5px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.2);
+            max-width: 300px;
+        }
+        .loading {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 20px;
+            background: white;
+            border-radius: 5px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.2);
+            z-index: 1000;
+            display: none;
+        }
+        .status-box {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            background-color: #f0f0f0;
+        }
+        #log {
+            max-height: 200px;
+            overflow-y: auto;
+            padding: 10px;
+            border-radius: 5px;
+            background-color: #fff;
+            border: 1px solid #ddd;
+        }
+    </style>
+</head>
+<body>
+    <div class="loading" id="loading">
+        <strong>Loading...</strong>
+    </div>
+    
+    <div class="container">
+        <h1>Victorian LGAs Map</h1>
+        <p>Interactive map of Victorian Local Government Areas (LGAs) with document locations.</p>
+        
+        <div class="controls">
+            <div class="row">
+                <div class="col">
+                    <label for="lga-select">Select LGA:</label>
+                    <select id="lga-select" class="form-control" style="width: 100%; margin-bottom: 10px;">
+                        <option value="">-- Select LGA --</option>
+                        <\!-- LGAs will be populated by JavaScript -->
+                    </select>
+                </div>
+                <div class="col">
+                    <label>
+                        <input type="checkbox" id="show-documents" checked> 
+                        Show document locations
+                    </label>
+                </div>
+            </div>
+            <div>
+                <a href="/builders-hub" class="btn btn-primary" style="background-color: #007bff; color: white; padding: 5px 10px; border-radius: 5px; text-decoration: none;">
+                    Return to Builder's Hub
+                </a>
+            </div>
+        </div>
+        
+        <\!-- Map container -->
+        <div id="map"></div>
+        
+        <div class="status-box">
+            <details>
+                <summary><strong>Debug Log</strong> (click to expand)</summary>
+                <pre id="log"></pre>
+            </details>
+        </div>
+    </div>
+
+    <\!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    
+    <script>
+        // Logging function
+        function log(message) {
+            var logElement = document.getElementById('log');
+            logElement.textContent += message + '\n';
+            console.log(message);
+        }
+        
+        // Show loading indicator
+        function showLoading() {
+            document.getElementById('loading').style.display = 'block';
+        }
+        
+        // Hide loading indicator
+        function hideLoading() {
+            document.getElementById('loading').style.display = 'none';
+        }
+        
+        // Main script
+        document.addEventListener('DOMContentLoaded', function() {
+            log('DOMContentLoaded event fired');
+            showLoading();
+            
+            // Check if Leaflet is available
+            if (typeof L === 'undefined') {
+                log('ERROR: Leaflet library not loaded');
+                hideLoading();
+                return;
+            }
+            
+            log('Leaflet is available');
+            
+            try {
+                // Initialize map
+                log('Creating map...');
+                var map = L.map('map').setView([-37.8136, 144.9631], 8);
+                log('Map created');
+                
+                // Add tile layer
+                log('Adding tile layer...');
+                L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    maxZoom: 19,
+                    attribution: '© OpenStreetMap contributors'
+                }).addTo(map);
+                log('Tile layer added');
+                
+                // Add LGA data
+                log('Fetching LGA GeoJSON data...');
+                fetch('/builders-hub?lga_geojson=1', {
+                    // Add credentials to ensure session cookies are sent
+                    credentials: 'same-origin'
+                })
+                    .then(response => {
+                        if (\!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        log('LGA data received, adding to map...');
+                        
+                        // LGA layer with style
+                        var lgaLayer = L.geoJSON(data, {
+                            style: function(feature) {
+                                // Color based on document count if available
+                                var count = feature.properties.document_count || 0;
+                                var color = '#e5e7eb'; // default gray
+                                
+                                if (count > 20) {
+                                    color = '#4338ca'; // many documents
+                                } else if (count > 10) {
+                                    color = '#6366f1'; // medium
+                                } else if (count > 5) {
+                                    color = '#818cf8'; // few
+                                } else if (count > 0) {
+                                    color = '#a5b4fc'; // very few
+                                }
+                                
+                                return {
+                                    fillColor: color,
+                                    weight: 1,
+                                    opacity: 1,
+                                    color: 'white',
+                                    dashArray: '3',
+                                    fillOpacity: 0.7
+                                };
+                            },
+                            onEachFeature: function(feature, layer) {
+                                // Populate select dropdown
+                                if (feature.properties && feature.properties.lga_id && feature.properties.lga_name) {
+                                    var option = document.createElement('option');
+                                    option.value = feature.properties.lga_id;
+                                    option.textContent = feature.properties.lga_name;
+                                    document.getElementById('lga-select').appendChild(option);
+                                }
+                                
+                                // Add popup on click
+                                if (feature.properties) {
+                                    layer.bindPopup(`
+                                        <div class="info-panel">
+                                            <h4>${feature.properties.lga_name || 'Unknown LGA'}</h4>
+                                            <p>Document count: ${feature.properties.document_count || 0}</p>
+                                            <p>Area: ${Math.round(feature.properties.area_sqkm || 0)} sq km</p>
+                                        </div>
+                                    `);
+                                }
+                                
+                                // Highlight on hover
+                                layer.on({
+                                    mouseover: function(e) {
+                                        var layer = e.target;
+                                        layer.setStyle({
+                                            weight: 3,
+                                            color: '#666',
+                                            dashArray: '',
+                                            fillOpacity: 0.9
+                                        });
+                                        if (\!L.Browser.ie && \!L.Browser.opera && \!L.Browser.edge) {
+                                            layer.bringToFront();
+                                        }
+                                    },
+                                    mouseout: function(e) {
+                                        lgaLayer.resetStyle(e.target);
+                                    },
+                                    click: function(e) {
+                                        var props = e.target.feature.properties;
+                                        if (props && props.lga_id) {
+                                            // Update dropdown
+                                            document.getElementById('lga-select').value = props.lga_id;
+                                            
+                                            // Fetch document locations if checkbox is checked
+                                            if (document.getElementById('show-documents').checked) {
+                                                fetchDocumentLocations(props.lga_id);
+                                            }
+                                        }
+                                    }
+                                });
+                            }
+                        }).addTo(map);
+                        
+                        log('LGA layer added to map');
+                        
+                        // Add legend
+                        var legend = L.control({position: 'bottomright'});
+                        legend.onAdd = function(map) {
+                            var div = L.DomUtil.create('div', 'legend');
+                            div.innerHTML = '<h4>Document Count</h4>' +
+                                '<div><span class="color-box" style="background: #4338ca"></span> &gt; 20</div>' +
+                                '<div><span class="color-box" style="background: #6366f1"></span> 11-20</div>' +
+                                '<div><span class="color-box" style="background: #818cf8"></span> 6-10</div>' +
+                                '<div><span class="color-box" style="background: #a5b4fc"></span> 1-5</div>' +
+                                '<div><span class="color-box" style="background: #e5e7eb"></span> None</div>';
+                            return div;
+                        };
+                        legend.addTo(map);
+                        
+                        // Fit map to LGA bounds
+                        map.fitBounds(lgaLayer.getBounds());
+                        
+                        hideLoading();
+                    })
+                    .catch(error => {
+                        log('ERROR fetching LGA data: ' + error.message);
+                        
+                        // Fallback - create a simple polygon for Melbourne
+                        log('Creating fallback LGA polygon...');
+                        var fallbackGeoJSON = {
+                            "type": "FeatureCollection",
+                            "features": [{
+                                "type": "Feature",
+                                "properties": {
+                                    "lga_id": 1,
+                                    "lga_name": "Melbourne",
+                                    "area_sqkm": 37.7
+                                },
+                                "geometry": {
+                                    "type": "Polygon",
+                                    "coordinates": [[
+                                        [144.9, -37.8], [145.0, -37.8], 
+                                        [145.0, -37.9], [144.9, -37.9], 
+                                        [144.9, -37.8]
+                                    ]]
+                                }
+                            }]
+                        };
+                        
+                        L.geoJSON(fallbackGeoJSON, {
+                            style: {
+                                color: '#0000ff',
+                                weight: 1,
+                                opacity: 0.5,
+                                fillColor: '#3388ff',
+                                fillOpacity: 0.2
+                            }
+                        }).addTo(map);
+                        
+                        log('Fallback LGA added');
+                        hideLoading();
+                    });
+                
+                // Document markers layer
+                var documentMarkersLayer = L.layerGroup().addTo(map);
+                
+                // Function to fetch document locations
+                window.fetchDocumentLocations = function(lgaId) {
+                    log('Fetching document locations for LGA ' + lgaId);
+                    showLoading();
+                    
+                    // Clear existing markers
+                    documentMarkersLayer.clearLayers();
+                    
+                    fetch('/api/document-locations?lga_id=' + lgaId)
+                        .then(response => {
+                            if (\!response.ok) {
+                                throw new Error('Network response was not ok');
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            log(`Received ${data.length} document locations`);
+                            
+                            // Add markers for each document
+                            data.forEach(function(doc) {
+                                if (doc.latitude && doc.longitude) {
+                                    var marker = L.marker([doc.latitude, doc.longitude]).addTo(documentMarkersLayer);
+                                    
+                                    // Add popup with document details
+                                    marker.bindPopup(`
+                                        <div>
+                                            <h5>${doc.document_name || 'Document'}</h5>
+                                            <p><strong>Type:</strong> ${doc.document_type || 'Unknown'}</p>
+                                            <p><strong>Address:</strong> ${doc.address || 'No address'}</p>
+                                            <a href="/download-document-file?id=${doc.document_id}" target="_blank" 
+                                               style="background-color: #007bff; color: white; padding: 3px 8px; 
+                                                      border-radius: 3px; text-decoration: none; display: inline-block;">
+                                                Download
+                                            </a>
+                                        </div>
+                                    `);
+                                }
+                            });
+                            
+                            log('Document markers added to map');
+                            hideLoading();
+                        })
+                        .catch(error => {
+                            log('ERROR fetching document locations: ' + error.message);
+                            hideLoading();
+                        });
+                };
+                
+                // Document visibility toggle
+                document.getElementById('show-documents').addEventListener('change', function() {
+                    if (this.checked) {
+                        documentMarkersLayer.addTo(map);
+                        var lgaId = document.getElementById('lga-select').value;
+                        if (lgaId) {
+                            fetchDocumentLocations(lgaId);
+                        }
+                    } else {
+                        map.removeLayer(documentMarkersLayer);
+                    }
+                });
+                
+                // LGA selection change
+                document.getElementById('lga-select').addEventListener('change', function() {
+                    var lgaId = this.value;
+                    if (lgaId) {
+                        if (document.getElementById('show-documents').checked) {
+                            fetchDocumentLocations(lgaId);
+                        }
+                    }
+                });
+                
+                log('Map initialization complete');
+            } catch (e) {
+                log('ERROR: ' + e.message);
+                hideLoading();
+            }
+        });
+    </script>
+</body>
+</html>

@@ -18,3 +18,7 @@ python-dotenv==1.0.0
 Pillow==10.0.0
 pytz==2023.3
 email-validator==2.0.0
+geopandas==0.14.1
+shapely==2.0.1
+rtree==1.1.0
+fiona==1.9.5

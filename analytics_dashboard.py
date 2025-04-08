@@ -20,12 +20,42 @@ def get_db_connection():
     """Get a database connection using the provided configuration"""
     import psycopg2
     import os
+    from urllib.parse import urlparse
     
     # Check if running on Heroku
     if 'DATABASE_URL' in os.environ:
         # Parse database URL for Heroku
-        conn = psycopg2.connect(os.environ['DATABASE_URL'], sslmode='require')
+        database_url = os.environ['DATABASE_URL']
+        # Check for postgres:// prefix and replace with postgresql://
+        if database_url.startswith('postgres://'):
+            database_url = database_url.replace('postgres://', 'postgresql://', 1)
+        conn = psycopg2.connect(database_url, sslmode='require')
     else:
+        # Try to load from .env file first
+        try:
+            from dotenv import load_dotenv
+            load_dotenv()
+            
+            db_host = os.environ.get('DB_HOST')
+            db_name = os.environ.get('DB_NAME')
+            db_user = os.environ.get('DB_USER')
+            db_password = os.environ.get('DB_PASSWORD')
+            db_port = os.environ.get('DB_PORT', '5432')
+            
+            if db_host and db_name and db_user and db_password:
+                conn = psycopg2.connect(
+                    user=db_user,
+                    password=db_password,
+                    host=db_host,
+                    port=db_port,
+                    dbname=db_name
+                )
+                print("Connected using .env configuration")
+                conn.autocommit = False
+                return conn
+        except Exception as e:
+            print(f"Failed to load from .env: {e}")
+        
         # Try to load from config file
         try:
             import configparser
@@ -39,16 +69,18 @@ def get_db_connection():
                 port=config['database']['port'],
                 dbname=config['database']['database']
             )
+            print("Connected using db_config.ini")
         except Exception as e:
             print(f"Failed to load config: {e}")
-            # Fallback to hardcoded values
+            # Use the database parameters from db_connect.py default values
             conn = psycopg2.connect(
-                user='postgres',
-                password='1234',
-                host='localhost',
-                port='5432',
-                dbname='postgres'
+                user="u15p78tmoefhv2",
+                password="p78dc6c2370076ee1ac7f23f370d707687e8400f94032cccdb35ddd1d7b37381f",
+                host="c1i13pt05ja4ag.cluster-czrs8kj4isg7.us-east-1.rds.amazonaws.com",
+                port="5432",
+                database="d1oncga6g47frr"
             )
+            print("Connected using fallback credentials")
     
     conn.autocommit = False
     return conn
@@ -92,7 +124,7 @@ def get_analytics_data(property_id=None, date_range=365, category=None):
             # Build property filter condition
             property_filter = ""
             if property_id and property_id != 'all':
-                property_filter = f"AND property_id = '{property_id}'"
+                property_filter = f"AND mi.property_id = '{property_id}'"
             
             # Build category filter condition
             category_filter = ""
@@ -102,7 +134,7 @@ def get_analytics_data(property_id=None, date_range=365, category=None):
             # Get total income
             cur.execute(f"""
                 SELECT COALESCE(SUM(income_amount), 0) as total_income
-                FROM propintel.money_in
+                FROM propintel.money_in mi
                 WHERE income_date >= current_date - interval '{date_range} days'
                 {property_filter}
             """)
@@ -111,9 +143,9 @@ def get_analytics_data(property_id=None, date_range=365, category=None):
             # Get total expenses
             cur.execute(f"""
                 SELECT COALESCE(SUM(expense_amount), 0) as total_expenses
-                FROM propintel.money_out
+                FROM propintel.money_out mo
                 WHERE expense_date >= current_date - interval '{date_range} days'
-                {property_filter}
+                {property_filter.replace('mi.', 'mo.')}
                 {category_filter}
             """)
             total_expenses = decimal_to_float(cur.fetchone()['total_expenses'] or 0)
@@ -122,9 +154,9 @@ def get_analytics_data(property_id=None, date_range=365, category=None):
             cur.execute(f"""
                 SELECT COUNT(*) as total_work_records,
                        COALESCE(SUM(work_cost), 0) as total_work_cost
-                FROM propintel.work
+                FROM propintel.work w
                 WHERE work_date >= current_date - interval '{date_range} days'
-                {property_filter}
+                {property_filter.replace('mi.', 'w.')}
             """)
             work_data = cur.fetchone()
             total_work_records = int(work_data['total_work_records'] or 0)
@@ -143,7 +175,7 @@ def get_analytics_data(property_id=None, date_range=365, category=None):
                     SELECT 
                         date_trunc('month', income_date) as month,
                         COALESCE(SUM(income_amount), 0) as income
-                    FROM propintel.money_in
+                    FROM propintel.money_in mi
                     WHERE income_date >= current_date - interval '{date_range} days'
                     {property_filter}
                     GROUP BY month
@@ -152,9 +184,9 @@ def get_analytics_data(property_id=None, date_range=365, category=None):
                     SELECT 
                         date_trunc('month', expense_date) as month,
                         COALESCE(SUM(expense_amount), 0) as expenses
-                    FROM propintel.money_out
+                    FROM propintel.money_out mo
                     WHERE expense_date >= current_date - interval '{date_range} days'
-                    {property_filter}
+                    {property_filter.replace('mi.', 'mo.')}
                     {category_filter}
                     GROUP BY month
                 ),
@@ -162,9 +194,9 @@ def get_analytics_data(property_id=None, date_range=365, category=None):
                     SELECT 
                         date_trunc('month', work_date) as month,
                         COALESCE(SUM(work_cost), 0) as work_cost
-                    FROM propintel.work
+                    FROM propintel.work w
                     WHERE work_date >= current_date - interval '{date_range} days'
-                    {property_filter}
+                    {property_filter.replace('mi.', 'w.')}
                     GROUP BY month
                 )
                 SELECT 
@@ -192,9 +224,9 @@ def get_analytics_data(property_id=None, date_range=365, category=None):
                 SELECT
                     expense_category,
                     COALESCE(SUM(expense_amount), 0) as total_amount
-                FROM propintel.money_out
+                FROM propintel.money_out mo
                 WHERE expense_date >= current_date - interval '{date_range} days'
-                {property_filter}
+                {property_filter.replace('mi.', 'mo.')}
                 GROUP BY expense_category
                 ORDER BY total_amount DESC
             """)
@@ -228,7 +260,8 @@ def get_analytics_data(property_id=None, date_range=365, category=None):
                     FROM propintel.properties p
                     LEFT JOIN propintel.money_out m ON p.property_id = m.property_id
                     AND m.expense_date >= current_date - interval '{date_range} days'
-                    {category_filter}
+                    {category_filter.replace('expense_category', 'm.expense_category')}
+                    {property_filter.replace('mi.property_id', 'p.property_id') if property_id and property_id != 'all' else ''}
                     GROUP BY p.property_id, p.property_name
                 )
                 SELECT * FROM property_expenses
@@ -254,7 +287,7 @@ def get_analytics_data(property_id=None, date_range=365, category=None):
                     AND mi.income_date >= current_date - interval '{date_range} days'
                     LEFT JOIN propintel.money_out mo ON p.property_id = mo.property_id
                     AND mo.expense_date >= current_date - interval '{date_range} days'
-                    {category_filter}
+                    {category_filter.replace('expense_category', 'mo.expense_category')}
                     LEFT JOIN propintel.work w ON p.property_id = w.property_id
                     AND w.work_date >= current_date - interval '{date_range} days'
                     WHERE p.property_id = %s
@@ -442,7 +475,7 @@ def get_work_heatmap_data(cursor, property_id=None, date_range=365):
                 COUNT(*) as count
             FROM propintel.work
             WHERE work_date >= current_date - interval '{date_range} days'
-            {property_filter}
+            {property_filter.replace("property_id", "propintel.work.property_id") if property_id and property_id != 'all' else ''}
             GROUP BY day, month, day_idx, month_idx
             ORDER BY month_idx, day_idx
         """)
@@ -520,10 +553,10 @@ def get_expense_trends(cursor, property_id=None, date_range=365, category=None):
                         WHEN expense_category IS NULL THEN 'miscellaneous'
                         ELSE expense_category
                     END as category
-                FROM propintel.money_out
+                FROM propintel.money_out mo
                 WHERE expense_date >= current_date - interval '{date_range} days'
-                {property_filter}
-                {category_filter}
+                {property_filter.replace("property_id", "mo.property_id")}
+                {category_filter.replace("expense_category", "mo.expense_category")}
             ),
             expense_data AS (
                 SELECT 
@@ -533,10 +566,10 @@ def get_expense_trends(cursor, property_id=None, date_range=365, category=None):
                         ELSE expense_category
                     END as category,
                     COALESCE(SUM(expense_amount), 0) as amount
-                FROM propintel.money_out
+                FROM propintel.money_out mo
                 WHERE expense_date >= current_date - interval '{date_range} days'
-                {property_filter}
-                {category_filter}
+                {property_filter.replace("property_id", "mo.property_id")}
+                {category_filter.replace("expense_category", "mo.expense_category")}
                 GROUP BY month, category
             )
             SELECT 
@@ -757,38 +790,111 @@ def get_demo_data():
     # First try to get real property data from the database
     try:
         import psycopg2
-        import os
         properties = []
         
-        # Try to get a connection and fetch real property data
-        if 'DATABASE_URL' in os.environ:
-            # Parse database URL for Heroku
-            conn = psycopg2.connect(os.environ['DATABASE_URL'], sslmode='require')
-            with conn.cursor(cursor_factory=RealDictCursor) as cur:
-                cur.execute("""
-                    SELECT property_id, property_name, address, location,
-                           latitude, longitude
-                    FROM propintel.properties
-                    WHERE is_hidden IS NOT TRUE
-                    ORDER BY property_name
-                """)
-                properties = cur.fetchall()
-            conn.close()
+        # Try to get a connection using our better connection function
+        conn = get_db_connection()
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute("""
+                SELECT property_id, property_name, address, location,
+                       latitude, longitude
+                FROM propintel.properties
+                WHERE is_hidden IS NOT TRUE
+                ORDER BY property_name
+            """)
+            properties = cur.fetchall()
+        conn.close()
+        
+        if properties and len(properties) > 0:
+            print(f"Found {len(properties)} real properties to use")
             
-            if properties and len(properties) > 0:
-                print(f"Found {len(properties)} real properties to use")
+            # Convert properties to the format we need
+            demo_properties = []
+            for prop in properties:
+                demo_properties.append({
+                    'property_id': prop['property_id'],
+                    'property_name': prop['property_name'],
+                    'address': prop['address'] or "No address",
+                    'location': prop['location'] or "No location"
+                })
+            
+            # Get real data for properties
+            conn = get_db_connection()
+            try:
+                property_performance = []
+                property_expenses = []
                 
-                # Convert properties to the format we need
-                demo_properties = []
-                for prop in properties:
-                    demo_properties.append({
-                        'property_id': prop['property_id'],
-                        'property_name': prop['property_name'],
-                        'address': prop['address'] or "No address",
-                        'location': prop['location'] or "No location"
-                    })
-                
-                # Make synthetic data based on real property names
+                with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                    # Try to get actual financial data first
+                    for prop in demo_properties:
+                        prop_id = prop['property_id']
+                        
+                        # Get income, expenses, and work costs for this property
+                        cur.execute("""
+                            SELECT 
+                                COALESCE(SUM(mi.income_amount), 0) as income,
+                                COALESCE(SUM(mo.expense_amount), 0) as expenses,
+                                COALESCE(SUM(w.work_cost), 0) as work_cost
+                            FROM propintel.properties p
+                            LEFT JOIN propintel.money_in mi ON p.property_id = mi.property_id
+                            LEFT JOIN propintel.money_out mo ON p.property_id = mo.property_id  
+                            LEFT JOIN propintel.work w ON p.property_id = w.property_id
+                            WHERE p.property_id = %s
+                        """, (prop_id,))
+                        
+                        result = cur.fetchone()
+                        income = decimal_to_float(result['income']) if result and result['income'] else 0
+                        expenses = decimal_to_float(result['expenses']) if result and result['expenses'] else 0
+                        work_cost = decimal_to_float(result['work_cost']) if result and result['work_cost'] else 0
+                        profit = income - expenses - work_cost
+                        
+                        # If we have no data, use reasonable random values
+                        if income == 0 and expenses == 0 and work_cost == 0:
+                            income = random.uniform(25000, 45000)
+                            expenses = random.uniform(15000, 30000)
+                            work_cost = random.uniform(3000, 10000)
+                            profit = income - expenses - work_cost
+                        
+                        property_performance.append({
+                            'id': prop_id,
+                            'name': prop['property_name'],
+                            'income': income,
+                            'expenses': expenses,
+                            'work_cost': work_cost,
+                            'profit': profit
+                        })
+                        
+                        # Get expense categories for this property
+                        cur.execute("""
+                            SELECT 
+                                string_agg(DISTINCT expense_category, ', ') as categories,
+                                COALESCE(SUM(expense_amount), 0) as total_expenses
+                            FROM propintel.money_out
+                            WHERE property_id = %s
+                        """, (prop_id,))
+                        
+                        expense_result = cur.fetchone()
+                        categories = expense_result['categories'] if expense_result and expense_result['categories'] else ""
+                        total_expenses = decimal_to_float(expense_result['total_expenses']) if expense_result else 0
+                        
+                        # If no categories, generate some
+                        if not categories:
+                            categories = random.choice([
+                                'wage, material',
+                                'project_manager, material',
+                                'wage, miscellaneous',
+                                'material, project_manager'
+                            ])
+                        
+                        property_expenses.append({
+                            'property_id': prop_id,
+                            'property_name': prop['property_name'],
+                            'total_expenses': expenses,
+                            'categories': categories
+                        })
+            except Exception as e:
+                print(f"Error getting financial data: {e}")
+                # Fall back to synthetic data based on real property names
                 property_performance = []
                 property_expenses = []
                 
@@ -822,32 +928,10 @@ def get_demo_data():
                         'total_expenses': expenses,
                         'categories': categories
                     })
-            else:
-                # If no properties found, use demo properties
-                demo_properties = [
-                    {'property_id': '1', 'property_name': 'Property A', 'address': '123 Main St', 'location': 'New York, NY 10001'},
-                    {'property_id': '2', 'property_name': 'Property B', 'address': '456 Broadway', 'location': 'New York, NY 10002'},
-                    {'property_id': '3', 'property_name': 'Property C', 'address': '789 5th Ave', 'location': 'New York, NY 10003'},
-                    {'property_id': '4', 'property_name': 'Property D', 'address': '101 Park Ave', 'location': 'New York, NY 10004'}
-                ]
-                
-                # Demo property performance data
-                property_performance = [
-                    {'id': '1', 'name': 'Property A', 'income': 45000, 'expenses': 30000, 'work_cost': 10000, 'profit': 5000},
-                    {'id': '2', 'name': 'Property B', 'income': 35000, 'expenses': 20000, 'work_cost': 5000, 'profit': 10000},
-                    {'id': '3', 'name': 'Property C', 'income': 25000, 'expenses': 15000, 'work_cost': 3000, 'profit': 7000},
-                    {'id': '4', 'name': 'Property D', 'income': 30000, 'expenses': 18000, 'work_cost': 7000, 'profit': 5000}
-                ]
-                
-                # Demo property expenses
-                property_expenses = [
-                    {'property_id': '1', 'property_name': 'Property A', 'total_expenses': 30000, 'categories': 'wage, material'},
-                    {'property_id': '2', 'property_name': 'Property B', 'total_expenses': 20000, 'categories': 'project_manager, material'},
-                    {'property_id': '3', 'property_name': 'Property C', 'total_expenses': 15000, 'categories': 'wage, miscellaneous'},
-                    {'property_id': '4', 'property_name': 'Property D', 'total_expenses': 18000, 'categories': 'material, project_manager'}
-                ]
+            finally:
+                conn.close()  
         else:
-            # Fallback to demo properties
+            # If no properties found, use demo properties
             demo_properties = [
                 {'property_id': '1', 'property_name': 'Property A', 'address': '123 Main St', 'location': 'New York, NY 10001'},
                 {'property_id': '2', 'property_name': 'Property B', 'address': '456 Broadway', 'location': 'New York, NY 10002'},

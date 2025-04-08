@@ -1,0 +1,198 @@
+{% extends "layout.html" %}
+{% block title %}Upload Document - Builders Hub - PropIntel{% endblock %}
+
+{% block extra_head %}
+<script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="h2 mb-0">Upload Document</h1>
+                <div>
+                    <a href="{{ url_for('builders_hub') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Builders Hub
+                    </a>
+                </div>
+            </div>
+            <p class="text-muted">Upload building permits, regulations, and other documents for LGAs</p>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body">
+                    <form action="{{ url_for('upload_document') }}" method="post" enctype="multipart/form-data">
+                        <div class="mb-3">
+                            <label for="documentName" class="form-label">Document Name <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="documentName" name="document_name" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="documentType" class="form-label">Document Type <span class="text-danger">*</span></label>
+                            <select class="form-select" id="documentType" name="document_type" required>
+                                <option value="">Select a type</option>
+                                <option value="permit">Building Permit</option>
+                                <option value="regulation">Planning Regulation</option>
+                                <option value="form">Application Form</option>
+                                <option value="guideline">Building Guideline</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="lgaSelect" class="form-label">LGA <span class="text-danger">*</span></label>
+                            <select class="form-select" id="lgaSelect" name="lga_id" required>
+                                <option value="">Select an LGA</option>
+                                {% for lga in lgas %}
+                                <option value="{{ lga.lga_id }}">{{ lga.lga_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description</label>
+                            <textarea class="form-control" id="description" name="description" rows="3" placeholder="Provide a description of this document..."></textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="address" class="form-label">Location Address</label>
+                            <input type="text" class="form-control" id="address" name="address" placeholder="Enter an address associated with this document (optional)">
+                            <div class="form-text">Address will be geocoded to display on the map.</div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="latitude" class="form-label">Latitude</label>
+                                    <input type="number" step="any" class="form-control" id="latitude" name="latitude" placeholder="e.g. -37.8136">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="longitude" class="form-label">Longitude</label>
+                                    <input type="number" step="any" class="form-control" id="longitude" name="longitude" placeholder="e.g. 144.9631">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <button type="button" id="geocodeBtn" class="btn btn-outline-secondary btn-sm">
+                                <i class="fas fa-map-marker-alt me-1"></i> Geocode Address
+                            </button>
+                            <div class="form-text mt-1">Click to convert the address to coordinates</div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="documentFile" class="form-label">Document File <span class="text-danger">*</span></label>
+                            <input type="file" class="form-control" id="documentFile" name="document_file" required>
+                            <div class="form-text">Acceptable file types: PDF, DOC, DOCX, XLS, XLSX, TXT (Max size: 10MB)</div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="isPublic" name="is_public" checked>
+                                <label class="form-check-label" for="isPublic">
+                                    Make document publicly available to all users
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-upload me-2"></i>Upload Document
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="card-title mb-0">Upload Guidelines</h5>
+                </div>
+                <div class="card-body">
+                    <h6>Document Types</h6>
+                    <ul class="small">
+                        <li><strong>Building Permits</strong> - Official permits for construction</li>
+                        <li><strong>Planning Regulations</strong> - Zoning and development guidelines</li>
+                        <li><strong>Application Forms</strong> - Forms needed for permits and approvals</li>
+                        <li><strong>Building Guidelines</strong> - Construction standards and best practices</li>
+                        <li><strong>Other</strong> - Any other relevant documents</li>
+                    </ul>
+                    
+                    <h6 class="mt-3">Tips</h6>
+                    <ul class="small">
+                        <li>Choose a descriptive name that clearly indicates what the document is</li>
+                        <li>Include relevant details in the description such as relevant dates, versions, or key information</li>
+                        <li>Make sure PDF documents are text-searchable when possible</li>
+                        <li>Only uncheck "Make publicly available" if the document contains sensitive information</li>
+                    </ul>
+                    
+                    <div class="alert alert-info mt-3 mb-0 small">
+                        <i class="fas fa-info-circle me-2"></i> All uploaded documents are associated with your account and will be available to users browsing the Builders Hub.
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-3 text-center">
+                <a href="{{ url_for('import_lga_shapefile') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-sync me-2"></i>Import/Update LGA Data from Shapefile
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Geocode button handler
+        document.getElementById('geocodeBtn').addEventListener('click', function() {
+            const address = document.getElementById('address').value.trim();
+            if (!address) {
+                alert("Please enter an address to geocode");
+                return;
+            }
+            
+            // Show loading
+            this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Geocoding...';
+            this.disabled = true;
+            
+            // Call geocoding API (Nominatim/OpenStreetMap)
+            fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data && data.length > 0) {
+                        // Get the first result
+                        const result = data[0];
+                        
+                        // Update form fields
+                        document.getElementById('latitude').value = result.lat;
+                        document.getElementById('longitude').value = result.lon;
+                        
+                        // Show success
+                        alert("Address geocoded successfully!");
+                    } else {
+                        alert("Could not geocode the address. Please try a different address or enter coordinates manually.");
+                    }
+                })
+                .catch(error => {
+                    console.error('Error geocoding address:', error);
+                    alert("Error geocoding address. Please try again later or enter coordinates manually.");
+                })
+                .finally(() => {
+                    // Reset button
+                    this.innerHTML = '<i class="fas fa-map-marker-alt me-1"></i> Geocode Address';
+                    this.disabled = false;
+                });
+        });
+    });
+</script>
+{% endblock %}
