@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session, g, abort
 import os
 import psycopg2
-from psycopg2.extras import RealDictCursor
+from psycopg2.extras import RealDictCursor, DictCursor
 import configparser
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -3054,7 +3054,7 @@ def get_document_locations():
                 d.document_id, 
                 d.document_name, 
                 d.document_type, 
-                d.address,
+                COALESCE(d.description, '') as address,
                 d.latitude, 
                 d.longitude
             FROM 
