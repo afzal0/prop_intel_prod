@@ -76,6 +76,31 @@ SET expense_type =
     END
 WHERE expense_type IS NULL;
 
+-- Add required columns to documents table if they don't exist
+DO $$
+BEGIN
+    -- Add upload_date column if it doesn't exist
+    IF NOT EXISTS (
+        SELECT 1 
+        FROM information_schema.columns 
+        WHERE table_schema = 'propintel' 
+        AND table_name = 'documents' 
+        AND column_name = 'upload_date'
+    ) THEN
+        ALTER TABLE propintel.documents ADD COLUMN upload_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+    END IF;
+
+    -- Remove address, latitude, longitude columns constraint if they exist
+    ALTER TABLE propintel.documents 
+    ALTER COLUMN address DROP NOT NULL,
+    ALTER COLUMN latitude DROP NOT NULL,
+    ALTER COLUMN longitude DROP NOT NULL;
+    
+EXCEPTION WHEN undefined_column THEN
+    -- It's okay if columns don't exist, just continue
+END;
+$$;
+
 -- Create trigger function to auto-generate expense from work if it doesn't exist
 CREATE OR REPLACE FUNCTION create_expense_from_work()
 RETURNS TRIGGER AS $$

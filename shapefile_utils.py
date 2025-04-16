@@ -543,11 +543,14 @@ def get_lga_list():
         logger.error(f"Error retrieving LGA list: {e}")
         return []
 
-def get_lga_documents(lga_id=None):
+def get_lga_documents(lga_id=None, user_id=None):
     """
     Get documents for a specific LGA or all LGAs
+    If user_id is provided, include both public documents and the user's private documents
     """
     try:
+        from flask import g
+        
         conn = get_db_connection()
         cursor = conn.cursor(cursor_factory=DictCursor)
         
@@ -561,6 +564,8 @@ def get_lga_documents(lga_id=None):
             d.download_count,
             d.created_at,
             d.lga_id,
+            d.is_public,
+            d.user_id,
             l.lga_name
         FROM 
             propintel.documents d
@@ -568,12 +573,39 @@ def get_lga_documents(lga_id=None):
             propintel.lgas l ON d.lga_id = l.lga_id
         """
         
+        # Get current user if available from Flask context
+        if user_id is None and 'g' in locals() and hasattr(g, 'user') and g.user:
+            user_id = g.user.get('user_id')
+        
+        # Role check - if admin, show all documents
+        is_admin = False
+        if 'g' in locals() and hasattr(g, 'user') and g.user:
+            is_admin = g.user.get('role') == 'admin'
+            
+        params = []
+        where_clauses = []
+        
+        # Filter by LGA if provided
         if lga_id:
-            query += " WHERE d.lga_id = %s"
-            cursor.execute(query, (lga_id,))
-        else:
-            query += " ORDER BY d.created_at DESC"
-            cursor.execute(query)
+            where_clauses.append("d.lga_id = %s")
+            params.append(lga_id)
+        
+        # Handle document visibility
+        if not is_admin:
+            if user_id:
+                # For regular users: show public documents and their own documents
+                where_clauses.append("(d.is_public = TRUE OR d.user_id = %s)")
+                params.append(user_id)
+            else:
+                # For anonymous users: show only public documents
+                where_clauses.append("d.is_public = TRUE")
+                
+        # Build the complete where clause
+        if where_clauses:
+            query += " WHERE " + " AND ".join(where_clauses)
+            
+        query += " ORDER BY d.created_at DESC"
+        cursor.execute(query, tuple(params))
         
         documents = cursor.fetchall()
         cursor.close()

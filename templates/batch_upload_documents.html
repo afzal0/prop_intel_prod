@@ -1,0 +1,383 @@
+{% extends "layout.html" %}
+{% block title %}Batch Upload Documents - Builders Hub - PropIntel{% endblock %}
+
+{% block extra_head %}
+<script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+<style>
+    .document-upload-container {
+        border: 1px solid #dee2e6;
+        border-radius: 5px;
+        padding: 15px;
+        margin-bottom: 20px;
+        position: relative;
+    }
+    .document-upload-container .remove-document {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        cursor: pointer;
+        color: #dc3545;
+    }
+    #add-document-btn {
+        margin-bottom: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="h2 mb-0">Batch Upload Documents</h1>
+                <div>
+                    <a href="{{ url_for('builders_hub') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Builders Hub
+                    </a>
+                </div>
+            </div>
+            <p class="text-muted">Upload multiple building permits, regulations, and other documents for LGAs at once</p>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body">
+                    <form action="{{ url_for('batch_upload_documents') }}" method="post" enctype="multipart/form-data" id="batch-upload-form">
+                        <!-- Common fields for all documents -->
+                        <div class="mb-3">
+                            <label for="lgaSelect" class="form-label">LGA for All Documents <span class="text-danger">*</span></label>
+                            <select class="form-select" id="lgaSelect" name="lga_id" required>
+                                <option value="">Select an LGA</option>
+                                {% for lga in lgas %}
+                                <option value="{{ lga.lga_id }}">{{ lga.lga_name }}</option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">This LGA will be applied to all documents unless overridden individually</div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="isPublic" name="is_public" checked>
+                                <label class="form-check-label" for="isPublic">
+                                    Make all documents publicly available
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <h4 class="mb-3">Document Uploads</h4>
+                        <div id="document-containers">
+                            <!-- First document upload (always present) -->
+                            <div class="document-upload-container" data-index="0">
+                                <h5>Document 1</h5>
+                                <div class="mb-3">
+                                    <label for="documentName_0" class="form-label">Document Name <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="documentName_0" name="document_name_0" required>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="documentType_0" class="form-label">Document Type <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="documentType_0" name="document_type_0" required>
+                                        <option value="">Select a type</option>
+                                        <option value="permit">Building Permit</option>
+                                        <option value="regulation">Planning Regulation</option>
+                                        <option value="form">Application Form</option>
+                                        <option value="guideline">Building Guideline</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="description_0" class="form-label">Description</label>
+                                    <textarea class="form-control" id="description_0" name="description_0" rows="2" placeholder="Provide a description of this document..."></textarea>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="address_0" class="form-label">Location Address</label>
+                                    <input type="text" class="form-control" id="address_0" name="address_0" placeholder="Enter an address associated with this document (optional)">
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="latitude_0" class="form-label">Latitude</label>
+                                            <input type="number" step="any" class="form-control" id="latitude_0" name="latitude_0" placeholder="e.g. -37.8136">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="longitude_0" class="form-label">Longitude</label>
+                                            <input type="number" step="any" class="form-control" id="longitude_0" name="longitude_0" placeholder="e.g. 144.9631">
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <button type="button" class="geocode-btn btn btn-outline-secondary btn-sm" data-index="0">
+                                        <i class="fas fa-map-marker-alt me-1"></i> Geocode Address
+                                    </button>
+                                </div>
+                                
+                                <div class="mb-4">
+                                    <label for="documentFile_0" class="form-label">Document File <span class="text-danger">*</span></label>
+                                    <input type="file" class="form-control" id="documentFile_0" name="document_file_0" required>
+                                    <div class="form-text">Acceptable file types: PDF, DOC, DOCX, XLS, XLSX, TXT (Max size: 10MB)</div>
+                                    {% if errors and errors.document_file_0 %}
+                                    <div class="text-danger">{{ errors.document_file_0 }}</div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input override-public" type="checkbox" id="overridePublic_0" name="override_public_0">
+                                        <label class="form-check-label" for="overridePublic_0">
+                                            Override global public setting for this document
+                                        </label>
+                                    </div>
+                                    <div class="form-check ms-4 override-option" style="display: none;">
+                                        <input class="form-check-input" type="checkbox" id="isPublic_0" name="is_public_0" checked>
+                                        <label class="form-check-label" for="isPublic_0">
+                                            Make this document publicly available
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <button type="button" id="add-document-btn" class="btn btn-outline-success">
+                            <i class="fas fa-plus-circle me-2"></i>Add Another Document
+                        </button>
+                        
+                        <input type="hidden" name="document_count" id="document-count" value="1">
+                        
+                        <div class="d-grid gap-2 mt-4">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-upload me-2"></i>Upload All Documents
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="card-title mb-0">Batch Upload Guidelines</h5>
+                </div>
+                <div class="card-body">
+                    <h6>Tips for Batch Upload</h6>
+                    <ul class="small">
+                        <li>You can upload up to 10 documents at once</li>
+                        <li>Common LGA settings apply to all documents unless overridden</li>
+                        <li>Each document needs its own name and file</li>
+                        <li>Address geocoding works individually for each document</li>
+                    </ul>
+                    
+                    <h6 class="mt-3">Document Types</h6>
+                    <ul class="small">
+                        <li><strong>Building Permits</strong> - Official permits for construction</li>
+                        <li><strong>Planning Regulations</strong> - Zoning and development guidelines</li>
+                        <li><strong>Application Forms</strong> - Forms needed for permits and approvals</li>
+                        <li><strong>Building Guidelines</strong> - Construction standards and best practices</li>
+                        <li><strong>Other</strong> - Any other relevant documents</li>
+                    </ul>
+                    
+                    <div class="alert alert-info mt-3 mb-0 small">
+                        <i class="fas fa-info-circle me-2"></i> All uploaded documents are associated with your account and will be available to users browsing the Builders Hub.
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-3 text-center">
+                <a href="{{ url_for('import_lga_shapefile') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-sync me-2"></i>Import/Update LGA Data from Shapefile
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        let documentCount = 1;
+        const maxDocuments = 10;
+        
+        // Handle "Add Another Document" button
+        document.getElementById('add-document-btn').addEventListener('click', function() {
+            if (documentCount >= maxDocuments) {
+                alert(`You can upload a maximum of ${maxDocuments} documents at once.`);
+                return;
+            }
+            
+            const newIndex = documentCount;
+            const container = document.createElement('div');
+            container.className = 'document-upload-container';
+            container.dataset.index = newIndex;
+            
+            container.innerHTML = `
+                <span class="remove-document"><i class="fas fa-times-circle"></i></span>
+                <h5>Document ${newIndex + 1}</h5>
+                <div class="mb-3">
+                    <label for="documentName_${newIndex}" class="form-label">Document Name <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="documentName_${newIndex}" name="document_name_${newIndex}" required>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="documentType_${newIndex}" class="form-label">Document Type <span class="text-danger">*</span></label>
+                    <select class="form-select" id="documentType_${newIndex}" name="document_type_${newIndex}" required>
+                        <option value="">Select a type</option>
+                        <option value="permit">Building Permit</option>
+                        <option value="regulation">Planning Regulation</option>
+                        <option value="form">Application Form</option>
+                        <option value="guideline">Building Guideline</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="description_${newIndex}" class="form-label">Description</label>
+                    <textarea class="form-control" id="description_${newIndex}" name="description_${newIndex}" rows="2" placeholder="Provide a description of this document..."></textarea>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="address_${newIndex}" class="form-label">Location Address</label>
+                    <input type="text" class="form-control" id="address_${newIndex}" name="address_${newIndex}" placeholder="Enter an address associated with this document (optional)">
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="latitude_${newIndex}" class="form-label">Latitude</label>
+                            <input type="number" step="any" class="form-control" id="latitude_${newIndex}" name="latitude_${newIndex}" placeholder="e.g. -37.8136">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="longitude_${newIndex}" class="form-label">Longitude</label>
+                            <input type="number" step="any" class="form-control" id="longitude_${newIndex}" name="longitude_${newIndex}" placeholder="e.g. 144.9631">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <button type="button" class="geocode-btn btn btn-outline-secondary btn-sm" data-index="${newIndex}">
+                        <i class="fas fa-map-marker-alt me-1"></i> Geocode Address
+                    </button>
+                </div>
+                
+                <div class="mb-4">
+                    <label for="documentFile_${newIndex}" class="form-label">Document File <span class="text-danger">*</span></label>
+                    <input type="file" class="form-control" id="documentFile_${newIndex}" name="document_file_${newIndex}" required>
+                    <div class="form-text">Acceptable file types: PDF, DOC, DOCX, XLS, XLSX, TXT (Max size: 10MB)</div>
+                </div>
+                
+                <div class="mb-3">
+                    <div class="form-check">
+                        <input class="form-check-input override-public" type="checkbox" id="overridePublic_${newIndex}" name="override_public_${newIndex}">
+                        <label class="form-check-label" for="overridePublic_${newIndex}">
+                            Override global public setting for this document
+                        </label>
+                    </div>
+                    <div class="form-check ms-4 override-option" style="display: none;">
+                        <input class="form-check-input" type="checkbox" id="isPublic_${newIndex}" name="is_public_${newIndex}" checked>
+                        <label class="form-check-label" for="isPublic_${newIndex}">
+                            Make this document publicly available
+                        </label>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('document-containers').appendChild(container);
+            documentCount++;
+            document.getElementById('document-count').value = documentCount;
+            
+            // Add event listener for the remove button
+            container.querySelector('.remove-document').addEventListener('click', function() {
+                container.remove();
+                documentCount--;
+                document.getElementById('document-count').value = documentCount;
+                updateDocumentNumbers();
+            });
+            
+            // Add geocode button event listener
+            setupGeocodeButton(newIndex);
+            
+            // Add override public checkbox handler
+            setupOverridePublicCheckbox(newIndex);
+        });
+        
+        // Function to update document numbers after removal
+        function updateDocumentNumbers() {
+            const containers = document.querySelectorAll('.document-upload-container');
+            containers.forEach((container, index) => {
+                container.querySelector('h5').textContent = `Document ${index + 1}`;
+            });
+        }
+        
+        // Setup geocode button functionality
+        function setupGeocodeButton(index) {
+            document.querySelector(`.geocode-btn[data-index="${index}"]`).addEventListener('click', function() {
+                const address = document.getElementById(`address_${index}`).value.trim();
+                if (!address) {
+                    alert("Please enter an address to geocode");
+                    return;
+                }
+                
+                // Show loading
+                this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Geocoding...';
+                this.disabled = true;
+                
+                // Call geocoding API (Nominatim/OpenStreetMap)
+                fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data && data.length > 0) {
+                            // Get the first result
+                            const result = data[0];
+                            
+                            // Update form fields
+                            document.getElementById(`latitude_${index}`).value = result.lat;
+                            document.getElementById(`longitude_${index}`).value = result.lon;
+                            
+                            // Show success
+                            alert("Address geocoded successfully!");
+                        } else {
+                            alert("Could not geocode the address. Please try a different address or enter coordinates manually.");
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error geocoding address:', error);
+                        alert("Error geocoding address. Please try again later or enter coordinates manually.");
+                    })
+                    .finally(() => {
+                        // Reset button
+                        this.innerHTML = '<i class="fas fa-map-marker-alt me-1"></i> Geocode Address';
+                        this.disabled = false;
+                    });
+            });
+        }
+        
+        // Setup override public checkbox functionality
+        function setupOverridePublicCheckbox(index) {
+            document.getElementById(`overridePublic_${index}`).addEventListener('change', function() {
+                const overrideOption = this.closest('.document-upload-container').querySelector('.override-option');
+                if (this.checked) {
+                    overrideOption.style.display = 'block';
+                } else {
+                    overrideOption.style.display = 'none';
+                }
+            });
+        }
+        
+        // Setup initial geocode button
+        setupGeocodeButton(0);
+        
+        // Setup initial override public checkbox
+        setupOverridePublicCheckbox(0);
+    });
+</script>
+{% endblock %}

@@ -1,12 +1,13 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session, g, abort
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session, g, abort, send_file
 import os
 import psycopg2
+from werkzeug.security import check_password_hash
 from psycopg2.extras import RealDictCursor, DictCursor
 import configparser
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 import tempfile
-import datetime
+from datetime import datetime, timedelta
 import json
 import uuid
 import hashlib
@@ -50,7 +51,8 @@ app.secret_key = os.environ.get('SECRET_KEY', 'propintel_secret_key')
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['PROPERTY_IMAGES'] = 'static/images/properties'
 app.config['WORK_IMAGES'] = 'static/images/work'
-app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif','pdf'}
+app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif', 'pdf'}
+app.config['ALLOWED_DOCUMENT_EXTENSIONS'] = {'pdf', 'doc', 'docx', 'xls', 'xlsx', 'txt'}
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB limit
 app.config['SESSION_COOKIE_SECURE'] = os.environ.get('FLASK_ENV') != 'development'
 app.config['SESSION_COOKIE_HTTPONLY'] = True
@@ -58,9 +60,10 @@ app.config['SESSION_KEY_PREFIX'] = 'propintel_session_'  # Prefix for session ke
 app.config["SESSION_PERMANENT"] = True
 app.config["SESSION_TYPE"] = "filesystem"
 app.config["SESSION_FILE_DIR"] = os.path.join(os.path.dirname(os.path.abspath(__file__)), "flask_session")
-app.config["PERMANENT_SESSION_LIFETIME"] = datetime.timedelta(days=31)
+app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=31)
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static/images')
+DOCUMENTS_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static/documents')
 MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB max upload size
 
 # Add this to top of app.py
@@ -76,8 +79,10 @@ os.makedirs('static', exist_ok=True)
 MELBOURNE_CENTER = [-37.8136, 144.9631]
 
 # Check if a file has an allowed extension
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
+def allowed_file(filename, allowed_extensions=None):
+    if allowed_extensions is None:
+        allowed_extensions = app.config['ALLOWED_EXTENSIONS']
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in allowed_extensions
 
 
 secret_key_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'secret_key.txt')
@@ -311,29 +316,38 @@ def login():
                     admin_user = cur.fetchone()
                     
                     if admin_user:
-                        # Verify password using bcrypt with proper error handling
+                        # Verify password using Werkzeug's password hash checker first, then fallback methods
                         try:
-                            import bcrypt
-                            # Handle both hashed and non-hashed passwords
-                            if admin_user['password_hash'].startswith('$2'):
-                                # This is already a bcrypt hash
-                                password_match = bcrypt.checkpw(
-                                    password.encode('utf-8'), 
-                                    admin_user['password_hash'].encode('utf-8')
-                                )
-                            else:
-                                # This might be a plain password or different format
-                                # Try direct comparison as fallback
-                                password_match = (password == admin_user['password_hash'])
+                            # First try with Werkzeug's check_password_hash
+                            password_match = check_password_hash(admin_user['password_hash'], password)
+                            
+                            # If that fails and it looks like a legacy format, try alternative methods
+                            if not password_match:
+                                import bcrypt
+                                # Check if it's a bcrypt hash
+                                if admin_user['password_hash'].startswith('$2'):
+                                    try:
+                                        # This is already a bcrypt hash
+                                        password_match = bcrypt.checkpw(
+                                            password.encode('utf-8'), 
+                                            admin_user['password_hash'].encode('utf-8')
+                                        )
+                                    except Exception:
+                                        # If bcrypt check fails, continue with other methods
+                                        pass
                                 
-                                # If match, upgrade to bcrypt hash for next time
+                                # Last resort - try direct comparison for plain text passwords (legacy)
+                                if not password_match and not admin_user['password_hash'].startswith('pbkdf2:') and not admin_user['password_hash'].startswith('$2'):
+                                    password_match = (password == admin_user['password_hash'])
+                                
+                                # If match with any legacy format, upgrade to Werkzeug hash format
                                 if password_match:
-                                    hashed = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+                                    new_hash = generate_password_hash(password)
                                     cur.execute("""
                                         UPDATE propintel.users
                                         SET password_hash = %s
                                         WHERE user_id = %s
-                                    """, (hashed.decode('utf-8'), admin_user['user_id']))
+                                    """, (new_hash, admin_user['user_id']))
                                     conn.commit()
                             
                             if password_match:
@@ -379,29 +393,38 @@ def login():
                 user = cur.fetchone()
                 
                 if user and user['is_active']:
-                    # Verify password using bcrypt with proper error handling
+                    # Verify password using Werkzeug's password hash checker first, then fallback methods
                     try:
-                        import bcrypt
-                        # Handle both hashed and non-hashed passwords
-                        if user['password_hash'].startswith('$2'):
-                            # This is already a bcrypt hash
-                            password_match = bcrypt.checkpw(
-                                password.encode('utf-8'), 
-                                user['password_hash'].encode('utf-8')
-                            )
-                        else:
-                            # This might be a plain password or different format
-                            # Try direct comparison as fallback
-                            password_match = (password == user['password_hash'])
+                        # First try with Werkzeug's check_password_hash
+                        password_match = check_password_hash(user['password_hash'], password)
+                        
+                        # If that fails and it looks like a legacy format, try alternative methods
+                        if not password_match:
+                            import bcrypt
+                            # Check if it's a bcrypt hash
+                            if user['password_hash'].startswith('$2'):
+                                try:
+                                    # This is already a bcrypt hash
+                                    password_match = bcrypt.checkpw(
+                                        password.encode('utf-8'), 
+                                        user['password_hash'].encode('utf-8')
+                                    )
+                                except Exception:
+                                    # If bcrypt check fails, continue with other methods
+                                    pass
                             
-                            # If match, upgrade to bcrypt hash for next time
+                            # Last resort - try direct comparison for plain text passwords (legacy)
+                            if not password_match and not user['password_hash'].startswith('pbkdf2:') and not user['password_hash'].startswith('$2'):
+                                password_match = (password == user['password_hash'])
+                            
+                            # If match with any legacy format, upgrade to Werkzeug hash format
                             if password_match:
-                                hashed = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+                                new_hash = generate_password_hash(password)
                                 cur.execute("""
                                     UPDATE propintel.users
                                     SET password_hash = %s
                                     WHERE user_id = %s
-                                """, (hashed.decode('utf-8'), user['user_id']))
+                                """, (new_hash, user['user_id']))
                                 conn.commit()
                         
                         if password_match:
@@ -2861,10 +2884,19 @@ def builders_hub():
 @login_required
 def document_upload():
     """Upload document page and handler"""
-    # Check if user is admin
-    if g.user['role'] != 'admin':
-        flash('You need admin privileges to upload documents', 'danger')
-        return redirect(url_for('builders_hub'))
+    # No role check here - all users can upload documents
+    # Documents uploaded by regular users will be set as private by default
+    
+    # Initialize error dictionary for form validation
+    errors = {}
+    
+    # Create documents directory if it doesn't exist
+    documents_dir = DOCUMENTS_FOLDER
+    try:
+        os.makedirs(documents_dir, exist_ok=True)
+        app.logger.info(f"Created or verified documents directory: {documents_dir}")
+    except Exception as e:
+        app.logger.error(f"Error creating documents directory: {e}")
     
     # Get all LGAs for the form
     try:
@@ -2883,28 +2915,28 @@ def document_upload():
         
         # Check if file is in request
         if 'document_file' not in request.files:
+            errors['document_file'] = 'No file selected'
             flash('No file selected', 'danger')
-            return render_template('upload_document.html', lgas=lgas)
+            return render_template('upload_document.html', lgas=lgas, errors=errors)
         
         document_file = request.files['document_file']
         
         # Validate file
         if document_file.filename == '':
+            errors['document_file'] = 'No file selected'
             flash('No file selected', 'danger')
-            return render_template('upload_document.html', lgas=lgas)
+            return render_template('upload_document.html', lgas=lgas, errors=errors)
         
         # Check file type
-        allowed_extensions = {'pdf', 'doc', 'docx', 'xls', 'xlsx', 'txt'}
-        if not '.' in document_file.filename or document_file.filename.rsplit('.', 1)[1].lower() not in allowed_extensions:
+        if not allowed_file(document_file.filename, app.config['ALLOWED_DOCUMENT_EXTENSIONS']):
+            errors['document_file'] = f"File type not allowed. Allowed types: {', '.join(app.config['ALLOWED_DOCUMENT_EXTENSIONS'])}"
             flash('File type not allowed. Please upload PDF, DOC, DOCX, XLS, XLSX, or TXT file.', 'danger')
-            return render_template('upload_document.html', lgas=lgas)
+            return render_template('upload_document.html', lgas=lgas, errors=errors)
         
         # Save file
         try:
-            # Create upload directory if it doesn't exist
-            upload_dir = os.path.join(app.config['UPLOAD_FOLDER'], 'documents')
-            if not os.path.exists(upload_dir):
-                os.makedirs(upload_dir)
+            # Use the documents directory
+            upload_dir = DOCUMENTS_FOLDER
             
             # Generate a safe filename
             filename = secure_filename(document_file.filename)
@@ -2915,6 +2947,9 @@ def document_upload():
             # Save the file
             document_file.save(file_path)
             file_size = os.path.getsize(file_path)
+            
+            # Only store the filename in database, not the full path
+            file_path_val = new_filename
             
             # Save to database
             conn = get_db_connection()
@@ -2952,11 +2987,11 @@ def document_upload():
             cursor.execute("""
             INSERT INTO propintel.documents (
                 lga_id, user_id, document_name, document_type, description, 
-                file_path, file_size, is_public, created_at, address, latitude, longitude
+                file_path, file_size, is_public, upload_date, address, latitude, longitude
             ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """, (
                 lga_id, g.user['user_id'], document_name, document_type, description,
-                new_filename, file_size, is_public, datetime.now(), address, latitude, longitude
+                new_filename, file_size, is_public, datetime.now().isoformat(), address, latitude, longitude
             ))
             
             conn.commit()
@@ -2967,8 +3002,10 @@ def document_upload():
             return redirect(url_for('builders_hub'))
             
         except Exception as e:
+            import traceback
             app.logger.error(f"Error uploading document: {e}")
-            flash('Error uploading document. Please try again.', 'danger')
+            app.logger.error(traceback.format_exc())
+            flash(f'Error uploading document: {str(e)}', 'danger')
     
     return render_template('upload_document.html', lgas=lgas)
 
@@ -3013,13 +3050,13 @@ def download_document(document_id):
         conn.close()
         
         # Prepare file for download
-        file_path = os.path.join(app.config['UPLOAD_FOLDER'], 'documents', document['file_path'])
+        file_path = os.path.join(DOCUMENTS_FOLDER, document['file_path'])
         
         if not os.path.exists(file_path):
             flash('Document file not found', 'danger')
             return redirect(url_for('builders_hub'))
         
-        return send_file(file_path, as_attachment=True, download_name=document['file_path'])
+        return send_file(file_path, as_attachment=True, download_name=document['document_name'])
         
     except Exception as e:
         app.logger.error(f"Error downloading document: {e}")
@@ -3276,13 +3313,30 @@ def upload_document():
     """For admins to upload documents to an LGA"""
     from shapefile_utils import get_lga_list
     
+    # Check if user is admin - remove this restriction to allow all users access
+    # if g.user['role'] != 'admin':
+    #     flash('You do not have permission to access this page', 'danger')
+    #     return redirect(url_for('builders_hub'))
+    
     if request.method == 'POST':
         # Get form data
         document_name = request.form.get('document_name', '').strip()
         document_type = request.form.get('document_type', '').strip()
         lga_id = request.form.get('lga_id')
         description = request.form.get('description', '')
-        is_public = 'is_public' in request.form
+        address = request.form.get('address', '')
+        
+        # Regular users can only upload private documents (admin can see them)
+        # Only admin can make documents public
+        is_public = g.user['role'] == 'admin' and 'is_public' in request.form
+        
+        # Get coordinates if provided
+        try:
+            latitude = float(request.form.get('latitude')) if request.form.get('latitude') else None
+            longitude = float(request.form.get('longitude')) if request.form.get('longitude') else None
+        except (ValueError, TypeError):
+            latitude = None
+            longitude = None
         
         # Validate required fields
         if not document_name or not document_type or not lga_id:
@@ -3302,16 +3356,12 @@ def upload_document():
             return redirect(url_for('upload_document'))
         
         # Check if the file is allowed
-        allowed_extensions = {'pdf', 'doc', 'docx', 'xls', 'xlsx', 'txt'}
-        file_ext = document_file.filename.rsplit('.', 1)[1].lower() if '.' in document_file.filename else ''
-        
-        if file_ext not in allowed_extensions:
-            flash(f'File type not allowed. Allowed types: {", ".join(allowed_extensions)}', 'danger')
+        if not allowed_file(document_file.filename, app.config['ALLOWED_DOCUMENT_EXTENSIONS']):
+            flash(f'File type not allowed. Allowed types: {", ".join(app.config["ALLOWED_DOCUMENT_EXTENSIONS"])}', 'danger')
             return redirect(url_for('upload_document'))
         
         try:
             # Generate secure filename
-            from werkzeug.utils import secure_filename
             filename = secure_filename(document_file.filename)
             timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
             secure_filename_val = f"{timestamp}_{filename}"
@@ -3327,6 +3377,9 @@ def upload_document():
             # Get file size
             file_size = os.path.getsize(file_path)
             
+            # Only store the filename in database, not the full path
+            file_path_val = secure_filename_val
+            
             # Connect to database
             conn = get_db_connection()
             
@@ -3336,17 +3389,21 @@ def upload_document():
                     cur.execute("""
                         INSERT INTO propintel.documents 
                         (lga_id, user_id, document_name, document_type, description, 
-                         file_path, file_size, is_public)
-                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                         file_path, file_size, is_public, upload_date, address, latitude, longitude)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     """, (
                         lga_id, 
                         g.user['user_id'], 
                         document_name,
                         document_type,
                         description,
-                        file_path,
+                        file_path_val,
                         file_size,
-                        is_public
+                        is_public,
+                        datetime.now().isoformat(),  # Use ISO format to avoid timezone issues
+                        address,
+                        latitude,
+                        longitude
                     ))
                     
                     # Log the action
@@ -3364,13 +3421,222 @@ def upload_document():
                 conn.close()
                 
         except Exception as e:
+            errors['general'] = f'Error uploading document: {str(e)}'
             flash(f'Error uploading document: {str(e)}', 'danger')
             
-        return redirect(url_for('upload_document'))
+            # Return to form with errors instead of redirecting
+            return render_template('upload_document.html', lgas=lgas, errors=errors)
     
     # GET method - show upload form
     lgas = get_lga_list()
-    return render_template('upload_document.html', lgas=lgas)
+    return render_template('upload_document.html', lgas=lgas, errors={})
+
+@app.route('/batch-upload-documents', methods=['GET', 'POST'])
+@login_required
+def batch_upload_documents():
+    """Handle batch upload of multiple documents"""
+    # Only admin can use batch upload
+    if g.user['role'] != 'admin':
+        flash('You need admin privileges to use batch upload', 'danger')
+        return redirect(url_for('builders_hub'))
+        
+    # Create documents directory if needed
+    try:
+        os.makedirs(DOCUMENTS_FOLDER, exist_ok=True)
+        app.logger.info(f"Created or verified documents directory: {DOCUMENTS_FOLDER}")
+    except Exception as e:
+        app.logger.error(f"Error creating documents directory: {e}")
+        
+    if request.method == 'GET':
+        # Get LGAs for the dropdown
+        from shapefile_utils import get_lga_list
+        lgas = get_lga_list()
+        return render_template('batch_upload_documents.html', lgas=lgas)
+    
+    # Handle POST request (form submission)
+    if request.method == 'POST':
+        # Get common data
+        lga_id = request.form.get('lga_id')
+        global_is_public = 'is_public' in request.form
+        document_count = int(request.form.get('document_count', 1))
+        
+        upload_results = []
+        conn = get_db_connection()
+        
+        try:
+            for i in range(document_count):
+                # Skip if this index was removed by the user
+                if f'document_name_{i}' not in request.form or f'document_file_{i}' not in request.files:
+                    continue
+                
+                document_name = request.form.get(f'document_name_{i}')
+                document_type = request.form.get(f'document_type_{i}')
+                description = request.form.get(f'description_{i}', '')
+                address = request.form.get(f'address_{i}', '')
+                
+                # Handle override of public setting if needed
+                is_public = global_is_public
+                if f'override_public_{i}' in request.form:
+                    is_public = f'is_public_{i}' in request.form
+                
+                # Get coordinates if provided
+                try:
+                    latitude = float(request.form.get(f'latitude_{i}')) if request.form.get(f'latitude_{i}') else None
+                    longitude = float(request.form.get(f'longitude_{i}')) if request.form.get(f'longitude_{i}') else None
+                except (ValueError, TypeError):
+                    latitude = None
+                    longitude = None
+                
+                # Handle file upload
+                document_file = request.files[f'document_file_{i}']
+                if document_file and allowed_file(document_file.filename, app.config['ALLOWED_DOCUMENT_EXTENSIONS']):
+                    # Generate a secure filename with timestamp to avoid collisions
+                    timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+                    original_filename = secure_filename(document_file.filename)
+                    filename = f"{timestamp}_{original_filename}"
+                    
+                    # Ensure documents directory exists
+                    os.makedirs(DOCUMENTS_FOLDER, exist_ok=True)
+                    
+                    # Save file
+                    file_path = os.path.join(DOCUMENTS_FOLDER, filename)
+                    document_file.save(file_path)
+                    
+                    # Get file size
+                    file_size = os.path.getsize(file_path)
+                    
+                    # Only store filename in database, not full path
+                    file_path_val = filename
+                    
+                    # Insert into database
+                    cursor = conn.cursor()
+                    cursor.execute("""
+                        INSERT INTO propintel.documents 
+                        (lga_id, user_id, document_name, document_type, description, 
+                         file_path, file_size, is_public, upload_date, address, latitude, longitude)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    """, (
+                        lga_id, 
+                        g.user['user_id'], 
+                        document_name,
+                        document_type,
+                        description,
+                        file_path_val,
+                        file_size,
+                        is_public,
+                        datetime.now().isoformat(),  # Use ISO format to avoid timezone issues
+                        address,
+                        latitude,
+                        longitude
+                    ))
+                    
+                    upload_results.append({
+                        'name': document_name,
+                        'success': True,
+                        'message': 'Document uploaded successfully'
+                    })
+                else:
+                    app.logger.error(f"Document {i} ('{document_name}') has invalid type. Filename: {document_file.filename}")
+                    upload_results.append({
+                        'name': document_name,
+                        'success': False,
+                        'message': f'Invalid file type. Allowed types: {", ".join(app.config["ALLOWED_DOCUMENT_EXTENSIONS"])}'
+                    })
+            
+            conn.commit()
+            
+        except Exception as e:
+            conn.rollback()
+            import traceback
+            app.logger.error(f"Error in batch upload: {str(e)}")
+            app.logger.error(traceback.format_exc())
+            upload_results.append({
+                'name': f'Document {i+1}',
+                'success': False,
+                'message': f'Error: {str(e)}'
+            })
+        
+        finally:
+            conn.close()
+        
+        # Check results
+        success_count = sum(1 for result in upload_results if result['success'])
+        total_count = len(upload_results)
+        
+        if total_count == 0:
+            flash('No documents were uploaded. Please try again.', 'danger')
+        elif success_count == 0:
+            flash('All document uploads failed. Please check the files and try again.', 'danger')
+        elif success_count < total_count:
+            flash(f'{success_count} out of {total_count} documents were uploaded successfully.', 'warning')
+        else:
+            flash(f'All {success_count} documents were uploaded successfully!', 'success')
+        
+        return redirect(url_for('builders_hub'))
+
+@app.route('/toggle-document-public')
+@login_required
+def toggle_document_public():
+    """Toggle a document's public status (admin only)"""
+    document_id = request.args.get('id')
+    
+    # Admin access check
+    if not g.user or g.user['role'] != 'admin':
+        flash('You do not have permission to perform this action', 'danger')
+        return redirect(url_for('builders_hub'))
+        
+    if not document_id:
+        flash('No document specified', 'danger')
+        return redirect(url_for('builders_hub'))
+    
+    try:
+        document_id = int(document_id)
+    except ValueError:
+        flash('Invalid document ID', 'danger')
+        return redirect(url_for('builders_hub'))
+    
+    try:
+        # Connect to database
+        conn = get_db_connection()
+        
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            # Get current status
+            cur.execute("""
+                SELECT is_public, document_name FROM propintel.documents
+                WHERE document_id = %s
+            """, (document_id,))
+            
+            document = cur.fetchone()
+            
+            if not document:
+                flash('Document not found', 'danger')
+                return redirect(url_for('builders_hub'))
+            
+            # Toggle the public status
+            cur.execute("""
+                UPDATE propintel.documents
+                SET is_public = NOT is_public
+                WHERE document_id = %s
+                RETURNING is_public
+            """, (document_id,))
+            
+            result = cur.fetchone()
+            new_status = result['is_public']
+            
+            conn.commit()
+            
+            if new_status:
+                flash(f'Document "{document["document_name"]}" is now public', 'success')
+            else:
+                flash(f'Document "{document["document_name"]}" is now private', 'info')
+                
+    except Exception as e:
+        flash(f'Error: {str(e)}', 'danger')
+    finally:
+        if conn:
+            conn.close()
+    
+    return redirect(url_for('builders_hub'))
 
 @app.route('/download-document-file')
 def download_document_file():
@@ -3394,7 +3660,7 @@ def download_document_file():
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
             # Get document record
             cur.execute("""
-                SELECT document_id, document_name, file_path, is_public, download_count
+                SELECT document_id, document_name, file_path, is_public, download_count, user_id
                 FROM propintel.documents
                 WHERE document_id = %s
             """, (document_id,))
@@ -3405,8 +3671,12 @@ def download_document_file():
                 flash('Document not found', 'danger')
                 return redirect(url_for('builders_hub'))
             
-            # Check if the document is public or the user is an admin
-            if not document['is_public'] and (not g.user or g.user['role'] != 'admin'):
+            # Check permissions: allow if document is public, or if user is admin,
+            # or if user is the document owner
+            is_document_owner = g.user and str(g.user['user_id']) == str(document['user_id'])
+            is_admin = g.user and g.user['role'] == 'admin'
+            
+            if not document['is_public'] and not is_admin and not is_document_owner:
                 flash('You do not have permission to download this document', 'danger')
                 return redirect(url_for('builders_hub'))
             
@@ -3420,8 +3690,8 @@ def download_document_file():
             conn.commit()
             
             # Determine file type for MIME type
-            file_path = document['file_path']
-            file_ext = file_path.rsplit('.', 1)[1].lower() if '.' in file_path else ''
+            stored_file_path = document['file_path']
+            file_ext = stored_file_path.rsplit('.', 1)[1].lower() if '.' in stored_file_path else ''
             
             mime_types = {
                 'pdf': 'application/pdf',
@@ -3437,15 +3707,28 @@ def download_document_file():
             # Log the download action
             log_action('download', 'documents', document_id, f"Downloaded document '{document['document_name']}'")
             
+            # Construct full file path - stored_file_path is just the filename, need to add the directory
+            app.logger.info(f"Constructing full path for: {stored_file_path}")
+            full_file_path = os.path.join(DOCUMENTS_FOLDER, stored_file_path)
+            
+            if not os.path.exists(full_file_path):
+                flash('Document file not found on server', 'danger')
+                return redirect(url_for('builders_hub'))
+                
+            app.logger.info(f"Serving document: {full_file_path}")
+            
             # Return the file
             return send_file(
-                file_path,
+                full_file_path,
                 mimetype=mime_type,
                 as_attachment=True,
                 download_name=f"{document['document_name']}.{file_ext}"
             )
             
     except Exception as e:
+        import traceback
+        app.logger.error(f"Error downloading document: {str(e)}")
+        app.logger.error(traceback.format_exc())
         flash(f'Error downloading document: {str(e)}', 'danger')
         return redirect(url_for('builders_hub'))
     

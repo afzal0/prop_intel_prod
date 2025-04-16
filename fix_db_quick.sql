@@ -68,3 +68,23 @@ CREATE TABLE IF NOT EXISTS propintel.properties (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Add upload_date column to documents table
+ALTER TABLE propintel.documents 
+ADD COLUMN IF NOT EXISTS upload_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+
+-- Add address, latitude, longitude columns if they don't exist
+DO $$
+BEGIN
+  IF NOT EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema='propintel' AND table_name='documents' AND column_name='address') THEN
+    ALTER TABLE propintel.documents ADD COLUMN address TEXT;
+  END IF;
+  
+  IF NOT EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema='propintel' AND table_name='documents' AND column_name='latitude') THEN
+    ALTER TABLE propintel.documents ADD COLUMN latitude NUMERIC(10, 6);
+  END IF;
+  
+  IF NOT EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema='propintel' AND table_name='documents' AND column_name='longitude') THEN
+    ALTER TABLE propintel.documents ADD COLUMN longitude NUMERIC(10, 6);
+  END IF;
+END $$;
