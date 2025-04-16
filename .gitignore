@@ -13,3 +13,4 @@ secret_key.txt
 *_credentials.json
 db_connect.py
 extras
+~/static/documents.*pdf

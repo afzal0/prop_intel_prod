@@ -1,0 +1,44 @@
+FROM python:3.9-slim
+
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    g++ \
+    build-essential \
+    postgresql-client \
+    libpq-dev \
+    gdal-bin \
+    libgdal-dev \
+    python3-dev \
+    libspatialindex-dev \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set GDAL environment variables
+ENV GDAL_VERSION=3.6.2
+ENV GDAL_CONFIG=/usr/bin/gdal-config
+
+# Copy requirements and install dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Install GIS dependencies separately
+COPY gis_requirements.txt .
+RUN pip install --no-cache-dir shapely==2.0.1 && \
+    pip install --no-cache-dir rtree==1.1.0 && \
+    pip install --no-cache-dir geopandas==0.14.1
+
+# Copy application code
+COPY . .
+
+# Create necessary directories
+RUN mkdir -p uploads static
+
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+# Run the application using the PORT environment variable assigned by Heroku
+CMD gunicorn --bind 0.0.0.0:$PORT app:app
