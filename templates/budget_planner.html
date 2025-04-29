@@ -445,11 +445,30 @@
     });
     
     function initializeCharts() {
-        // Get data from backend
-        const budgetData = {{ budget_data|tojson|safe }};
-        const months = budgetData.months || ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-        const monthlyBudget = budgetData.monthly_budget || Array(12).fill(0);
-        const monthlySpent = budgetData.monthly_spent || Array(12).fill(0);
+        // Get data from backend with defensive programming
+        let budgetData;
+        
+        try {
+            budgetData = {{ budget_data|tojson|safe }};
+        } catch (error) {
+            console.error("Error parsing budget data:", error);
+            budgetData = {
+                months: [],
+                monthly_budget: [],
+                monthly_spent: [],
+                allocation_data: {
+                    wage: 0,
+                    project_manager: 0,
+                    material: 0,
+                    miscellaneous: 0
+                }
+            };
+        }
+        
+        // Safe defaults for data
+        const months = (budgetData && budgetData.months) ? budgetData.months : ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const monthlyBudget = (budgetData && budgetData.monthly_budget) ? budgetData.monthly_budget : Array(12).fill(0);
+        const monthlySpent = (budgetData && budgetData.monthly_spent) ? budgetData.monthly_spent : Array(12).fill(0);
         
         // Calculate projected values (only for future months)
         const currentMonth = new Date().getMonth(); // 0-indexed (0 = Jan)
@@ -522,8 +541,8 @@
         // Budget Allocation Chart
         const budgetAllocationCtx = document.getElementById('budgetAllocationChart').getContext('2d');
         
-        // Get allocation data from backend
-        const allocationData = budgetData.allocation_data || {
+        // Get allocation data from backend with defensive programming
+        const allocationData = (budgetData && budgetData.allocation_data) ? budgetData.allocation_data : {
             wage: 0,
             project_manager: 0,
             material: 0,
@@ -658,13 +677,28 @@
         document.getElementById('statusFilter').addEventListener('change', updateBudgetData);
         
         function updateBudgetData() {
-            // Get selected values
-            const selectedProperty = document.getElementById('propertyFilter').value;
-            const selectedYear = document.getElementById('yearFilter').value;
-            const selectedStatus = document.getElementById('statusFilter').value;
-            
-            // Redirect to the same page with query parameters
-            window.location.href = `/budget-planner?property_id=${selectedProperty}&year=${selectedYear}&status=${selectedStatus}`;
+            try {
+                // Get selected values, with error checking
+                const propertyFilter = document.getElementById('propertyFilter');
+                const yearFilter = document.getElementById('yearFilter');
+                const statusFilter = document.getElementById('statusFilter');
+                
+                if (!propertyFilter || !yearFilter || !statusFilter) {
+                    console.error("One or more filter elements not found");
+                    return;
+                }
+                
+                const selectedProperty = propertyFilter.value || 'all';
+                const selectedYear = yearFilter.value || new Date().getFullYear();
+                const selectedStatus = statusFilter.value || 'all';
+                
+                // Redirect to the same page with query parameters
+                window.location.href = `/budget-planner?property_id=${encodeURIComponent(selectedProperty)}&year=${encodeURIComponent(selectedYear)}&status=${encodeURIComponent(selectedStatus)}`;
+            } catch (error) {
+                console.error("Error updating budget data:", error);
+                // Fallback to basic redirect
+                window.location.href = '/budget-planner';
+            }
         }
     }
 </script>

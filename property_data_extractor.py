@@ -62,11 +62,11 @@ def get_db_config():
     
     # Default connection parameters (only used if neither DATABASE_URL nor config file is available)
     default_params = {
-        "user": "prop_intel",
-        "password": "nyrty7-cytrit-qePkyf",
-        "host": "propintel.postgres.database.azure.com",
-        "port": "5432",
-        "database": "postgres",
+        "user": os.environ.get("DB_USER", ""),
+        "password": os.environ.get("DB_PASSWORD", ""),
+        "host": os.environ.get("DB_HOST", ""),
+        "port": os.environ.get("DB_PORT", "5432"),
+        "database": os.environ.get("DB_NAME", "postgres"),
     }
     
     # Try to read from config file

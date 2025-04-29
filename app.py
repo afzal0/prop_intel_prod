@@ -18,6 +18,17 @@ from PIL import Image
 import io
 import secrets
 import string
+import logging
+import traceback
+
+# Configure application logging
+logging.basicConfig(
+    filename='app.log',
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
+logger = logging.getLogger(__name__)
 import ipaddress
 from flask import make_response
 from analytics_dashboard import analytics_dashboard
@@ -47,7 +58,7 @@ standard_json.dumps = decimal_safe_dumps
 # Set the custom JSON encoder for the app
 app = Flask(__name__)
 app.json_encoder = DecimalJSONEncoder
-app.secret_key = os.environ.get('SECRET_KEY', 'propintel_secret_key')
+app.secret_key = os.environ.get('SECRET_KEY', secrets.token_hex(32))
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['PROPERTY_IMAGES'] = 'static/images/properties'
 app.config['WORK_IMAGES'] = 'static/images/work'
@@ -56,6 +67,108 @@ app.config['ALLOWED_DOCUMENT_EXTENSIONS'] = {'pdf', 'doc', 'docx', 'xls', 'xlsx'
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB limit
 app.config['SESSION_COOKIE_SECURE'] = os.environ.get('FLASK_ENV') != 'development'
 app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.config['PREFERRED_URL_SCHEME'] = 'https'
+
+# Security headers
+@app.after_request
+def add_security_headers(response):
+    """Add security headers to each response"""
+    response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['X-Frame-Options'] = 'SAMEORIGIN'
+    response.headers['X-XSS-Protection'] = '1; mode=block'
+    response.headers['Content-Security-Policy'] = "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com https://fonts.googleapis.com; img-src 'self' data: https://*.tile.openstreetmap.org https://server.arcgisonline.com https://stamen-tiles-*.a.ssl.fastly.net; font-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.gstatic.com; connect-src 'self' https://*.tile.openstreetmap.org https://server.arcgisonline.com https://stamen-tiles-*.a.ssl.fastly.net;"
+    return response
+
+# Error handlers
+@app.errorhandler(404)
+def not_found_error(error):
+    """Handle 404 errors"""
+    return render_template('error.html', error_code=404, 
+                         error_message="Page not found. The requested page does not exist."), 404
+
+@app.errorhandler(500)
+def internal_error(error):
+    """Handle 500 errors"""
+    # Log the error
+    logger.error(f"Internal server error: {error}", exc_info=True)
+    return render_template('error.html', error_code=500, 
+                         error_message="Internal server error. Our team has been notified."), 500
+                         
+@app.errorhandler(403)
+def forbidden_error(error):
+    """Handle 403 errors"""
+    return render_template('error.html', error_code=403, 
+                         error_message="Forbidden. You don't have permission to access this resource."), 403
+
+# Register template filters
+import datetime
+import locale
+
+# Set locale for currency formatting
+try:
+    locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
+except:
+    try:
+        locale.setlocale(locale.LC_ALL, 'en_US')
+    except:
+        # Fallback if locale not available
+        pass
+
+# Format currency filter
+@app.template_filter('format_currency')
+def format_currency_filter(value):
+    '''Format a number as currency ($X,XXX.XX)'''
+    if value is None:
+        return "$0.00"
+    try:
+        value = float(value)
+        return "${:,.2f}".format(value)
+    except (ValueError, TypeError):
+        return "$0.00"
+
+# Format date filter
+@app.template_filter('format_date')
+def format_date_filter(value):
+    '''Format a date as Month DD, YYYY'''
+    if not value:
+        return ""
+    if isinstance(value, str):
+        try:
+            value = datetime.datetime.strptime(value, '%Y-%m-%d')
+        except ValueError:
+            try:
+                value = datetime.datetime.strptime(value, '%Y-%m-%d %H:%M:%S')
+            except ValueError:
+                return value
+    
+    if isinstance(value, datetime.datetime):
+        return value.strftime('%b %d, %Y')
+    return str(value)
+
+# Format percent filter
+@app.template_filter('format_percent')
+def format_percent_filter(value):
+    '''Format a number as percentage (X.XX%)'''
+    if value is None:
+        return "0.00%"
+    try:
+        value = float(value) * 100  # Convert decimal to percentage
+        return "{:.2f}%".format(value)
+    except (ValueError, TypeError):
+        return "0.00%"
+
+# Safe division filter (avoid divide by zero)
+@app.template_filter('safe_divide')
+def safe_divide_filter(numerator, denominator):
+    '''Safely divide two numbers, avoiding divide by zero'''
+    try:
+        if denominator == 0:
+            return 0
+        return numerator / denominator
+    except (ValueError, TypeError):
+        return 0
 app.config['SESSION_KEY_PREFIX'] = 'propintel_session_'  # Prefix for session keys
 app.config["SESSION_PERMANENT"] = True
 app.config["SESSION_TYPE"] = "filesystem"
@@ -1621,70 +1734,112 @@ def properties():
     # Construct the WHERE clause
     where_clause = " AND ".join(filters) if filters else "1=1"
     
-    conn = get_db_connection()
+    # Initialize variables with default values in case of database errors
+    properties = []
+    project_types = []
+    project_managers = []
+    statuses = []
+    
     try:
+        conn = get_db_connection()
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
-            # Get distinct project types and project managers for filters
-            cur.execute("SELECT DISTINCT project_type FROM propintel.properties WHERE project_type IS NOT NULL ORDER BY project_type")
-            project_types = [row['project_type'] for row in cur.fetchall()]
+            try:
+                # Get distinct project types and project managers for filters
+                cur.execute("SELECT DISTINCT project_type FROM propintel.properties WHERE project_type IS NOT NULL ORDER BY project_type")
+                project_types = [row['project_type'] for row in cur.fetchall()]
+            except Exception as e:
+                logger.error(f"Error fetching project types: {e}", exc_info=True)
             
-            cur.execute("SELECT DISTINCT project_manager FROM propintel.properties WHERE project_manager IS NOT NULL ORDER BY project_manager")
-            project_managers = [row['project_manager'] for row in cur.fetchall()]
+            try:
+                cur.execute("SELECT DISTINCT project_manager FROM propintel.properties WHERE project_manager IS NOT NULL ORDER BY project_manager")
+                project_managers = [row['project_manager'] for row in cur.fetchall()]
+            except Exception as e:
+                logger.error(f"Error fetching project managers: {e}", exc_info=True)
             
-            # Get distinct statuses
-            cur.execute("SELECT DISTINCT status FROM propintel.properties WHERE status IS NOT NULL ORDER BY status")
-            statuses = [row['status'] for row in cur.fetchall()]
+            try:
+                # Get distinct statuses
+                cur.execute("SELECT DISTINCT status FROM propintel.properties WHERE status IS NOT NULL ORDER BY status")
+                statuses = [row['status'] for row in cur.fetchall()]
+            except Exception as e:
+                logger.error(f"Error fetching statuses: {e}", exc_info=True)
             
             # Main query with filters and sorting
-            query = f"""
-                SELECT p.*, 
-                       u.username as owner_username,
-                       COUNT(DISTINCT w.work_id) AS work_count,
-                       COUNT(DISTINCT mi.money_in_id) AS income_count,
-                       COUNT(DISTINCT mo.money_out_id) AS expense_count,
-                       COALESCE(p.total_income, 0) as total_income,
-                       COALESCE(p.total_expenses, 0) as total_expenses,
-                       COALESCE(p.profit, 0) as profit
-                FROM propintel.properties p
-                LEFT JOIN propintel.users u ON p.user_id = u.user_id
-                LEFT JOIN propintel.work w ON p.property_id = w.property_id
-                LEFT JOIN propintel.money_in mi ON p.property_id = mi.property_id
-                LEFT JOIN propintel.money_out mo ON p.property_id = mo.property_id
-                WHERE {where_clause}
-                GROUP BY p.property_id, u.username
-                ORDER BY {sort_by} {sort_dir}
-            """
-            
-            cur.execute(query, params)
-            properties = cur.fetchall()
-            
+            try:
+                query = f"""
+                    SELECT p.*, 
+                           u.username as owner_username,
+                           COUNT(DISTINCT w.work_id) AS work_count,
+                           COUNT(DISTINCT mi.money_in_id) AS income_count,
+                           COUNT(DISTINCT mo.money_out_id) AS expense_count,
+                           COALESCE(p.total_income, 0) as total_income,
+                           COALESCE(p.total_expenses, 0) as total_expenses,
+                           COALESCE(p.profit, 0) as profit
+                    FROM propintel.properties p
+                    LEFT JOIN propintel.users u ON p.user_id = u.user_id
+                    LEFT JOIN propintel.work w ON p.property_id = w.property_id
+                    LEFT JOIN propintel.money_in mi ON p.property_id = mi.property_id
+                    LEFT JOIN propintel.money_out mo ON p.property_id = mo.property_id
+                    WHERE {where_clause}
+                    GROUP BY p.property_id, u.username
+                    ORDER BY {sort_by} {sort_dir}
+                """
+                
+                cur.execute(query, params)
+                properties = cur.fetchall()
+                
+                # Add default values for properties to ensure we don't have None values
+                for prop in properties:
+                    prop['work_count'] = prop.get('work_count', 0) or 0
+                    prop['income_count'] = prop.get('income_count', 0) or 0
+                    prop['expense_count'] = prop.get('expense_count', 0) or 0
+                    prop['property_name'] = prop.get('property_name', 'Unnamed Property') or 'Unnamed Property'
+                    prop['address'] = prop.get('address', 'No address') or 'No address'
+            except Exception as e:
+                logger.error(f"Error fetching properties: {e}", exc_info=True)
+                flash(f"Error loading properties: {str(e)}", "danger")
+                properties = []
+                
             # Get property images
             if properties:
-                property_ids = [p['property_id'] for p in properties]
-                placeholders = ','.join(['%s'] * len(property_ids))
-                
-                cur.execute(f"""
-                    SELECT property_id, image_path 
-                    FROM propintel.property_images 
-                    WHERE property_id IN ({placeholders})
-                    AND image_type = 'property'
-                    ORDER BY upload_date DESC
-                """, property_ids)
-                
-                # Organize images by property
-                property_images = {}
-                for row in cur.fetchall():
-                    if row['property_id'] not in property_images:
-                        property_images[row['property_id']] = []
-                    property_images[row['property_id']].append(row['image_path'])
-                
-                # Add image to property data
-                for prop in properties:
-                    prop_id = prop['property_id']
-                    if prop_id in property_images:
-                        prop['image'] = property_images[prop_id][0]  # Primary image
-                        prop['images'] = property_images[prop_id]  # All images
-                    else:
+                try:
+                    property_ids = [p['property_id'] for p in properties]
+                    placeholders = ','.join(['%s'] * len(property_ids))
+                    
+                    try:
+                        cur.execute(f"""
+                            SELECT property_id, image_path 
+                            FROM propintel.property_images 
+                            WHERE property_id IN ({placeholders})
+                            AND image_type = 'property'
+                            ORDER BY upload_date DESC
+                        """, property_ids)
+                        
+                        # Organize images by property
+                        property_images = {}
+                        for row in cur.fetchall():
+                            if row['property_id'] not in property_images:
+                                property_images[row['property_id']] = []
+                            property_images[row['property_id']].append(row['image_path'])
+                        
+                        # Add image to property data
+                        for prop in properties:
+                            prop_id = prop['property_id']
+                            if prop_id in property_images:
+                                prop['image'] = property_images[prop_id][0]  # Primary image
+                                prop['images'] = property_images[prop_id]  # All images
+                            else:
+                                prop['image'] = None
+                                prop['images'] = []
+                    except Exception as e:
+                        logger.error(f"Error fetching property images: {e}", exc_info=True)
+                        # Set default image values for all properties
+                        for prop in properties:
+                            prop['image'] = None
+                            prop['images'] = []
+                except Exception as e:
+                    logger.error(f"Error processing property IDs for images: {e}", exc_info=True)
+                    # Set default image values for all properties
+                    for prop in properties:
                         prop['image'] = None
                         prop['images'] = []
                 
@@ -1699,57 +1854,95 @@ def properties():
     
     # Handle Excel export request
     if export_excel:
-        import pandas as pd
-        from io import BytesIO
-        from flask import send_file
-        
-        # Create a Pandas dataframe from properties
-        df_data = [{
-            'Property Name': p['property_name'],
-            'Address': p['address'],
-            'Location': p['location'] or '',
-            'Status': p['status'] or '',
-            'Project Type': p['project_type'] or '',
-            'Project Manager': p['project_manager'] or '',
-            'Total Income': float(p['total_income']) if p['total_income'] else 0,
-            'Total Expenses': float(p['total_expenses']) if p['total_expenses'] else 0,
-            'Profit': float(p['profit']) if p['profit'] else 0,
-            'Number of Work Items': p['work_count'],
-            'Number of Income Records': p['income_count'],
-            'Number of Expense Records': p['expense_count']
-        } for p in properties]
-        
-        df = pd.DataFrame(df_data)
-        
-        # Create an Excel file in memory
-        output = BytesIO()
-        with pd.ExcelWriter(output, engine='openpyxl') as writer:
-            df.to_excel(writer, sheet_name='Properties', index=False)
+        try:
+            import pandas as pd
+            from io import BytesIO
+            from flask import send_file
             
-            # Auto-adjust columns width
-            worksheet = writer.sheets['Properties']
-            for idx, col in enumerate(df.columns):
-                max_len = max(df[col].astype(str).map(len).max(), len(col) + 2)
-                worksheet.column_dimensions[worksheet.cell(1, idx + 1).column_letter].width = max_len
-        
-        output.seek(0)
-        
-        # Set filename based on filters
-        filename = 'PropIntel_Properties'
-        if search:
-            filename += f'_search_{search}'
-        if status_filter:
-            filename += f'_status_{status_filter}'
-        if project_type:
-            filename += f'_type_{project_type}'
-        filename += '.xlsx'
-        
-        return send_file(
-            output,
-            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            download_name=filename,
-            as_attachment=True
-        )
+            # Create a Pandas dataframe from properties
+            df_data = []
+            for p in properties:
+                try:
+                    prop_data = {
+                        'Property Name': p.get('property_name', 'Unnamed Property'),
+                        'Address': p.get('address', 'No address'),
+                        'Location': p.get('location', '') or '',
+                        'Status': p.get('status', '') or '',
+                        'Project Type': p.get('project_type', '') or '',
+                        'Project Manager': p.get('project_manager', '') or '',
+                        'Number of Work Items': p.get('work_count', 0),
+                        'Number of Income Records': p.get('income_count', 0),
+                        'Number of Expense Records': p.get('expense_count', 0)
+                    }
+                    
+                    # Safely handle numeric values which could be None or non-numeric
+                    try:
+                        prop_data['Total Income'] = float(p.get('total_income', 0) or 0)
+                    except (ValueError, TypeError):
+                        prop_data['Total Income'] = 0
+                        
+                    try:
+                        prop_data['Total Expenses'] = float(p.get('total_expenses', 0) or 0)
+                    except (ValueError, TypeError):
+                        prop_data['Total Expenses'] = 0
+                        
+                    try:
+                        prop_data['Profit'] = float(p.get('profit', 0) or 0)
+                    except (ValueError, TypeError):
+                        prop_data['Profit'] = 0
+                        
+                    df_data.append(prop_data)
+                except Exception as e:
+                    logger.error(f"Error processing property for Excel: {e}", exc_info=True)
+                    continue
+            
+            df = pd.DataFrame(df_data)
+            
+            # Create an Excel file in memory
+            output = BytesIO()
+            with pd.ExcelWriter(output, engine='openpyxl') as writer:
+                df.to_excel(writer, sheet_name='Properties', index=False)
+                
+                # Auto-adjust columns width
+                try:
+                    worksheet = writer.sheets['Properties']
+                    for idx, col in enumerate(df.columns):
+                        # Apply safe column width with error handling
+                        try:
+                            if len(df) > 0:  # Only if we have data
+                                max_len = max(df[col].astype(str).map(len).max(), len(col) + 2)
+                            else:
+                                max_len = len(col) + 5  # Default width if no data
+                            worksheet.column_dimensions[worksheet.cell(1, idx + 1).column_letter].width = max_len
+                        except Exception as e:
+                            logger.error(f"Error setting Excel column width: {e}", exc_info=True)
+                            # Use default width as fallback
+                            worksheet.column_dimensions[worksheet.cell(1, idx + 1).column_letter].width = 15
+                except Exception as e:
+                    logger.error(f"Error adjusting Excel column widths: {e}", exc_info=True)
+            
+            output.seek(0)
+            
+            # Set filename based on filters
+            filename = 'PropIntel_Properties'
+            if search:
+                filename += f'_search_{search}'
+            if status_filter:
+                filename += f'_status_{status_filter}'
+            if project_type:
+                filename += f'_type_{project_type}'
+            filename += '.xlsx'
+            
+            return send_file(
+                output,
+                mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                download_name=filename,
+                as_attachment=True
+            )
+        except Exception as e:
+            logger.error(f"Error generating Excel export: {e}", exc_info=True)
+            flash(f"Error generating Excel export: {str(e)}", "danger")
+            # Continue to render the properties page as fallback
     
     return render_template('properties.html', 
                           properties=properties, 
@@ -2102,7 +2295,7 @@ def budget_planner():
             
     except Exception as e:
         # Log the error but don't redirect
-        print(f"Error loading budget data: {e}")
+        logger.error(f"Error loading budget data: {e}", exc_info=True)
         # Provide some dummy properties as fallback
         properties = [
             {'property_id': '1', 'property_name': 'Property A'},
@@ -2110,6 +2303,23 @@ def budget_planner():
             {'property_id': '3', 'property_name': 'Property C'},
             {'property_id': '4', 'property_name': 'Property D'}
         ]
+        # Initialize budget_data with empty values to prevent template errors
+        budget_data = {
+            'expense_data': {},
+            'income_data': {},
+            'active_budgets': [],
+            'upcoming_expenses': [],
+            'allocation_data': {
+                'wage': 0,
+                'project_manager': 0,
+                'material': 0,
+                'miscellaneous': 0
+            },
+            'total_expenses': 0,
+            'monthly_budget': [0] * 12,
+            'monthly_spent': [0] * 12,
+            'months': ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+        }
         flash(f"Error loading budget data: {str(e)}", "danger")
     finally:
         if conn:
@@ -2545,6 +2755,10 @@ def map_view():
         'features': features
     }
     
+    # Set default map center coordinates (Melbourne, Australia)
+    center_lat = -37.8136
+    center_lng = 144.9631
+    
     # Also try to get real properties from the database as a fallback
     try:
         conn = get_db_connection()
@@ -2559,20 +2773,35 @@ def map_view():
             
             # If we found properties in the DB, use those instead
             if db_properties and len(db_properties) > 0:
-                print(f"Found {len(db_properties)} real properties with coordinates")
+                logger.info(f"Found {len(db_properties)} real properties with coordinates")
                 
                 # Convert DB properties to GeoJSON
                 db_features = []
                 for prop in db_properties:
+                    # Use the first property coordinates as map center if available
+                    if db_features == []:
+                        try:
+                            center_lat = float(prop['latitude'])
+                            center_lng = float(prop['longitude'])
+                        except (ValueError, TypeError):
+                            pass  # Keep default coordinates if conversion fails
+                    
+                    try:
+                        lng = float(prop['longitude']) if prop['longitude'] is not None else center_lng
+                        lat = float(prop['latitude']) if prop['latitude'] is not None else center_lat
+                    except (ValueError, TypeError):
+                        lng = center_lng
+                        lat = center_lat
+                    
                     db_features.append({
                         'type': 'Feature',
                         'geometry': {
                             'type': 'Point',
-                            'coordinates': [float(prop['longitude']), float(prop['latitude'])]
+                            'coordinates': [lng, lat]
                         },
                         'properties': {
                             'id': prop['property_id'],
-                            'name': prop['property_name'],
+                            'name': prop['property_name'] or "Unnamed Property",
                             'address': prop['address'] or "No address",
                             'url': url_for('property_detail', property_id=prop['property_id']),
                             'is_over_budget': False,  # Default values
@@ -2589,18 +2818,17 @@ def map_view():
                 if db_features:
                     geojson['features'] = db_features
     except Exception as e:
-        import traceback
-        print(f"Error loading DB properties: {e}")
-        print(traceback.format_exc())
+        logger.error(f"Error loading DB properties: {e}", exc_info=True)
         # Continue with sample properties if DB fails
     finally:
         if 'conn' in locals() and conn:
             conn.close()
     
-    return render_template('map.html', 
-                          geojson=json.dumps(geojson),
-                          center_lat=-37.8136,  # Melbourne, Australia
-                          center_lng=144.9631)
+    # Convert GeoJSON to JSON string for template
+    import json
+    geojson_str = json.dumps(geojson)
+    
+    return render_template('map.html', geojson=geojson_str, center_lat=center_lat, center_lng=center_lng)
 
 @app.route('/api/property-locations')
 def property_locations_api():

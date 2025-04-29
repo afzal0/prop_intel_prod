@@ -7,6 +7,7 @@ Add these to your app.py file after creating the Flask app
 
 import datetime
 import locale
+from flask import current_app as app
 
 # Set locale for currency formatting
 try:

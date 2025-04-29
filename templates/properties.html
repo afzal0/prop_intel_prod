@@ -350,29 +350,29 @@
             <div class="col-md-6 col-lg-4 mb-4">
                 <div class="card h-100 property-card">
                     <div class="card-header">
-                        <h5 class="card-title mb-0">{{ property.property_name }}</h5>
+                        <h5 class="card-title mb-0">{{ property.property_name|default('Unnamed Property') }}</h5>
                     </div>
                     <div class="card-body">
                         <p class="card-text">
-                            <i class="fas fa-map-marker-alt me-2 text-primary"></i>{{ property.address }}
+                            <i class="fas fa-map-marker-alt me-2 text-primary"></i>{{ property.address|default('No address') }}
                         </p>
                         
                         <div class="row text-center small mb-3">
                             <div class="col">
                                 <div class="bg-success text-white rounded p-1 mb-1">
-                                    <i class="fas fa-dollar-sign"></i> {{ property.income_count }}
+                                    <i class="fas fa-dollar-sign"></i> {{ property.income_count|default(0) }}
                                 </div>
                                 <div>Income</div>
                             </div>
                             <div class="col">
                                 <div class="bg-danger text-white rounded p-1 mb-1">
-                                    <i class="fas fa-file-invoice-dollar"></i> {{ property.expense_count }}
+                                    <i class="fas fa-file-invoice-dollar"></i> {{ property.expense_count|default(0) }}
                                 </div>
                                 <div>Expenses</div>
                             </div>
                             <div class="col">
                                 <div class="bg-info text-white rounded p-1 mb-1">
-                                    <i class="fas fa-tools"></i> {{ property.work_count }}
+                                    <i class="fas fa-tools"></i> {{ property.work_count|default(0) }}
                                 </div>
                                 <div>Work</div>
                             </div>
@@ -408,17 +408,17 @@
                             <tbody>
                                 {% for property in properties %}
                                 <tr>
-                                    <td data-value="{{ property.property_name }}"><strong>{{ property.property_name }}</strong></td>
-                                    <td data-value="{{ property.address }}">{{ property.address }}</td>
+                                    <td data-value="{{ property.property_name|default('Unnamed Property') }}"><strong>{{ property.property_name|default('Unnamed Property') }}</strong></td>
+                                    <td data-value="{{ property.address|default('No address') }}">{{ property.address|default('No address') }}</td>
                                     <td data-value="{{ property.location or 'Melbourne' }}">{{ property.location or 'Melbourne' }}</td>
-                                    <td class="text-center" data-value="{{ property.work_count }}">
-                                        <span class="badge bg-primary rounded-pill">{{ property.work_count }}</span>
+                                    <td class="text-center" data-value="{{ property.work_count|default(0) }}">
+                                        <span class="badge bg-primary rounded-pill">{{ property.work_count|default(0) }}</span>
                                     </td>
-                                    <td class="text-center" data-value="{{ property.income_count }}">
-                                        <span class="badge bg-success rounded-pill">{{ property.income_count }}</span>
+                                    <td class="text-center" data-value="{{ property.income_count|default(0) }}">
+                                        <span class="badge bg-success rounded-pill">{{ property.income_count|default(0) }}</span>
                                     </td>
-                                    <td class="text-center" data-value="{{ property.expense_count }}">
-                                        <span class="badge bg-danger rounded-pill">{{ property.expense_count }}</span>
+                                    <td class="text-center" data-value="{{ property.expense_count|default(0) }}">
+                                        <span class="badge bg-danger rounded-pill">{{ property.expense_count|default(0) }}</span>
                                     </td>
                                     <td class="text-center">
                                         <a href="{{ url_for('property_detail', property_id=property.property_id) }}" class="btn btn-sm btn-primary">View</a>
