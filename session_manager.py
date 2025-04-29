@@ -8,7 +8,7 @@ This is an alternative to Flask's cookie-based sessions, which can be unreliable
 import os
 import json
 import uuid
-import datetime
+from datetime import datetime, timedelta
 import psycopg2
 from psycopg2.extras import RealDictCursor
 
@@ -199,7 +199,7 @@ class DatabaseSessionInterface:
     
     def get_expiration_time(self, app, session):
         # 30 days expiration
-        return datetime.datetime.now() + datetime.timedelta(days=30)
+        return datetime.now() + timedelta(days=30)
     
     def get_db_connection(self):
         '''Get a connection to the PostgreSQL database'''

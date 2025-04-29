@@ -159,7 +159,7 @@
     
     /* Map styles */
     #property-map {
-        height: 1000px;
+        height: 500px;
         width: 100%;
         border-radius: 5px;
     }
@@ -1122,6 +1122,19 @@
         }
         
         propertyMarkers = {}; // Reset markers
+        
+        // Remove dummy values from the map GeoJSON
+        if (geojsonData && geojsonData.features) {
+            // Only keep features with actual coordinates from the database
+            geojsonData.features = geojsonData.features.filter(feature => {
+                // Keep only features that have property_id or are not demo/placeholder data
+                return feature.properties && 
+                       feature.properties.id && 
+                       feature.properties.name && 
+                       !feature.properties.name.includes('Sample') &&
+                       !feature.properties.name.includes('Demo');
+            });
+        }
         
         // Create GeoJSON layer with custom markers/polygons and popups
         propertiesLayer = L.geoJSON(geojsonData, {

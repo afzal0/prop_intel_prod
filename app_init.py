@@ -5,6 +5,8 @@ App initialization file for PropIntel with server-side sessions
 Add this code to the top of app.py after importing Flask
 '''
 
+from datetime import datetime, timedelta
+
 # Initialize server-side sessions
 from session_manager import session_manager
 session_manager.init_app(app)
@@ -30,4 +32,4 @@ else:
 # Additional security settings
 app.config['SESSION_COOKIE_SECURE'] = os.environ.get('FLASK_ENV') != 'development'
 app.config['SESSION_COOKIE_HTTPONLY'] = True
-app.config['PERMANENT_SESSION_LIFETIME'] = datetime.timedelta(days=30)
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=30)

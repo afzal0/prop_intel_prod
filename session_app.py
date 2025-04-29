@@ -6,7 +6,7 @@ Run this to verify session functionality works
 """
 
 import os
-import datetime
+from datetime import datetime, timedelta
 import uuid
 from flask import Flask, session, redirect, url_for, request, render_template_string
 
@@ -20,7 +20,7 @@ app = Flask(__name__)
 
 # Configure sessions WITHOUT Flask-Session (using Flask's built-in sessions)
 app.config["SESSION_PERMANENT"] = True
-app.config["PERMANENT_SESSION_LIFETIME"] = datetime.timedelta(days=1)
+app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=1)
 app.config["SESSION_COOKIE_HTTPONLY"] = True
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 

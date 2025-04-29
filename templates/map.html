@@ -78,9 +78,20 @@
                             </div>
                         </div>
                         
+                        <div class="mb-2">
+                            <label class="form-label mb-1">Analysis Heatmap</label>
+                            <select id="heatmapTypeSelect" class="form-select form-select-sm">
+                                <option value="none">No Heatmap</option>
+                                <option value="work_count">Work Count</option>
+                                <option value="work_cost">Work Cost</option>
+                                <option value="income">Income Amount</option>
+                                <option value="expense">Expense Amount</option>
+                            </select>
+                        </div>
+                        
                         <div class="form-check form-switch mt-2">
-                            <input class="form-check-input" type="checkbox" id="workHeatmapToggle">
-                            <label class="form-check-label" for="workHeatmapToggle">Work Heatmap</label>
+                            <input class="form-check-input" type="checkbox" id="lgaLayerToggle">
+                            <label class="form-check-label" for="lgaLayerToggle">Show LGA Boundaries</label>
                         </div>
                     </div>
                 </div>
@@ -104,6 +115,7 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="/static/js/lga_mapping.js"></script>
 <script>
     // Load map when document is ready
     document.addEventListener('DOMContentLoaded', function() {
@@ -309,42 +321,151 @@
         }
         
         // Initialize heatmap
-        function createHeatmap() {
+        function createHeatmap(heatmapType = 'work_count') {
             // Remove existing heatmap if any
             if (heatmapLayer) {
                 map.removeLayer(heatmapLayer);
+                heatmapLayer = null;
             }
             
-            // Demo heatmap data - in production, this would come from the server
+            // If none selected, don't create a heatmap
+            if (heatmapType === 'none') {
+                return;
+            }
+            
+            // First check if we have any work heatmap data
+            fetch('/api/work-heatmap-data')
+                .then(response => {
+                    if (!response.ok) {
+                        // If API fails, use property data as fallback
+                        createLocalHeatmap(heatmapType);
+                        return null;
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data && data.length > 0) {
+                        // Use server-generated heatmap data
+                        createServerHeatmap(data, heatmapType);
+                    } else {
+                        // Fallback to local data
+                        createLocalHeatmap(heatmapType);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching heatmap data:', error);
+                    // Fallback to local data
+                    createLocalHeatmap(heatmapType);
+                });
+        }
+        
+        // Create heatmap from server data
+        function createServerHeatmap(heatmapData, heatmapType) {
+            // Gradient colors based on heatmap type
+            let gradient;
+            switch(heatmapType) {
+                case 'work_count':
+                    gradient = {0.4: 'blue', 0.65: 'lime', 1: 'red'};
+                    break;
+                case 'work_cost':
+                    gradient = {0.4: 'green', 0.65: 'yellow', 1: 'red'};
+                    break;
+                case 'income':
+                    gradient = {0.4: 'green', 0.7: 'lime', 1: '#00FF00'};
+                    break;
+                case 'expense':
+                    gradient = {0.4: 'orange', 0.7: '#FF4500', 1: 'red'};
+                    break;
+                default:
+                    gradient = {0.4: 'blue', 0.65: 'lime', 1: 'red'};
+            }
+            
+            // Create heatmap layer with server data
+            heatmapLayer = L.heatLayer(heatmapData, {
+                radius: 25,
+                blur: 15,
+                maxZoom: 17,
+                gradient: gradient
+            }).addTo(map);
+        }
+        
+        // Create heatmap from local property data (fallback)
+        function createLocalHeatmap(heatmapType) {
             const heatData = [];
             
-            // Generate heatmap data from work records
+            // Generate heatmap data based on selected type
             propertiesData.features.forEach(function(feature) {
                 const property = feature.properties;
                 const coords = feature.geometry.coordinates;
-                const workCount = property.work_count || 0;
+                let value = 0;
                 
-                // Only add points with work
-                if (workCount > 0) {
+                // Set value based on heatmap type
+                switch(heatmapType) {
+                    case 'work_count':
+                        value = property.work_count || 0;
+                        break;
+                    case 'work_cost':
+                        value = property.work_cost || 0;
+                        break;
+                    case 'income':
+                        value = property.income || 0;
+                        break;
+                    case 'expense':
+                        value = property.expenses || 0;
+                        break;
+                }
+                
+                // Only add points with non-zero values
+                if (value > 0) {
+                    // Scale value for better visualization (normalize large values)
+                    let intensity;
+                    
+                    if (heatmapType === 'work_count') {
+                        intensity = Math.min(value * 0.8, 30); // Cap at 30 for count
+                    } else {
+                        // For monetary values, use logarithmic scale to handle wide ranges
+                        intensity = Math.log(value + 1) * 2;
+                    }
+                    
                     // Add main point with higher intensity
-                    heatData.push([coords[1], coords[0], workCount * 0.8]);
+                    heatData.push([coords[1], coords[0], intensity]);
                     
                     // Add random nearby points for better visualization
-                    for (let i = 0; i < Math.min(workCount, 5); i++) {
-                        const lat = coords[1] + (Math.random() - 0.5) * 0.01;
-                        const lng = coords[0] + (Math.random() - 0.5) * 0.01;
-                        heatData.push([lat, lng, workCount * 0.2]);
+                    const pointCount = Math.min(Math.ceil(value / 5), 10); // More points for higher values
+                    for (let i = 0; i < pointCount; i++) {
+                        const lat = coords[1] + (Math.random() - 0.5) * 0.02;
+                        const lng = coords[0] + (Math.random() - 0.5) * 0.02;
+                        heatData.push([lat, lng, intensity * 0.3]); // Lower intensity for spread
                     }
                 }
             });
+            
+            // Gradient colors based on heatmap type
+            let gradient;
+            switch(heatmapType) {
+                case 'work_count':
+                    gradient = {0.4: 'blue', 0.65: 'lime', 1: 'red'};
+                    break;
+                case 'work_cost':
+                    gradient = {0.4: 'green', 0.65: 'yellow', 1: 'red'};
+                    break;
+                case 'income':
+                    gradient = {0.4: 'green', 0.7: 'lime', 1: '#00FF00'};
+                    break;
+                case 'expense':
+                    gradient = {0.4: 'orange', 0.7: '#FF4500', 1: 'red'};
+                    break;
+                default:
+                    gradient = {0.4: 'blue', 0.65: 'lime', 1: 'red'};
+            }
             
             // Create heatmap layer
             heatmapLayer = L.heatLayer(heatData, {
                 radius: 25,
                 blur: 15,
                 maxZoom: 17,
-                gradient: {0.4: 'blue', 0.65: 'lime', 1: 'red'}
-            });
+                gradient: gradient
+            }).addTo(map);
         }
         
         // Event listeners for map controls
@@ -393,18 +514,65 @@
             });
         });
         
-        // Heatmap toggle
-        document.getElementById('workHeatmapToggle').addEventListener('change', function() {
+        // Heatmap type selector
+        document.getElementById('heatmapTypeSelect').addEventListener('change', function() {
+            const heatmapType = this.value;
+            // Create new heatmap based on selection
+            createHeatmap(heatmapType);
+        });
+        
+        // LGA layer toggle
+        document.getElementById('lgaLayerToggle').addEventListener('change', function() {
             if (this.checked) {
-                // Create and add heatmap if not already created
-                if (!heatmapLayer) {
-                    createHeatmap();
-                }
-                map.addLayer(heatmapLayer);
+                // Initialize and show LGA layer using the shared component
+                PropIntelMaps.initLgaLayer(map, {
+                    styleCallback: function(feature, defaultStyle) {
+                        return {
+                            color: '#3388ff',
+                            weight: 1,
+                            opacity: 0.5,
+                            fillOpacity: 0.1
+                        };
+                    },
+                    getPropertiesCallback: function(feature, layer) {
+                        // Calculate property statistics for this LGA
+                        let propertyCount = 0;
+                        let workCount = 0;
+                        let income = 0;
+                        let expenses = 0;
+                        
+                        // This is a simplified approach - for production, these statistics 
+                        // would come from the server
+                        propertiesData.features.forEach(function(prop) {
+                            // Create a Leaflet layer for the feature to use its bounds
+                            const lgaLayer = L.geoJSON(feature);
+                            const point = L.latLng(
+                                prop.geometry.coordinates[1], 
+                                prop.geometry.coordinates[0]
+                            );
+                            
+                            // Check if point is inside the LGA bounds
+                            if (lgaLayer.getBounds().contains(point)) {
+                                propertyCount++;
+                                workCount += prop.properties.work_count || 0;
+                                income += prop.properties.income || 0;
+                                expenses += prop.properties.expenses || 0;
+                            }
+                        });
+                        
+                        return {
+                            propertyCount: propertyCount,
+                            workCount: workCount,
+                            income: income,
+                            expenses: expenses
+                        };
+                    }
+                });
             } else {
-                // Remove heatmap
-                if (heatmapLayer) {
-                    map.removeLayer(heatmapLayer);
+                // Remove LGA layer
+                if (window.currentLgaLayer) {
+                    map.removeLayer(window.currentLgaLayer);
+                    window.currentLgaLayer = null;
                 }
             }
         });

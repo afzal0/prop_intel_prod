@@ -16,7 +16,7 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 import configparser
 import hashlib
-import datetime
+from datetime import datetime, timedelta
 import shutil
 from werkzeug.security import generate_password_hash
 
@@ -351,13 +351,13 @@ Copy and add this code to app.py after the Flask app creation
 
 import os
 from flask_session import Session
-import datetime
+from datetime import datetime, timedelta
 
 # Configure Flask-Session for server-side session storage
 app.config['SESSION_TYPE'] = 'filesystem'  # Use filesystem-based sessions
 app.config['SESSION_FILE_DIR'] = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'flask_session')
 app.config['SESSION_PERMANENT'] = True
-app.config['PERMANENT_SESSION_LIFETIME'] = datetime.timedelta(days=30)
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=30)
 app.config['SESSION_USE_SIGNER'] = True  # Sign the session cookie
 app.config['SESSION_KEY_PREFIX'] = 'propintel_session_'  # Prefix for session keys
 
@@ -407,7 +407,7 @@ Template filters for PropIntel
 Add these to your app.py file after creating the Flask app
 '''
 
-import datetime
+from datetime import datetime, timedelta
 import locale
 
 # Set locale for currency formatting
@@ -811,7 +811,7 @@ Add this code after creating the Flask app (`app = Flask(__name__)`):
 app.config['SESSION_TYPE'] = 'filesystem'  # Use filesystem-based sessions
 app.config['SESSION_FILE_DIR'] = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'flask_session')
 app.config['SESSION_PERMANENT'] = True
-app.config['PERMANENT_SESSION_LIFETIME'] = datetime.timedelta(days=30)
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=30)
 app.config['SESSION_USE_SIGNER'] = True  # Sign the session cookie
 app.config['SESSION_KEY_PREFIX'] = 'propintel_session_'  # Prefix for session keys
 

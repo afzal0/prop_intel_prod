@@ -3,6 +3,22 @@
 
 {% block extra_head %}
 <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.css" />
+<style>
+    #document-map {
+        height: 300px;
+        width: 100%;
+        border-radius: 0.375rem;
+        margin-top: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .location-help-text {
+        font-size: 0.875rem;
+        color: #6c757d;
+        margin-top: 0.5rem;
+    }
+</style>
 {% endblock %}
 
 {% block content %}
@@ -25,7 +41,7 @@
         <div class="col-md-8">
             <div class="card">
                 <div class="card-body">
-                    <form action="{{ url_for('upload_document') }}" method="post" enctype="multipart/form-data">
+                    <form action="{{ url_for('document_upload') }}" method="post" enctype="multipart/form-data">
                         <div class="mb-3">
                             <label for="documentName" class="form-label">Document Name <span class="text-danger">*</span></label>
                             <input type="text" class="form-control" id="documentName" name="document_name" required>
@@ -59,31 +75,34 @@
                         </div>
                         
                         <div class="mb-3">
-                            <label for="address" class="form-label">Location Address</label>
-                            <input type="text" class="form-control" id="address" name="address" placeholder="Enter an address associated with this document (optional)">
-                            <div class="form-text">Address will be geocoded to display on the map.</div>
-                        </div>
-                        
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
+                            <div class="d-flex justify-content-between">
+                                <label class="form-label">Document Location (Optional)</label>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" id="clearLocationBtn">
+                                    <i class="fas fa-times-circle me-1"></i> Clear Location
+                                </button>
+                            </div>
+                            <div class="input-group mb-2">
+                                <input type="text" class="form-control" id="address" name="address" placeholder="Search for address">
+                                <button class="btn btn-outline-secondary" type="button" id="geocodeBtn">
+                                    <i class="fas fa-search"></i> Search
+                                </button>
+                            </div>
+                            <div class="location-help-text">
+                                You can also click directly on the map to set the location
+                            </div>
+                            
+                            <div id="document-map"></div>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
                                     <label for="latitude" class="form-label">Latitude</label>
-                                    <input type="number" step="any" class="form-control" id="latitude" name="latitude" placeholder="e.g. -37.8136">
+                                    <input type="text" class="form-control" id="latitude" name="latitude" readonly>
                                 </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
+                                <div class="col-md-6">
                                     <label for="longitude" class="form-label">Longitude</label>
-                                    <input type="number" step="any" class="form-control" id="longitude" name="longitude" placeholder="e.g. 144.9631">
+                                    <input type="text" class="form-control" id="longitude" name="longitude" readonly>
                                 </div>
                             </div>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <button type="button" id="geocodeBtn" class="btn btn-outline-secondary btn-sm">
-                                <i class="fas fa-map-marker-alt me-1"></i> Geocode Address
-                            </button>
-                            <div class="form-text mt-1">Click to convert the address to coordinates</div>
                         </div>
                         
                         <div class="mb-4">
@@ -153,7 +172,7 @@
             </div>
             
             <div class="mt-3 text-center">
-                <a href="{{ url_for('import_lga_shapefile') }}" class="btn btn-outline-secondary">
+                <a href="{{ url_for('import_lga_data') }}" class="btn btn-outline-secondary">
                     <i class="fas fa-sync me-2"></i>Import/Update LGA Data from Shapefile
                 </a>
             </div>
@@ -163,8 +182,53 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Initialize map
+        const map = L.map('document-map').setView([-37.8136, 144.9631], 10);
+        
+        // Add the OpenStreetMap tile layer
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+            maxZoom: 19
+        }).addTo(map);
+        
+        // Create a marker variable to store the marker
+        let marker = null;
+        
+        // Add location marker when map is clicked
+        map.on('click', function(e) {
+            setMarkerLocation(e.latlng.lat, e.latlng.lng);
+        });
+        
+        // Function to set marker location and update form fields
+        function setMarkerLocation(lat, lng) {
+            // Remove existing marker if any
+            if (marker) {
+                map.removeLayer(marker);
+            }
+            
+            // Create new marker
+            marker = L.marker([lat, lng], {
+                draggable: true
+            }).addTo(map);
+            
+            // Update form fields
+            document.getElementById('latitude').value = lat.toFixed(6);
+            document.getElementById('longitude').value = lng.toFixed(6);
+            
+            // Handle marker drag
+            marker.on('dragend', function(e) {
+                const position = marker.getLatLng();
+                document.getElementById('latitude').value = position.lat.toFixed(6);
+                document.getElementById('longitude').value = position.lng.toFixed(6);
+            });
+            
+            // Center map on marker
+            map.setView([lat, lng], 15);
+        }
+        
         // Geocode button handler
         document.getElementById('geocodeBtn').addEventListener('click', function() {
             const address = document.getElementById('address').value.trim();
@@ -178,33 +242,101 @@
             this.disabled = true;
             
             // Call geocoding API (Nominatim/OpenStreetMap)
-            fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`)
+            fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`)
                 .then(response => response.json())
                 .then(data => {
                     if (data && data.length > 0) {
                         // Get the first result
                         const result = data[0];
                         
-                        // Update form fields
-                        document.getElementById('latitude').value = result.lat;
-                        document.getElementById('longitude').value = result.lon;
-                        
-                        // Show success
-                        alert("Address geocoded successfully!");
+                        // Set marker and update form fields
+                        setMarkerLocation(parseFloat(result.lat), parseFloat(result.lon));
                     } else {
-                        alert("Could not geocode the address. Please try a different address or enter coordinates manually.");
+                        alert("Could not geocode the address. Please try a different address or click directly on the map.");
                     }
                 })
                 .catch(error => {
                     console.error('Error geocoding address:', error);
-                    alert("Error geocoding address. Please try again later or enter coordinates manually.");
+                    alert("Error geocoding address. Please try again later or click directly on the map.");
                 })
                 .finally(() => {
                     // Reset button
-                    this.innerHTML = '<i class="fas fa-map-marker-alt me-1"></i> Geocode Address';
+                    this.innerHTML = '<i class="fas fa-search"></i> Search';
                     this.disabled = false;
                 });
         });
+        
+        // Clear location button
+        document.getElementById('clearLocationBtn').addEventListener('click', function() {
+            if (marker) {
+                map.removeLayer(marker);
+                marker = null;
+            }
+            document.getElementById('latitude').value = '';
+            document.getElementById('longitude').value = '';
+            document.getElementById('address').value = '';
+        });
+        
+        // LGA selection changes map view
+        document.getElementById('lgaSelect').addEventListener('change', function() {
+            const lgaId = parseInt(this.value);
+            if (!lgaId) return;
+            
+            // Make a request to get the LGA boundary
+            fetch(`/builders-hub?lga_geojson=true`)
+                .then(response => response.json())
+                .then(data => {
+                    // Find the selected LGA
+                    const lgaFeature = data.features.find(f => f.properties.lga_id === lgaId);
+                    if (lgaFeature) {
+                        // Create a layer for the LGA
+                        const lgaLayer = L.geoJSON(lgaFeature);
+                        
+                        // Fit the map to the LGA bounds
+                        map.fitBounds(lgaLayer.getBounds());
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading LGA boundaries:', error);
+                });
+        });
+        
+        // Load LGA boundaries
+        fetch('/builders-hub?lga_geojson=true')
+            .then(response => response.json())
+            .then(data => {
+                // Create LGA layer with styling
+                L.geoJSON(data, {
+                    style: {
+                        color: '#3388ff',
+                        weight: 1,
+                        opacity: 0.4,
+                        fillOpacity: 0.05,
+                        fillColor: '#3388ff'
+                    },
+                    onEachFeature: function(feature, layer) {
+                        // Add click handler
+                        layer.on('click', function(e) {
+                            // Set LGA dropdown to the clicked LGA
+                            const lgaId = feature.properties.lga_id;
+                            const lgaSelect = document.getElementById('lgaSelect');
+                            if (lgaSelect) {
+                                lgaSelect.value = lgaId;
+                            }
+                            
+                            // Set marker at the clicked location
+                            const latlng = e.latlng;
+                            setMarkerLocation(latlng.lat, latlng.lng);
+                            
+                            // Stop propagation to prevent the map click handler
+                            e.originalEvent.stopPropagation();
+                        });
+                    }
+                }).addTo(map);
+            })
+            .catch(error => {
+                console.error('Error loading LGA boundaries:', error);
+            });
     });
 </script>
 {% endblock %}

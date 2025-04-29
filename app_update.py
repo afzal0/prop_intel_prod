@@ -1,5 +1,5 @@
 import os
-import datetime
+from datetime import datetime
 from werkzeug.utils import secure_filename
 from flask import g, redirect, url_for, flash, request, abort, render_template
 import psycopg2
@@ -61,7 +61,7 @@ def new_property():
         purchase_date = None
         if purchase_date_str:
             try:
-                purchase_date = datetime.datetime.strptime(purchase_date_str, '%Y-%m-%d').date()
+                purchase_date = datetime.strptime(purchase_date_str, '%Y-%m-%d').date()
             except ValueError:
                 flash('Invalid purchase date format', 'warning')
         
@@ -73,7 +73,7 @@ def new_property():
                 # Create a secure filename
                 filename = secure_filename(property_image.filename)
                 # Add timestamp to avoid name collisions
-                timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+                timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
                 new_filename = f"{timestamp}_{filename}"
                 # Save the image
                 property_dir = os.path.join(UPLOAD_FOLDER, 'properties')
@@ -173,7 +173,7 @@ def new_work(property_id):
             return redirect(url_for('new_work', property_id=property_id))
         
         try:
-            work_date = datetime.datetime.strptime(work_date, '%Y-%m-%d').date()
+            work_date = datetime.strptime(work_date, '%Y-%m-%d').date()
             work_cost = float(work_cost) if work_cost else 0
         except ValueError:
             flash('Invalid date or cost format', 'danger')
@@ -187,7 +187,7 @@ def new_work(property_id):
                 # Create a secure filename
                 filename = secure_filename(work_image.filename)
                 # Add timestamp to avoid name collisions
-                timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+                timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
                 new_filename = f"{timestamp}_{filename}"
                 # Save the image
                 work_dir = os.path.join(UPLOAD_FOLDER, 'work')
@@ -298,7 +298,7 @@ def new_expense(property_id):
             return redirect(url_for('new_expense', property_id=property_id))
         
         try:
-            expense_date = datetime.datetime.strptime(expense_date, '%Y-%m-%d').date()
+            expense_date = datetime.strptime(expense_date, '%Y-%m-%d').date()
             expense_amount = float(expense_amount)
         except ValueError:
             flash('Invalid date or amount format', 'danger')
@@ -312,7 +312,7 @@ def new_expense(property_id):
                 # Create a secure filename
                 filename = secure_filename(expense_image.filename)
                 # Add timestamp to avoid name collisions
-                timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+                timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
                 new_filename = f"{timestamp}_{filename}"
                 # Save the image
                 receipts_dir = os.path.join(UPLOAD_FOLDER, 'receipts')

@@ -6,7 +6,7 @@ property analytics dashboard page.
 """
 
 import json
-import datetime
+from datetime import datetime, timedelta
 import random
 import decimal
 import urllib.request
@@ -357,8 +357,8 @@ def get_analytics_data(property_id=None, date_range=365, category=None):
             
             # Calculate change percentages compared to previous period
             if date_range > 30:
-                prev_period_start = datetime.datetime.now() - datetime.timedelta(days=date_range*2)
-                prev_period_end = datetime.datetime.now() - datetime.timedelta(days=date_range)
+                prev_period_start = datetime.now() - timedelta(days=date_range*2)
+                prev_period_end = datetime.now() - timedelta(days=date_range)
                 
                 # Previous period income
                 cur.execute(f"""
@@ -984,14 +984,14 @@ def get_demo_data():
     geojson = prepare_property_geojson(demo_properties, fetch_polygons=False)
     
     # Generate 12 months of data
-    now = datetime.datetime.now()
+    now = datetime.now()
     labels = []
     income_data = []
     expense_data = []
     work_cost_data = []
     
     for i in range(12):
-        month_date = now - datetime.timedelta(days=30*(11-i))
+        month_date = now - timedelta(days=30*(11-i))
         labels.append(month_date.strftime('%b %Y'))
         income_data.append(random.uniform(10000, 20000))
         expense_data.append(random.uniform(5000, 12000))
@@ -1049,11 +1049,11 @@ def get_demo_data():
             })
     
     # Demo pending work
-    now = datetime.datetime.now()
+    now = datetime.now()
     pending_work = [
-        {'work_id': 1, 'property_name': 'Property A', 'work_description': 'Repair roof', 'work_date': now + datetime.timedelta(days=5), 'work_cost': 1500, 'status': 'Pending'},
-        {'work_id': 2, 'property_name': 'Property B', 'work_description': 'Replace windows', 'work_date': now + datetime.timedelta(days=10), 'work_cost': 3000, 'status': 'Pending'},
-        {'work_id': 3, 'property_name': 'Property C', 'work_description': 'Paint exterior', 'work_date': now + datetime.timedelta(days=15), 'work_cost': 2500, 'status': 'Pending'}
+        {'work_id': 1, 'property_name': 'Property A', 'work_description': 'Repair roof', 'work_date': now + timedelta(days=5), 'work_cost': 1500, 'status': 'Pending'},
+        {'work_id': 2, 'property_name': 'Property B', 'work_description': 'Replace windows', 'work_date': now + timedelta(days=10), 'work_cost': 3000, 'status': 'Pending'},
+        {'work_id': 3, 'property_name': 'Property C', 'work_description': 'Paint exterior', 'work_date': now + timedelta(days=15), 'work_cost': 2500, 'status': 'Pending'}
     ]
     
     return {

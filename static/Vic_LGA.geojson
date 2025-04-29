@@ -1,0 +1,115 @@
+{
+    "type": "FeatureCollection",
+    "features": [
+        {
+            "type": "Feature",
+            "properties": {
+                "LGA_NAME": "Melbourne",
+                "STATE": "VIC"
+            },
+            "geometry": {
+                "type": "Polygon",
+                "coordinates": [[[144.9, -37.8], [145.0, -37.8], [145.0, -37.9], [144.9, -37.9], [144.9, -37.8]]]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "LGA_NAME": "Port Phillip",
+                "STATE": "VIC"
+            },
+            "geometry": {
+                "type": "Polygon",
+                "coordinates": [[[144.95, -37.85], [145.05, -37.85], [145.05, -37.95], [144.95, -37.95], [144.95, -37.85]]]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "LGA_NAME": "Yarra",
+                "STATE": "VIC"
+            },
+            "geometry": {
+                "type": "Polygon",
+                "coordinates": [[[144.98, -37.79], [145.08, -37.79], [145.08, -37.89], [144.98, -37.89], [144.98, -37.79]]]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "LGA_NAME": "Bayside",
+                "STATE": "VIC"
+            },
+            "geometry": {
+                "type": "Polygon",
+                "coordinates": [[[145.0, -37.95], [145.1, -37.95], [145.1, -38.05], [145.0, -38.05], [145.0, -37.95]]]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "LGA_NAME": "Monash",
+                "STATE": "VIC"
+            },
+            "geometry": {
+                "type": "Polygon",
+                "coordinates": [[[145.1, -37.9], [145.2, -37.9], [145.2, -38.0], [145.1, -38.0], [145.1, -37.9]]]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "LGA_NAME": "Wyndham",
+                "STATE": "VIC"
+            },
+            "geometry": {
+                "type": "Polygon",
+                "coordinates": [[[144.5, -37.85], [144.7, -37.85], [144.7, -38.05], [144.5, -38.05], [144.5, -37.85]]]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "LGA_NAME": "Maribyrnong",
+                "STATE": "VIC"
+            },
+            "geometry": {
+                "type": "Polygon",
+                "coordinates": [[[144.85, -37.75], [144.95, -37.75], [144.95, -37.85], [144.85, -37.85], [144.85, -37.75]]]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "LGA_NAME": "Moonee Valley",
+                "STATE": "VIC"
+            },
+            "geometry": {
+                "type": "Polygon",
+                "coordinates": [[[144.88, -37.72], [144.97, -37.72], [144.97, -37.78], [144.88, -37.78], [144.88, -37.72]]]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "LGA_NAME": "Banyule",
+                "STATE": "VIC"
+            },
+            "geometry": {
+                "type": "Polygon",
+                "coordinates": [[[145.05, -37.7], [145.15, -37.7], [145.15, -37.8], [145.05, -37.8], [145.05, -37.7]]]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "LGA_NAME": "Moreland",
+                "STATE": "VIC"
+            },
+            "geometry": {
+                "type": "Polygon",
+                "coordinates": [[[144.92, -37.7], [144.99, -37.7], [144.99, -37.78], [144.92, -37.78], [144.92, -37.7]]]
+            }
+        }
+    ]
+}

@@ -103,7 +103,6 @@ def forbidden_error(error):
                          error_message="Forbidden. You don't have permission to access this resource."), 403
 
 # Register template filters
-import datetime
 import locale
 
 # Set locale for currency formatting
@@ -2711,6 +2710,213 @@ def property_detail(property_id):
         material_expense_total=material_expense_total,
         misc_expense_total=misc_expense_total
     )
+
+@app.route('/property/<int:property_id>/edit', methods=['POST'])
+@login_required
+def edit_property(property_id):
+    """Edit property details"""
+    # Check if property exists and user has permission to edit it
+    conn = None
+    try:
+        conn = get_db_connection()
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            # Get property details
+            cur.execute("""
+                SELECT * FROM propintel.properties WHERE property_id = %s
+            """, (property_id,))
+            property_data = cur.fetchone()
+            
+            if not property_data:
+                flash('Property not found', 'danger')
+                return redirect(url_for('properties'))
+            
+            # Check if user has permission to edit this property
+            if g.user['role'] != 'admin' and property_data['user_id'] != g.user['user_id']:
+                flash('You do not have permission to edit this property', 'danger')
+                return redirect(url_for('property_detail', property_id=property_id))
+            
+            # Get form data
+            property_name = request.form.get('property_name')
+            address = request.form.get('address')
+            location = request.form.get('location')
+            property_type = request.form.get('property_type')
+            project_manager = request.form.get('project_manager')
+            status = request.form.get('status')
+            start_date = request.form.get('start_date') or None
+            completion_date = request.form.get('completion_date') or None
+            notes = request.form.get('notes')
+            
+            # Update property details
+            cur.execute("""
+                UPDATE propintel.properties 
+                SET property_name = %s, 
+                    address = %s, 
+                    location = %s, 
+                    property_type = %s,
+                    project_manager = %s,
+                    status = %s,
+                    start_date = %s,
+                    completion_date = %s,
+                    notes = %s
+                WHERE property_id = %s
+            """, (
+                property_name, 
+                address, 
+                location, 
+                property_type,
+                project_manager,
+                status,
+                start_date,
+                completion_date,
+                notes,
+                property_id
+            ))
+            conn.commit()
+            
+            # Handle property image upload
+            if 'property_image' in request.files and request.files['property_image'].filename:
+                property_image = request.files['property_image']
+                
+                # Check if the file is allowed
+                if property_image and allowed_file(property_image.filename):
+                    # Generate secure filename
+                    filename = secure_filename(property_image.filename)
+                    timestamp = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
+                    unique_filename = f"{timestamp}_{filename}"
+                    
+                    # Save the file
+                    property_image_path = os.path.join(app.config['PROPERTY_IMAGES'], unique_filename)
+                    full_path = os.path.join(app.static_folder, 'images', 'properties', unique_filename)
+                    
+                    # Create directory if it doesn't exist
+                    os.makedirs(os.path.dirname(full_path), exist_ok=True)
+                    property_image.save(full_path)
+                    
+                    # Add image to database
+                    cur.execute("""
+                        INSERT INTO propintel.property_images 
+                        (property_id, image_path, image_type, upload_date)
+                        VALUES (%s, %s, %s, CURRENT_TIMESTAMP)
+                    """, (property_id, unique_filename, 'property'))
+                    conn.commit()
+            
+            flash('Property updated successfully', 'success')
+            
+    except Exception as e:
+        logger.error(f"Error updating property: {e}", exc_info=True)
+        flash(f"Error updating property: {str(e)}", 'danger')
+        if conn:
+            conn.rollback()
+    finally:
+        if conn:
+            conn.close()
+    
+    return redirect(url_for('property_detail', property_id=property_id))
+
+@app.route('/property/<int:property_id>/add_image', methods=['POST'])
+@login_required
+def add_property_image(property_id):
+    """Add a new image to a property"""
+    conn = None
+    try:
+        # Check if property exists
+        conn = get_db_connection()
+        with conn.cursor() as cur:
+            cur.execute("SELECT property_id FROM propintel.properties WHERE property_id = %s", (property_id,))
+            if not cur.fetchone():
+                flash('Property not found', 'danger')
+                return redirect(url_for('properties'))
+        
+        # Handle image upload
+        if 'property_image' not in request.files or not request.files['property_image'].filename:
+            flash('No image selected', 'warning')
+            return redirect(url_for('property_detail', property_id=property_id))
+            
+        property_image = request.files['property_image']
+        
+        # Check if the file is allowed
+        if not allowed_file(property_image.filename):
+            flash('File type not allowed', 'danger')
+            return redirect(url_for('property_detail', property_id=property_id))
+        
+        # Generate secure filename
+        filename = secure_filename(property_image.filename)
+        timestamp = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
+        unique_filename = f"{timestamp}_{filename}"
+        
+        # Save the file
+        property_image_path = os.path.join(app.config['PROPERTY_IMAGES'], unique_filename)
+        full_path = os.path.join(app.static_folder, 'images', 'properties', unique_filename)
+        
+        # Create directory if it doesn't exist
+        os.makedirs(os.path.dirname(full_path), exist_ok=True)
+        property_image.save(full_path)
+        
+        # Add image to database
+        with conn.cursor() as cur:
+            cur.execute("""
+                INSERT INTO propintel.property_images 
+                (property_id, image_path, image_type, upload_date)
+                VALUES (%s, %s, %s, CURRENT_TIMESTAMP)
+            """, (property_id, unique_filename, 'property'))
+            conn.commit()
+            
+        flash('Image added successfully', 'success')
+        
+    except Exception as e:
+        logger.error(f"Error adding property image: {e}", exc_info=True)
+        flash(f"Error adding property image: {str(e)}", 'danger')
+        if conn:
+            conn.rollback()
+    finally:
+        if conn:
+            conn.close()
+    
+    return redirect(url_for('property_detail', property_id=property_id))
+
+@app.route('/property/<int:property_id>/delete_image/<int:image_id>', methods=['POST'])
+@login_required
+def delete_property_image(property_id, image_id):
+    """Delete a property image"""
+    conn = None
+    try:
+        conn = get_db_connection()
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            # Get the image path before deleting
+            cur.execute("""
+                SELECT image_path FROM propintel.property_images 
+                WHERE image_id = %s AND property_id = %s
+            """, (image_id, property_id))
+            image = cur.fetchone()
+            
+            if not image:
+                flash('Image not found', 'danger')
+                return redirect(url_for('property_detail', property_id=property_id))
+            
+            # Delete the image file
+            image_path = os.path.join(app.static_folder, 'images', 'properties', image['image_path'])
+            if os.path.exists(image_path):
+                os.remove(image_path)
+            
+            # Delete from database
+            cur.execute("""
+                DELETE FROM propintel.property_images 
+                WHERE image_id = %s AND property_id = %s
+            """, (image_id, property_id))
+            conn.commit()
+            
+            flash('Image deleted successfully', 'success')
+            
+    except Exception as e:
+        logger.error(f"Error deleting property image: {e}", exc_info=True)
+        flash(f"Error deleting property image: {str(e)}", 'danger')
+        if conn:
+            conn.rollback()
+    finally:
+        if conn:
+            conn.close()
+    
+    return redirect(url_for('property_detail', property_id=property_id))
 
 
 @app.route('/map')

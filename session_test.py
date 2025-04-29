@@ -8,7 +8,7 @@ Run this to test if sessions work correctly
 from flask import Flask, session, redirect, url_for, request
 from flask_session import Session
 import os
-import datetime
+from datetime import datetime, timedelta
 
 app = Flask(__name__)
 
@@ -16,7 +16,7 @@ app = Flask(__name__)
 app.config["SESSION_PERMANENT"] = True
 app.config["SESSION_TYPE"] = "filesystem"
 app.config["SESSION_FILE_DIR"] = os.path.join(os.path.dirname(os.path.abspath(__file__)), "flask_session")
-app.config["PERMANENT_SESSION_LIFETIME"] = datetime.timedelta(days=31)
+app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=31)
 app.secret_key = "session-test-key"
 
 # Initialize Flask-Session
