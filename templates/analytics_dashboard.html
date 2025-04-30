@@ -1096,23 +1096,175 @@
     }
     
     function initializeMap() {
-        // Create map with default view
-        map = L.map('property-map', {
-            zoomControl: true,
-            scrollWheelZoom: true
-        }).setView([40.7128, -74.0060], 12);
+        // Initialize map
+        map = L.map('property-map').setView([-37.8136, 144.9631], 11);
         
-        // Add tile layers
-        mapLayers.standard = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        // Add tile layer
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         }).addTo(map);
         
-        mapLayers.satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-            attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
-        });
+        // Create property markers layer
+        propertiesLayer = L.layerGroup().addTo(map);
+        
+        // Create heatmap layer (initialized empty)
+        if (window.L && window.L.heatLayer) {
+            mapLayers.heatmap = L.heatLayer([], {
+                radius: 25,
+                blur: 15,
+                maxZoom: 17,
+                gradient: {0.4: 'blue', 0.65: 'lime', 1: 'red'}
+            });
+        } else {
+            console.warn("Leaflet.heat plugin not loaded. Heatmap will not be available.");
+        }
         
         // Add properties to map
         addPropertiesToMap();
+        
+        // Add property filter change handler
+        document.getElementById('propertyFilter').addEventListener('change', function() {
+            if (this.value !== 'all') {
+                // Zoom to the selected property
+                selectProperty(this.value);
+            } else {
+                // Show all properties
+                updateDashboardData();
+                
+                // If we have properties, fit the map to show all of them
+                if (geojsonData && geojsonData.features && geojsonData.features.length > 0) {
+                    const bounds = L.latLngBounds(geojsonData.features.map(function(feature) {
+                        const coords = feature.geometry.coordinates;
+                        return [coords[1], coords[0]];
+                    }));
+                    map.fitBounds(bounds);
+                }
+            }
+        });
+        
+        // Add heatmap toggle
+        const heatmapToggle = document.createElement('div');
+        heatmapToggle.className = 'leaflet-control leaflet-bar';
+        heatmapToggle.style.padding = '10px';
+        heatmapToggle.style.backgroundColor = 'white';
+        heatmapToggle.style.border = '2px solid rgba(0,0,0,0.2)';
+        heatmapToggle.style.borderRadius = '4px';
+        
+        // Add heatmap type selector
+        const heatmapSelect = document.createElement('select');
+        heatmapSelect.className = 'form-select form-select-sm';
+        heatmapSelect.innerHTML = `
+            <option value="none">No Heatmap</option>
+            <option value="income">Income</option>
+            <option value="expense">Expenses</option>
+            <option value="work">Work Count</option>
+        `;
+        
+        heatmapSelect.addEventListener('change', function() {
+            const heatmapType = this.value;
+            updateHeatmap(heatmapType);
+        });
+        
+        heatmapToggle.appendChild(heatmapSelect);
+        
+        // Create custom control
+        const heatmapControl = L.Control.extend({
+            options: {
+                position: 'topright'
+            },
+            onAdd: function() {
+                return heatmapToggle;
+            }
+        });
+        
+        // Add control to map
+        map.addControl(new heatmapControl());
+    }
+    
+    function updateHeatmap(heatmapType) {
+        // Remove existing heatmap if any
+        if (mapLayers.heatmap && map.hasLayer(mapLayers.heatmap)) {
+            map.removeLayer(mapLayers.heatmap);
+        }
+        
+        // If none selected, don't create a heatmap
+        if (heatmapType === 'none') {
+            return;
+        }
+        
+        // Generate heatmap data based on selected type
+        const heatData = [];
+        
+        if (geojsonData && geojsonData.features) {
+            geojsonData.features.forEach(function(feature) {
+                const property = feature.properties;
+                const coords = feature.geometry.coordinates;
+                let value = 0;
+                
+                // Set value based on heatmap type
+                switch(heatmapType) {
+                    case 'work':
+                        value = property.work_count || 0;
+                        break;
+                    case 'income':
+                        value = property.income || 0;
+                        break;
+                    case 'expense':
+                        value = property.expenses || 0;
+                        break;
+                }
+                
+                // Only add points with non-zero values
+                if (value > 0) {
+                    // Scale value for better visualization
+                    let intensity;
+                    
+                    if (heatmapType === 'work') {
+                        intensity = Math.min(value * 0.8, 30); // Cap at 30 for count
+                    } else {
+                        // For monetary values, use logarithmic scale to handle wide ranges
+                        intensity = Math.log(value + 1) * 2;
+                    }
+                    
+                    // Add main point with higher intensity
+                    heatData.push([coords[1], coords[0], intensity]);
+                    
+                    // Add random nearby points for better visualization
+                    const pointCount = Math.min(Math.ceil(value / 5), 10); // More points for higher values
+                    for (let i = 0; i < pointCount; i++) {
+                        const lat = coords[1] + (Math.random() - 0.5) * 0.02;
+                        const lng = coords[0] + (Math.random() - 0.5) * 0.02;
+                        heatData.push([lat, lng, intensity * 0.3]); // Lower intensity for spread
+                    }
+                }
+            });
+        }
+        
+        // Set gradient colors based on heatmap type
+        let gradient;
+        switch(heatmapType) {
+            case 'work':
+                gradient = {0.4: 'blue', 0.65: 'lime', 1: 'red'};
+                break;
+            case 'income':
+                gradient = {0.4: 'green', 0.7: 'lime', 1: '#00FF00'};
+                break;
+            case 'expense':
+                gradient = {0.4: 'orange', 0.7: '#FF4500', 1: 'red'};
+                break;
+            default:
+                gradient = {0.4: 'blue', 0.65: 'lime', 1: 'red'};
+        }
+        
+        // Create heatmap layer
+        if (window.L && window.L.heatLayer) {
+            mapLayers.heatmap = L.heatLayer(heatData, {
+                radius: 25,
+                blur: 15,
+                maxZoom: 17,
+                gradient: gradient
+            }).addTo(map);
+        }
     }
     
     function addPropertiesToMap() {

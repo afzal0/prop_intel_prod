@@ -523,56 +523,64 @@
         
         // LGA layer toggle
         document.getElementById('lgaLayerToggle').addEventListener('change', function() {
-            if (this.checked) {
-                // Initialize and show LGA layer using the shared component
-                PropIntelMaps.initLgaLayer(map, {
-                    styleCallback: function(feature, defaultStyle) {
-                        return {
-                            color: '#3388ff',
-                            weight: 1,
-                            opacity: 0.5,
-                            fillOpacity: 0.1
-                        };
-                    },
-                    getPropertiesCallback: function(feature, layer) {
-                        // Calculate property statistics for this LGA
-                        let propertyCount = 0;
-                        let workCount = 0;
-                        let income = 0;
-                        let expenses = 0;
-                        
-                        // This is a simplified approach - for production, these statistics 
-                        // would come from the server
-                        propertiesData.features.forEach(function(prop) {
-                            // Create a Leaflet layer for the feature to use its bounds
-                            const lgaLayer = L.geoJSON(feature);
-                            const point = L.latLng(
-                                prop.geometry.coordinates[1], 
-                                prop.geometry.coordinates[0]
-                            );
-                            
-                            // Check if point is inside the LGA bounds
-                            if (lgaLayer.getBounds().contains(point)) {
-                                propertyCount++;
-                                workCount += prop.properties.work_count || 0;
-                                income += prop.properties.income || 0;
-                                expenses += prop.properties.expenses || 0;
+            const showLgaLayer = this.checked;
+            
+            if (showLgaLayer) {
+                // Add LGA layer if it's not already on the map
+                if (!window.currentLgaLayer || !map.hasLayer(window.currentLgaLayer)) {
+                    // Import the shared LGA utilities
+                    if (window.PropIntelMaps && window.PropIntelMaps.initLgaLayer) {
+                        // Initialize LGA layer with custom options
+                        window.PropIntelMaps.initLgaLayer(map, {
+                            showPopup: true,
+                            highlightOnHover: true,
+                            // Add custom style for better visibility with property markers
+                            styleCallback: function(feature, defaultStyle) {
+                                return {
+                                    color: '#3388ff',
+                                    weight: 2,
+                                    opacity: 0.7,
+                                    fillOpacity: 0.1,
+                                    fillColor: '#3388ff'
+                                };
+                            },
+                            getPropertiesCallback: function(feature) {
+                                // Count properties in this LGA
+                                const lgaName = feature.properties.lga_name.toLowerCase();
+                                const propertiesInLga = propertiesData.features.filter(function(p) {
+                                    return p.properties.location && 
+                                        p.properties.location.toLowerCase().includes(lgaName);
+                                });
+                                
+                                // Calculate totals
+                                let income = 0;
+                                let expenses = 0;
+                                let workCount = 0;
+                                
+                                propertiesInLga.forEach(function(p) {
+                                    income += p.properties.income || 0;
+                                    expenses += p.properties.expenses || 0;
+                                    workCount += p.properties.work_count || 0;
+                                });
+                                
+                                return {
+                                    propertyCount: propertiesInLga.length,
+                                    income: income,
+                                    expenses: expenses,
+                                    workCount: workCount
+                                };
                             }
                         });
-                        
-                        return {
-                            propertyCount: propertyCount,
-                            workCount: workCount,
-                            income: income,
-                            expenses: expenses
-                        };
+                    } else {
+                        console.error('LGA mapping utilities not found');
+                        alert('LGA boundary display is not available.');
+                        this.checked = false;
                     }
-                });
+                }
             } else {
-                // Remove LGA layer
-                if (window.currentLgaLayer) {
+                // Remove LGA layer if it exists
+                if (window.currentLgaLayer && map.hasLayer(window.currentLgaLayer)) {
                     map.removeLayer(window.currentLgaLayer);
-                    window.currentLgaLayer = null;
                 }
             }
         });

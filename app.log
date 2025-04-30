@@ -383,3 +383,224 @@ AttributeError: module 'property_data_extractor' has no attribute 'get_db_config
 2025-04-29 21:05:06 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:05:06] "[36mGET /static/logo.png HTTP/1.1[0m" 304 -
 2025-04-29 21:05:12 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:05:12] "GET /builders-hub?lga_geojson=true HTTP/1.1" 200 -
 2025-04-29 21:05:31 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:05:31] "GET /api/document-locations?lga_id=30 HTTP/1.1" 200 -
+2025-04-29 21:27:14 - numexpr.utils - INFO - NumExpr defaulting to 8 threads.
+2025-04-29 21:27:15 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5002
+2025-04-29 21:27:15 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-04-29 21:27:26 - app - INFO - Reading shapefile from /Users/afzalkhan/prop_intelv3/spatial/Vic_LGA.shp
+2025-04-29 21:27:26 - app - INFO - Shapefile read successfully with 82 features
+2025-04-29 21:27:26 - app - INFO - Converting from GEOGCS["GCS_GDA2020",DATUM["Geocentric_Datum_of_Australia_2020",SPHEROID["GRS 1980",6378137,298.257222101,AUTHORITY["EPSG","7019"]],AUTHORITY["EPSG","1168"]],PRIMEM["Greenwich",0],UNIT["Degree",0.0174532925199433],AXIS["Longitude",EAST],AXIS["Latitude",NORTH]] to EPSG:4326
+2025-04-29 21:27:29 - app - WARNING - Skipping row 80 with None geometry
+2025-04-29 21:27:29 - app - WARNING - Skipping row 81 with None geometry
+2025-04-29 21:27:29 - app - INFO - Generated 80 valid GeoJSON features
+2025-04-29 21:27:29 - app - INFO - GeoJSON serialized with 80 features
+2025-04-29 21:27:29 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:27:29] "GET /builders-hub HTTP/1.1" 200 -
+2025-04-29 21:27:29 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:27:29] "[36mGET /static/logo.png HTTP/1.1[0m" 304 -
+2025-04-29 21:27:29 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:27:29] "[36mGET /static/js/lga_mapping.js HTTP/1.1[0m" 304 -
+2025-04-29 21:27:34 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:27:34] "GET /builders-hub?lga_geojson=true HTTP/1.1" 200 -
+2025-04-29 21:27:46 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:27:46] "GET /analytics HTTP/1.1" 200 -
+2025-04-29 21:27:46 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:27:46] "[36mGET /static/logo.png HTTP/1.1[0m" 304 -
+2025-04-29 21:28:17 - app - ERROR - Exception on /budget-planner [GET]
+Traceback (most recent call last):
+  File "/opt/anaconda3/lib/python3.12/site-packages/flask/app.py", line 1473, in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.12/site-packages/flask/app.py", line 882, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.12/site-packages/flask/app.py", line 880, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.12/site-packages/flask/app.py", line 865, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/afzalkhan/prop_intelv3/app.py", line 597, in decorated_function
+    return f(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^
+  File "/Users/afzalkhan/prop_intelv3/app.py", line 1979, in budget_planner
+    year = request.args.get('year', str(datetime.datetime.now().year))
+                                        ^^^^^^^^^^^^^^^^^
+AttributeError: type object 'datetime.datetime' has no attribute 'datetime'
+2025-04-29 21:28:17 - __main__ - ERROR - Internal server error: 500 Internal Server Error: The server encountered an internal error and was unable to complete your request. Either the server is overloaded or there is an error in the application.
+Traceback (most recent call last):
+  File "/opt/anaconda3/lib/python3.12/site-packages/flask/app.py", line 1473, in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.12/site-packages/flask/app.py", line 882, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.12/site-packages/flask/app.py", line 880, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.12/site-packages/flask/app.py", line 865, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/afzalkhan/prop_intelv3/app.py", line 597, in decorated_function
+    return f(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^
+  File "/Users/afzalkhan/prop_intelv3/app.py", line 1979, in budget_planner
+    year = request.args.get('year', str(datetime.datetime.now().year))
+                                        ^^^^^^^^^^^^^^^^^
+AttributeError: type object 'datetime.datetime' has no attribute 'datetime'
+2025-04-29 21:28:17 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:28:17] "[35m[1mGET /budget-planner HTTP/1.1[0m" 500 -
+2025-04-29 21:28:17 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:28:17] "[36mGET /static/logo.png HTTP/1.1[0m" 304 -
+2025-04-29 21:28:51 - app - INFO - Reading shapefile from /Users/afzalkhan/prop_intelv3/spatial/Vic_LGA.shp
+2025-04-29 21:28:52 - app - INFO - Shapefile read successfully with 82 features
+2025-04-29 21:28:52 - app - INFO - Converting from GEOGCS["GCS_GDA2020",DATUM["Geocentric_Datum_of_Australia_2020",SPHEROID["GRS 1980",6378137,298.257222101,AUTHORITY["EPSG","7019"]],AUTHORITY["EPSG","1168"]],PRIMEM["Greenwich",0],UNIT["Degree",0.0174532925199433],AXIS["Longitude",EAST],AXIS["Latitude",NORTH]] to EPSG:4326
+2025-04-29 21:28:54 - app - WARNING - Skipping row 80 with None geometry
+2025-04-29 21:28:54 - app - WARNING - Skipping row 81 with None geometry
+2025-04-29 21:28:54 - app - INFO - Generated 80 valid GeoJSON features
+2025-04-29 21:28:54 - app - INFO - GeoJSON serialized with 80 features
+2025-04-29 21:28:54 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:28:54] "GET /builders-hub HTTP/1.1" 200 -
+2025-04-29 21:28:55 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:28:55] "[36mGET /static/logo.png HTTP/1.1[0m" 304 -
+2025-04-29 21:28:55 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:28:55] "[36mGET /static/js/lga_mapping.js HTTP/1.1[0m" 304 -
+2025-04-29 21:28:59 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:28:59] "GET /builders-hub?lga_geojson=true HTTP/1.1" 200 -
+2025-04-29 21:29:08 - app - INFO - Constructing full path for: 20250429204955_document.pdf
+2025-04-29 21:29:08 - app - INFO - Serving document: /Users/afzalkhan/prop_intelv3/static/documents/20250429204955_document.pdf
+2025-04-29 21:29:08 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:29:08] "[36mGET /download-document-file?id=34 HTTP/1.1[0m" 304 -
+2025-04-29 21:29:19 - app - INFO - Created or verified documents directory: /Users/afzalkhan/prop_intelv3/static/documents
+2025-04-29 21:29:21 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:29:21] "GET /document-upload HTTP/1.1" 200 -
+2025-04-29 21:29:21 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:29:21] "[36mGET /static/logo.png HTTP/1.1[0m" 304 -
+2025-04-29 21:29:25 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:29:25] "GET /builders-hub?lga_geojson=true HTTP/1.1" 200 -
+2025-04-29 21:29:30 - app - INFO - Reading shapefile from /Users/afzalkhan/prop_intelv3/spatial/Vic_LGA.shp
+2025-04-29 21:29:30 - app - INFO - Shapefile read successfully with 82 features
+2025-04-29 21:29:30 - app - INFO - Converting from GEOGCS["GCS_GDA2020",DATUM["Geocentric_Datum_of_Australia_2020",SPHEROID["GRS 1980",6378137,298.257222101,AUTHORITY["EPSG","7019"]],AUTHORITY["EPSG","1168"]],PRIMEM["Greenwich",0],UNIT["Degree",0.0174532925199433],AXIS["Longitude",EAST],AXIS["Latitude",NORTH]] to EPSG:4326
+2025-04-29 21:29:33 - app - WARNING - Skipping row 80 with None geometry
+2025-04-29 21:29:33 - app - WARNING - Skipping row 81 with None geometry
+2025-04-29 21:29:33 - app - INFO - Generated 80 valid GeoJSON features
+2025-04-29 21:29:33 - app - INFO - GeoJSON serialized with 80 features
+2025-04-29 21:29:33 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:29:33] "GET /builders-hub HTTP/1.1" 200 -
+2025-04-29 21:29:33 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:29:33] "[36mGET /static/js/lga_mapping.js HTTP/1.1[0m" 304 -
+2025-04-29 21:29:33 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:29:33] "[36mGET /static/logo.png HTTP/1.1[0m" 304 -
+2025-04-29 21:29:37 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:29:37] "GET /about HTTP/1.1" 200 -
+2025-04-29 21:29:37 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:29:37] "[36mGET /static/logo.png HTTP/1.1[0m" 304 -
+2025-04-29 21:29:37 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:29:37] "GET /builders-hub?lga_geojson=true HTTP/1.1" 200 -
+2025-04-29 21:29:47 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:29:47] "GET / HTTP/1.1" 200 -
+2025-04-29 21:29:47 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:29:47] "[36mGET /static/logo.png HTTP/1.1[0m" 304 -
+2025-04-29 21:29:49 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:29:49] "GET /api/properties HTTP/1.1" 200 -
+2025-04-29 21:29:55 - __main__ - INFO - Found 12 real properties with coordinates
+2025-04-29 21:29:55 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:29:55] "GET /map HTTP/1.1" 200 -
+2025-04-29 21:29:55 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:29:55] "[36mGET /static/js/lga_mapping.js HTTP/1.1[0m" 304 -
+2025-04-29 21:29:55 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:29:55] "[36mGET /static/logo.png HTTP/1.1[0m" 304 -
+2025-04-29 21:30:07 - shapefile_utils - INFO - Successfully updated work heatmap data
+2025-04-29 21:30:09 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:30:09] "GET /api/work-heatmap-data HTTP/1.1" 200 -
+2025-04-29 21:30:10 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:30:10] "GET /builders-hub?lga_geojson=true HTTP/1.1" 200 -
+2025-04-29 21:30:23 - shapefile_utils - INFO - Successfully updated work heatmap data
+2025-04-29 21:30:25 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:30:25] "GET /api/work-heatmap-data HTTP/1.1" 200 -
+2025-04-29 21:30:53 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:30:53] "GET /property/9 HTTP/1.1" 200 -
+2025-04-29 21:30:55 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:30:55] "GET /property/9 HTTP/1.1" 200 -
+2025-04-29 21:30:55 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:30:55] "[36mGET /static/logo.png HTTP/1.1[0m" 304 -
+2025-04-29 21:30:55 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:30:55] "[36mGET /static/images/property-placeholder.jpg HTTP/1.1[0m" 304 -
+2025-04-29 21:31:39 - __main__ - ERROR - Error updating property: column "property_type" of relation "properties" does not exist
+LINE 6:                     property_type = 'Residential',
+                            ^
+Traceback (most recent call last):
+  File "/Users/afzalkhan/prop_intelv3/app.py", line 2754, in edit_property
+    cur.execute("""
+  File "/opt/anaconda3/lib/python3.12/site-packages/psycopg2/extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+psycopg2.errors.UndefinedColumn: column "property_type" of relation "properties" does not exist
+LINE 6:                     property_type = 'Residential',
+                            ^
+
+2025-04-29 21:31:39 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:31:39] "[32mPOST /property/9/edit HTTP/1.1[0m" 302 -
+2025-04-29 21:31:53 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:31:53] "GET /property/9 HTTP/1.1" 200 -
+2025-04-29 21:31:53 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:31:53] "[36mGET /static/logo.png HTTP/1.1[0m" 304 -
+2025-04-29 21:31:53 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:31:53] "[36mGET /static/images/property-placeholder.jpg HTTP/1.1[0m" 304 -
+2025-04-29 21:38:15 - numexpr.utils - INFO - NumExpr defaulting to 8 threads.
+2025-04-29 21:38:16 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5002
+2025-04-29 21:38:16 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-04-29 21:38:34 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:38:34] "GET /property/9 HTTP/1.1" 200 -
+2025-04-29 21:38:34 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:38:34] "[36mGET /static/logo.png HTTP/1.1[0m" 304 -
+2025-04-29 21:38:34 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:38:34] "[36mGET /static/images/property-placeholder.jpg HTTP/1.1[0m" 304 -
+2025-04-29 21:38:52 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:38:52] "[32mPOST /property/9/edit HTTP/1.1[0m" 302 -
+2025-04-29 21:39:06 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:39:06] "GET /property/9 HTTP/1.1" 200 -
+2025-04-29 21:39:06 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:39:06] "[36mGET /static/logo.png HTTP/1.1[0m" 304 -
+2025-04-29 21:39:06 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:39:06] "[36mGET /static/images/property-placeholder.jpg HTTP/1.1[0m" 304 -
+2025-04-29 21:39:37 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:39:37] "[32mPOST /property/9/edit HTTP/1.1[0m" 302 -
+2025-04-29 21:39:51 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:39:51] "GET /property/9 HTTP/1.1" 200 -
+2025-04-29 21:39:52 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:39:52] "[36mGET /static/logo.png HTTP/1.1[0m" 304 -
+2025-04-29 21:39:52 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:39:52] "[36mGET /static/images/property-placeholder.jpg HTTP/1.1[0m" 304 -
+2025-04-29 21:40:03 - app - ERROR - Unexpected error in budget planner: type object 'datetime.datetime' has no attribute 'datetime'
+2025-04-29 21:40:03 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:40:03] "GET /budget-planner HTTP/1.1" 200 -
+2025-04-29 21:40:03 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:40:03] "[36mGET /static/logo.png HTTP/1.1[0m" 304 -
+2025-04-29 21:40:36 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:40:36] "GET /analytics HTTP/1.1" 200 -
+2025-04-29 21:40:36 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:40:36] "[36mGET /static/logo.png HTTP/1.1[0m" 304 -
+2025-04-29 21:41:55 - app - INFO - Reading shapefile from /Users/afzalkhan/prop_intelv3/spatial/Vic_LGA.shp
+2025-04-29 21:41:55 - app - INFO - Shapefile read successfully with 82 features
+2025-04-29 21:41:55 - app - INFO - Converting from GEOGCS["GCS_GDA2020",DATUM["Geocentric_Datum_of_Australia_2020",SPHEROID["GRS 1980",6378137,298.257222101,AUTHORITY["EPSG","7019"]],AUTHORITY["EPSG","1168"]],PRIMEM["Greenwich",0],UNIT["Degree",0.0174532925199433],AXIS["Longitude",EAST],AXIS["Latitude",NORTH]] to EPSG:4326
+2025-04-29 21:41:58 - app - WARNING - Skipping row 80 with None geometry
+2025-04-29 21:41:58 - app - WARNING - Skipping row 81 with None geometry
+2025-04-29 21:41:58 - app - INFO - Generated 80 valid GeoJSON features
+2025-04-29 21:41:58 - app - INFO - GeoJSON serialized with 80 features
+2025-04-29 21:41:58 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:41:58] "GET /builders-hub HTTP/1.1" 200 -
+2025-04-29 21:41:58 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:41:58] "[36mGET /static/js/lga_mapping.js HTTP/1.1[0m" 304 -
+2025-04-29 21:41:58 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:41:58] "[36mGET /static/logo.png HTTP/1.1[0m" 304 -
+2025-04-29 21:42:04 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:42:04] "GET /builders-hub?lga_geojson=true HTTP/1.1" 200 -
+2025-04-29 21:42:16 - app - INFO - Constructing full path for: 20250429204955_document.pdf
+2025-04-29 21:42:16 - app - INFO - Serving document: /Users/afzalkhan/prop_intelv3/static/documents/20250429204955_document.pdf
+2025-04-29 21:42:16 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:42:16] "[36mGET /download-document-file?id=34 HTTP/1.1[0m" 304 -
+2025-04-29 21:42:27 - __main__ - INFO - Found 12 real properties with coordinates
+2025-04-29 21:42:27 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:42:27] "GET /map HTTP/1.1" 200 -
+2025-04-29 21:42:27 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:42:27] "[36mGET /static/logo.png HTTP/1.1[0m" 304 -
+2025-04-29 21:42:27 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:42:27] "[36mGET /static/js/lga_mapping.js HTTP/1.1[0m" 304 -
+2025-04-29 21:42:33 - shapefile_utils - INFO - Successfully updated work heatmap data
+2025-04-29 21:42:35 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:42:35] "GET /api/work-heatmap-data HTTP/1.1" 200 -
+2025-04-29 21:42:38 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:42:38] "GET /builders-hub?lga_geojson=true HTTP/1.1" 200 -
+2025-04-29 21:42:49 - shapefile_utils - INFO - Successfully updated work heatmap data
+2025-04-29 21:42:51 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:42:51] "GET /api/work-heatmap-data HTTP/1.1" 200 -
+2025-04-29 21:48:44 - numexpr.utils - INFO - NumExpr defaulting to 8 threads.
+2025-04-29 21:48:44 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5002
+2025-04-29 21:48:44 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-04-29 21:48:50 - __main__ - INFO - Found 12 real properties with coordinates
+2025-04-29 21:48:50 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:48:50] "GET /map HTTP/1.1" 200 -
+2025-04-29 21:48:51 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:48:51] "[36mGET /static/js/lga_mapping.js HTTP/1.1[0m" 304 -
+2025-04-29 21:48:51 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:48:51] "[36mGET /static/logo.png HTTP/1.1[0m" 304 -
+2025-04-29 21:48:59 - shapefile_utils - INFO - Successfully updated work heatmap data. 12 records updated.
+2025-04-29 21:49:01 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:49:01] "GET /api/work-heatmap-data HTTP/1.1" 200 -
+2025-04-29 21:49:09 - shapefile_utils - INFO - Successfully updated work heatmap data. 12 records updated.
+2025-04-29 21:49:12 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:49:12] "GET /api/work-heatmap-data HTTP/1.1" 200 -
+2025-04-29 21:49:14 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:49:14] "GET /builders-hub?lga_geojson=true HTTP/1.1" 200 -
+2025-04-29 21:49:19 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:49:19] "GET /budget-planner HTTP/1.1" 200 -
+2025-04-29 21:49:19 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:49:19] "[36mGET /static/logo.png HTTP/1.1[0m" 304 -
+2025-04-29 21:49:26 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:49:26] "GET /budget-planner?property_id=28&year=2025&status=all HTTP/1.1" 200 -
+2025-04-29 21:49:26 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:49:26] "[36mGET /static/logo.png HTTP/1.1[0m" 304 -
+2025-04-29 21:49:34 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:49:34] "GET /budget-planner?property_id=8&year=2025&status=all HTTP/1.1" 200 -
+2025-04-29 21:49:34 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:49:34] "[36mGET /static/logo.png HTTP/1.1[0m" 304 -
+2025-04-29 21:49:45 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:49:45] "GET /budget-planner?property_id=8&year=2025&status=Completed HTTP/1.1" 200 -
+2025-04-29 21:49:46 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:49:46] "GET /budget-planner?property_id=8&year=2025&status=all HTTP/1.1" 200 -
+2025-04-29 21:49:47 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:49:47] "[36mGET /static/logo.png HTTP/1.1[0m" 304 -
+2025-04-29 21:50:03 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:50:03] "GET /analytics HTTP/1.1" 200 -
+2025-04-29 21:50:03 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:50:03] "[36mGET /static/logo.png HTTP/1.1[0m" 304 -
+2025-04-29 21:50:33 - app - INFO - Reading shapefile from /Users/afzalkhan/prop_intelv3/spatial/Vic_LGA.shp
+2025-04-29 21:50:33 - app - INFO - Shapefile read successfully with 82 features
+2025-04-29 21:50:33 - app - INFO - Converting from GEOGCS["GCS_GDA2020",DATUM["Geocentric_Datum_of_Australia_2020",SPHEROID["GRS 1980",6378137,298.257222101,AUTHORITY["EPSG","7019"]],AUTHORITY["EPSG","1168"]],PRIMEM["Greenwich",0],UNIT["Degree",0.0174532925199433],AXIS["Longitude",EAST],AXIS["Latitude",NORTH]] to EPSG:4326
+2025-04-29 21:50:36 - app - WARNING - Skipping row 80 with None geometry
+2025-04-29 21:50:36 - app - WARNING - Skipping row 81 with None geometry
+2025-04-29 21:50:36 - app - INFO - Generated 80 valid GeoJSON features
+2025-04-29 21:50:36 - app - INFO - GeoJSON serialized with 80 features
+2025-04-29 21:50:36 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:50:36] "GET /builders-hub HTTP/1.1" 200 -
+2025-04-29 21:50:37 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:50:37] "[36mGET /static/logo.png HTTP/1.1[0m" 304 -
+2025-04-29 21:50:37 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:50:37] "[36mGET /static/js/lga_mapping.js HTTP/1.1[0m" 304 -
+2025-04-29 21:50:41 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:50:41] "GET /builders-hub?lga_geojson=true HTTP/1.1" 200 -
+2025-04-29 21:50:48 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:50:48] "[33mPOST /delete-document?id=1 HTTP/1.1[0m" 404 -
+2025-04-29 21:50:49 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:50:49] "[33mPOST /delete-document?id=1 HTTP/1.1[0m" 404 -
+2025-04-29 21:50:49 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:50:49] "POST /delete-document?id=1 HTTP/1.1" 200 -
+2025-04-29 21:51:01 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:51:01] "POST /delete-document?id=2 HTTP/1.1" 200 -
+2025-04-29 21:51:38 - app - INFO - Constructing full path for: 20250429204955_document.pdf
+2025-04-29 21:51:38 - app - INFO - Serving document: /Users/afzalkhan/prop_intelv3/static/documents/20250429204955_document.pdf
+2025-04-29 21:51:38 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:51:38] "[36mGET /download-document-file?id=34 HTTP/1.1[0m" 304 -
+2025-04-29 21:51:56 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:51:56] "GET /api/document-locations?lga_id=62 HTTP/1.1" 200 -
+2025-04-29 21:51:59 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:51:59] "GET /api/document-locations?lga_id=62 HTTP/1.1" 200 -
+2025-04-29 21:52:01 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:52:01] "GET /api/document-locations?lga_id=62 HTTP/1.1" 200 -
+2025-04-29 21:52:07 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:52:07] "GET /api/document-locations?lga_id=62 HTTP/1.1" 200 -
+2025-04-29 21:52:13 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:52:13] "GET /admin/users HTTP/1.1" 200 -
+2025-04-29 21:52:13 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:52:13] "[36mGET /static/logo.png HTTP/1.1[0m" 304 -
+2025-04-29 21:52:22 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:52:22] "GET /properties HTTP/1.1" 200 -
+2025-04-29 21:52:22 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:52:22] "[36mGET /static/logo.png HTTP/1.1[0m" 304 -
+2025-04-29 21:52:29 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:52:29] "GET / HTTP/1.1" 200 -
+2025-04-29 21:52:29 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:52:29] "[36mGET /static/logo.png HTTP/1.1[0m" 304 -
+2025-04-29 21:52:31 - werkzeug - INFO - 127.0.0.1 - - [29/Apr/2025 21:52:31] "GET /api/properties HTTP/1.1" 200 -

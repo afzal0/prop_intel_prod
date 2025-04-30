@@ -702,283 +702,102 @@ def get_osm_building_polygon(lat, lng):
 
 def prepare_property_geojson(properties, fetch_polygons=False):
     """
-    Prepare GeoJSON for property map display.
-    
-    Uses actual coordinates from the database if available, otherwise generates random positions.
-    Includes financial data and budget status for advanced visualization.
+    Convert property data to GeoJSON format for mapping.
     
     Args:
-        properties: List of property dictionaries
-        fetch_polygons: Whether to fetch building polygons from OpenStreetMap (can be slow)
+        properties: List of property dictionaries with coordinates
+        fetch_polygons: Whether to fetch building polygons (slower but more detailed)
+    
+    Returns:
+        GeoJSON object with property features
     """
-    # Central coordinates (for fallback)
-    center_lat = 40.7128  # New York City latitude
-    center_lng = -74.0060  # New York City longitude
-    
-    features = []
-    for prop in properties:
-        # Use actual coordinates if available, otherwise generate random ones
-        if prop.get('latitude') and prop.get('longitude'):
-            lat = decimal_to_float(prop['latitude'])
-            lng = decimal_to_float(prop['longitude'])
-        else:
-            # Generate random coordinates near the center point
-            lat = center_lat + (random.random() - 0.5) * 0.1
-            lng = center_lng + (random.random() - 0.5) * 0.1
-        
-        # Create address string
-        address = prop.get('address', "Address not available")
-        if prop.get('location'):
-            address += f", {prop['location']}"
-        
-        # Get financial data for budget analysis
-        total_expenses = decimal_to_float(prop.get('total_expenses', 0)) if prop.get('total_expenses') else 0
-        work_costs = decimal_to_float(prop.get('work_cost', 0)) if prop.get('work_cost') else 0
-        total_income = decimal_to_float(prop.get('total_income', 0)) if prop.get('total_income') else 0
-        
-        # Determine if property is over budget
-        is_over_budget = (total_expenses + work_costs) > total_income
-        
-        # Create GeoJSON feature
-        feature = {
-            "type": "Feature",
-            "properties": {
-                "id": prop['property_id'],
-                "name": prop['property_name'],
-                "address": address,
-                "url": f"/property/{prop['property_id']}",
-                "income": total_income,
-                "expenses": total_expenses,
-                "work_cost": work_costs,
-                "is_over_budget": is_over_budget
-            }
-        }
-        
-        # Try to get building polygon from OpenStreetMap if requested
-        polygon_coords = None
-        if fetch_polygons:
-            try:
-                # Add a timeout to avoid long delays
-                polygon_coords = get_osm_building_polygon(lat, lng)
-                # Small delay to avoid overwhelming the API
-                time.sleep(0.2)
-            except Exception as e:
-                print(f"Error getting building polygon: {e}")
-        
-        # Use polygon geometry if available, otherwise fallback to point
-        if polygon_coords:
-            feature["geometry"] = {
-                "type": "Polygon",
-                "coordinates": [polygon_coords]  # OpenStreetMap returns [lon, lat], which matches GeoJSON format
-            }
-        else:
-            feature["geometry"] = {
-                "type": "Point",
-                "coordinates": [lng, lat]
-            }
-        
-        features.append(feature)
-    
-    return {
-        "type": "FeatureCollection",
-        "features": features
+    geojson = {
+        'type': 'FeatureCollection',
+        'features': []
     }
+    
+    try:
+        for prop in properties:
+            # Skip properties without coordinates
+            if not prop.get('latitude') or not prop.get('longitude'):
+                continue
+                
+            try:
+                lat = float(prop['latitude'])
+                lng = float(prop['longitude'])
+                
+                # Ensure coordinates are valid
+                if not (-90 <= lat <= 90) or not (-180 <= lng <= 180):
+                    continue
+                    
+                # Create the feature
+                feature = {
+                    'type': 'Feature',
+                    'geometry': {
+                        'type': 'Point',
+                        'coordinates': [lng, lat]  # GeoJSON format is [lng, lat]
+                    },
+                    'properties': {
+                        'id': prop['property_id'],
+                        'name': prop['property_name'] or 'Unnamed Property',
+                        'address': prop['address'] or 'No address',
+                        'location': prop['location'] or '',
+                        'url': f'/property/{prop["property_id"]}',
+                        'work_count': prop.get('work_count', 0),
+                        'income': prop.get('income', 0),
+                        'income_count': prop.get('income_count', 0),
+                        'expenses': prop.get('expenses', 0),
+                        'expense_count': prop.get('expense_count', 0),
+                        'work_cost': prop.get('work_cost', 0),
+                        'is_over_budget': prop.get('is_over_budget', False)
+                    }
+                }
+                
+                # If requested, try to get building polygon for more detailed display
+                if fetch_polygons:
+                    try:
+                        building_polygon = get_osm_building_polygon(lat, lng)
+                        if building_polygon:
+                            feature['geometry'] = building_polygon
+                    except Exception as e:
+                        # Fall back to point if polygon fetch fails
+                        print(f"Failed to get polygon for property {prop['property_id']}: {e}")
+                
+                geojson['features'].append(feature)
+            except (ValueError, TypeError) as e:
+                print(f"Error processing property coordinates: {e}")
+                continue
+                
+    except Exception as e:
+        print(f"Error preparing GeoJSON: {e}")
+        
+    return geojson
 
 def get_demo_data():
-    """Try to retrieve real property data but generate demo data as fallback"""
+    """Generate generic placeholder data if unable to retrieve real property data"""
+    # Generic demo properties without specific addresses or locations
+    demo_properties = [
+        {'property_id': '1', 'property_name': 'Property 1', 'address': 'Address 1', 'location': 'Location 1', 'latitude': -37.8136, 'longitude': 144.9631},
+        {'property_id': '2', 'property_name': 'Property 2', 'address': 'Address 2', 'location': 'Location 2', 'latitude': -37.8236, 'longitude': 144.9731},
+        {'property_id': '3', 'property_name': 'Property 3', 'address': 'Address 3', 'location': 'Location 3', 'latitude': -37.8336, 'longitude': 144.9831},
+        {'property_id': '4', 'property_name': 'Property 4', 'address': 'Address 4', 'location': 'Location 4', 'latitude': -37.8436, 'longitude': 144.9931}
+    ]
     
-    # First try to get real property data from the database
-    try:
-        import psycopg2
-        properties = []
-        
-        # Try to get a connection using our better connection function
-        conn = get_db_connection()
-        with conn.cursor(cursor_factory=RealDictCursor) as cur:
-            cur.execute("""
-                SELECT property_id, property_name, address, location,
-                       latitude, longitude
-                FROM propintel.properties
-                WHERE is_hidden IS NOT TRUE
-                ORDER BY property_name
-            """)
-            properties = cur.fetchall()
-        conn.close()
-        
-        if properties and len(properties) > 0:
-            print(f"Found {len(properties)} real properties to use")
-            
-            # Convert properties to the format we need
-            demo_properties = []
-            for prop in properties:
-                demo_properties.append({
-                    'property_id': prop['property_id'],
-                    'property_name': prop['property_name'],
-                    'address': prop['address'] or "No address",
-                    'location': prop['location'] or "No location"
-                })
-            
-            # Get real data for properties
-            conn = get_db_connection()
-            try:
-                property_performance = []
-                property_expenses = []
-                
-                with conn.cursor(cursor_factory=RealDictCursor) as cur:
-                    # Try to get actual financial data first
-                    for prop in demo_properties:
-                        prop_id = prop['property_id']
-                        
-                        # Get income, expenses, and work costs for this property
-                        cur.execute("""
-                            SELECT 
-                                COALESCE(SUM(mi.income_amount), 0) as income,
-                                COALESCE(SUM(mo.expense_amount), 0) as expenses,
-                                COALESCE(SUM(w.work_cost), 0) as work_cost
-                            FROM propintel.properties p
-                            LEFT JOIN propintel.money_in mi ON p.property_id = mi.property_id
-                            LEFT JOIN propintel.money_out mo ON p.property_id = mo.property_id  
-                            LEFT JOIN propintel.work w ON p.property_id = w.property_id
-                            WHERE p.property_id = %s
-                        """, (prop_id,))
-                        
-                        result = cur.fetchone()
-                        income = decimal_to_float(result['income']) if result and result['income'] else 0
-                        expenses = decimal_to_float(result['expenses']) if result and result['expenses'] else 0
-                        work_cost = decimal_to_float(result['work_cost']) if result and result['work_cost'] else 0
-                        profit = income - expenses - work_cost
-                        
-                        # If we have no data, use reasonable random values
-                        if income == 0 and expenses == 0 and work_cost == 0:
-                            income = random.uniform(25000, 45000)
-                            expenses = random.uniform(15000, 30000)
-                            work_cost = random.uniform(3000, 10000)
-                            profit = income - expenses - work_cost
-                        
-                        property_performance.append({
-                            'id': prop_id,
-                            'name': prop['property_name'],
-                            'income': income,
-                            'expenses': expenses,
-                            'work_cost': work_cost,
-                            'profit': profit
-                        })
-                        
-                        # Get expense categories for this property
-                        cur.execute("""
-                            SELECT 
-                                string_agg(DISTINCT expense_category, ', ') as categories,
-                                COALESCE(SUM(expense_amount), 0) as total_expenses
-                            FROM propintel.money_out
-                            WHERE property_id = %s
-                        """, (prop_id,))
-                        
-                        expense_result = cur.fetchone()
-                        categories = expense_result['categories'] if expense_result and expense_result['categories'] else ""
-                        total_expenses = decimal_to_float(expense_result['total_expenses']) if expense_result else 0
-                        
-                        # If no categories, generate some
-                        if not categories:
-                            categories = random.choice([
-                                'wage, material',
-                                'project_manager, material',
-                                'wage, miscellaneous',
-                                'material, project_manager'
-                            ])
-                        
-                        property_expenses.append({
-                            'property_id': prop_id,
-                            'property_name': prop['property_name'],
-                            'total_expenses': expenses,
-                            'categories': categories
-                        })
-            except Exception as e:
-                print(f"Error getting financial data: {e}")
-                # Fall back to synthetic data based on real property names
-                property_performance = []
-                property_expenses = []
-                
-                for prop in demo_properties:
-                    # Create realistic performance data
-                    income = random.uniform(25000, 45000)
-                    expenses = random.uniform(15000, 30000)
-                    work_cost = random.uniform(3000, 10000)
-                    profit = income - expenses - work_cost
-                    
-                    property_performance.append({
-                        'id': prop['property_id'],
-                        'name': prop['property_name'],
-                        'income': income,
-                        'expenses': expenses,
-                        'work_cost': work_cost,
-                        'profit': profit
-                    })
-                    
-                    # Create realistic expense data
-                    categories = random.choice([
-                        'wage, material',
-                        'project_manager, material',
-                        'wage, miscellaneous',
-                        'material, project_manager'
-                    ])
-                    
-                    property_expenses.append({
-                        'property_id': prop['property_id'],
-                        'property_name': prop['property_name'],
-                        'total_expenses': expenses,
-                        'categories': categories
-                    })
-            finally:
-                conn.close()  
-        else:
-            # If no properties found, use demo properties
-            demo_properties = [
-                {'property_id': '1', 'property_name': 'Property A', 'address': '123 Main St', 'location': 'New York, NY 10001'},
-                {'property_id': '2', 'property_name': 'Property B', 'address': '456 Broadway', 'location': 'New York, NY 10002'},
-                {'property_id': '3', 'property_name': 'Property C', 'address': '789 5th Ave', 'location': 'New York, NY 10003'},
-                {'property_id': '4', 'property_name': 'Property D', 'address': '101 Park Ave', 'location': 'New York, NY 10004'}
-            ]
-            
-            # Demo property performance data
-            property_performance = [
-                {'id': '1', 'name': 'Property A', 'income': 45000, 'expenses': 30000, 'work_cost': 10000, 'profit': 5000},
-                {'id': '2', 'name': 'Property B', 'income': 35000, 'expenses': 20000, 'work_cost': 5000, 'profit': 10000},
-                {'id': '3', 'name': 'Property C', 'income': 25000, 'expenses': 15000, 'work_cost': 3000, 'profit': 7000},
-                {'id': '4', 'name': 'Property D', 'income': 30000, 'expenses': 18000, 'work_cost': 7000, 'profit': 5000}
-            ]
-            
-            # Demo property expenses
-            property_expenses = [
-                {'property_id': '1', 'property_name': 'Property A', 'total_expenses': 30000, 'categories': 'wage, material'},
-                {'property_id': '2', 'property_name': 'Property B', 'total_expenses': 20000, 'categories': 'project_manager, material'},
-                {'property_id': '3', 'property_name': 'Property C', 'total_expenses': 15000, 'categories': 'wage, miscellaneous'},
-                {'property_id': '4', 'property_name': 'Property D', 'total_expenses': 18000, 'categories': 'material, project_manager'}
-            ]
-    except Exception as e:
-        print(f"Error fetching property data: {e}")
-        # Fallback to demo properties
-        demo_properties = [
-            {'property_id': '1', 'property_name': 'Property A', 'address': '123 Main St', 'location': 'New York, NY 10001'},
-            {'property_id': '2', 'property_name': 'Property B', 'address': '456 Broadway', 'location': 'New York, NY 10002'},
-            {'property_id': '3', 'property_name': 'Property C', 'address': '789 5th Ave', 'location': 'New York, NY 10003'},
-            {'property_id': '4', 'property_name': 'Property D', 'address': '101 Park Ave', 'location': 'New York, NY 10004'}
-        ]
-        
-        # Demo property performance data
-        property_performance = [
-            {'id': '1', 'name': 'Property A', 'income': 45000, 'expenses': 30000, 'work_cost': 10000, 'profit': 5000},
-            {'id': '2', 'name': 'Property B', 'income': 35000, 'expenses': 20000, 'work_cost': 5000, 'profit': 10000},
-            {'id': '3', 'name': 'Property C', 'income': 25000, 'expenses': 15000, 'work_cost': 3000, 'profit': 7000},
-            {'id': '4', 'name': 'Property D', 'income': 30000, 'expenses': 18000, 'work_cost': 7000, 'profit': 5000}
-        ]
-        
-        # Demo property expenses
-        property_expenses = [
-            {'property_id': '1', 'property_name': 'Property A', 'total_expenses': 30000, 'categories': 'wage, material'},
-            {'property_id': '2', 'property_name': 'Property B', 'total_expenses': 20000, 'categories': 'project_manager, material'},
-            {'property_id': '3', 'property_name': 'Property C', 'total_expenses': 15000, 'categories': 'wage, miscellaneous'},
-            {'property_id': '4', 'property_name': 'Property D', 'total_expenses': 18000, 'categories': 'material, project_manager'}
-        ]
+    # Generic property performance data
+    property_performance = [
+        {'id': '1', 'name': 'Property 1', 'income': 45000, 'expenses': 30000, 'work_cost': 10000, 'profit': 5000},
+        {'id': '2', 'name': 'Property 2', 'income': 35000, 'expenses': 20000, 'work_cost': 5000, 'profit': 10000},
+        {'id': '3', 'name': 'Property 3', 'income': 25000, 'expenses': 15000, 'work_cost': 3000, 'profit': 7000},
+        {'id': '4', 'name': 'Property 4', 'income': 30000, 'expenses': 18000, 'work_cost': 7000, 'profit': 5000}
+    ]
+    
+    # Generic property expenses
+    property_expenses = [
+        {'property_id': '1', 'property_name': 'Property 1', 'total_expenses': 30000, 'categories': 'wage, material'},
+        {'property_id': '2', 'property_name': 'Property 2', 'total_expenses': 20000, 'categories': 'project_manager, material'},
+        {'property_id': '3', 'property_name': 'Property 3', 'total_expenses': 15000, 'categories': 'wage, miscellaneous'},
+        {'property_id': '4', 'property_name': 'Property 4', 'total_expenses': 18000, 'categories': 'material, project_manager'}
+    ]
     
     # Create GeoJSON for map (without polygon fetching for demo data)
     geojson = prepare_property_geojson(demo_properties, fetch_polygons=False)
@@ -1051,9 +870,9 @@ def get_demo_data():
     # Demo pending work
     now = datetime.now()
     pending_work = [
-        {'work_id': 1, 'property_name': 'Property A', 'work_description': 'Repair roof', 'work_date': now + timedelta(days=5), 'work_cost': 1500, 'status': 'Pending'},
-        {'work_id': 2, 'property_name': 'Property B', 'work_description': 'Replace windows', 'work_date': now + timedelta(days=10), 'work_cost': 3000, 'status': 'Pending'},
-        {'work_id': 3, 'property_name': 'Property C', 'work_description': 'Paint exterior', 'work_date': now + timedelta(days=15), 'work_cost': 2500, 'status': 'Pending'}
+        {'work_id': 1, 'property_name': 'Property 1', 'work_description': 'Repair roof', 'work_date': now + timedelta(days=5), 'work_cost': 1500, 'status': 'Pending'},
+        {'work_id': 2, 'property_name': 'Property 2', 'work_description': 'Replace windows', 'work_date': now + timedelta(days=10), 'work_cost': 3000, 'status': 'Pending'},
+        {'work_id': 3, 'property_name': 'Property 3', 'work_description': 'Paint exterior', 'work_date': now + timedelta(days=15), 'work_cost': 2500, 'status': 'Pending'}
     ]
     
     return {

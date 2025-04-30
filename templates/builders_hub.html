@@ -254,7 +254,7 @@
                 {% if documents %}
                     <h4 class="mb-3">All Documents</h4>
                     {% for doc in documents %}
-                    <div class="document-item" data-lga-id="{{ doc.lga_id }}" data-type="{{ doc.document_type }}">
+                    <div class="document-item" data-lga-id="{{ doc.lga_id }}" data-type="{{ doc.document_type }}" data-document-id="{{ doc.document_id }}">
                         <div class="d-flex justify-content-between">
                             <div>
                                 <h5 class="mb-1">
@@ -304,6 +304,26 @@
         </div>
     </div>
 </div>
+
+<!-- Delete Document Modal -->
+<div class="modal fade" id="deleteDocumentModal" tabindex="-1" aria-labelledby="deleteDocumentModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteDocumentModalLabel">Delete Document</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete this document? This cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteDocument">Delete</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
 
 {% block scripts %}
@@ -461,6 +481,8 @@ function showDocumentMarkers(lgaId, markersLayer) {
                         '<div>' +
                         '<h6>' + doc.document_name + '</h6>' +
                         '<p><strong>Type:</strong> ' + (doc.document_type || 'Unknown') + '</p>' +
+                        '<p><strong>Address:</strong> ' + (doc.address || 'No address provided') + '</p>' +
+                        '<p><strong>Location:</strong> ' + doc.latitude.toFixed(6) + ', ' + doc.longitude.toFixed(6) + '</p>' +
                         '<a href="/download-document-file?id=' + doc.document_id + '" class="btn btn-sm btn-primary">Download</a>' +
                         '</div>'
                     );
@@ -651,6 +673,88 @@ function filterDocuments(lgaId, docType, keyword) {
     
     // Update the recent month display
     document.getElementById('lgaRecent').textContent = mostRecentMonth;
+}
+
+// Handle delete document button click
+document.addEventListener('DOMContentLoaded', function() {
+    // Set up the delete document modal
+    var deleteDocumentModal = document.getElementById('deleteDocumentModal');
+    if (deleteDocumentModal) {
+        deleteDocumentModal.addEventListener('show.bs.modal', function(event) {
+            // Button that triggered the modal
+            var button = event.relatedTarget;
+            
+            // Extract document info from button's data attributes
+            var documentId = button.getAttribute('data-document-id');
+            var documentName = button.getAttribute('data-document-name');
+            
+            // Update the modal's content
+            var modalTitle = deleteDocumentModal.querySelector('.modal-title');
+            var modalBody = deleteDocumentModal.querySelector('.modal-body p');
+            var deleteButton = deleteDocumentModal.querySelector('#confirmDeleteDocument');
+            
+            modalTitle.textContent = 'Delete Document';
+            modalBody.textContent = 'Are you sure you want to delete "' + documentName + '"? This cannot be undone.';
+            
+            // Set the document ID on the delete button for form submission
+            deleteButton.setAttribute('data-document-id', documentId);
+        });
+        
+        // Handle the delete confirmation
+        document.getElementById('confirmDeleteDocument').addEventListener('click', function() {
+            var documentId = this.getAttribute('data-document-id');
+            deleteDocument(documentId);
+        });
+    }
+});
+
+// Function to delete a document
+function deleteDocument(documentId) {
+    // Show loading
+    showLoading();
+    
+    // Send delete request to server
+    fetch('/delete-document?id=' + documentId, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Server returned ' + response.status);
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            // Hide modal
+            var modal = bootstrap.Modal.getInstance(document.getElementById('deleteDocumentModal'));
+            modal.hide();
+            
+            // Remove document item from the page
+            var documentItem = document.querySelector(`.document-item[data-document-id="${documentId}"]`);
+            if (documentItem) {
+                documentItem.remove();
+            } else {
+                // If we can't find it by data attribute, reload the page to refresh the list
+                window.location.reload();
+            }
+            
+            // Show success message
+            alert('Document deleted successfully');
+        } else {
+            alert('Error: ' + (data.message || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        console.error('Error deleting document:', error);
+        alert('Error deleting document: ' + error.message);
+    })
+    .finally(() => {
+        hideLoading();
+    });
 }
 </script>
 {% endblock %}

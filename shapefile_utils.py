@@ -673,7 +673,8 @@ def generate_work_heatmap():
             longitude, 
             intensity, 
             property_id, 
-            work_count
+            work_count,
+            last_updated
         )
         SELECT 
             p.latitude,
@@ -686,7 +687,8 @@ def generate_work_heatmap():
                 ELSE 5
             END as intensity,
             p.property_id,
-            COUNT(w.work_id) as work_count
+            COUNT(w.work_id) as work_count,
+            NOW() as last_updated
         FROM 
             propintel.properties p
         LEFT JOIN
@@ -697,11 +699,15 @@ def generate_work_heatmap():
             p.property_id
         """)
         
+        # Count how many records were inserted
+        cursor.execute("SELECT COUNT(*) FROM propintel.work_heatmap")
+        count = cursor.fetchone()[0]
+        
         conn.commit()
         cursor.close()
         conn.close()
         
-        logger.info("Successfully updated work heatmap data")
+        logger.info(f"Successfully updated work heatmap data. {count} records updated.")
         return True
         
     except Exception as e:
