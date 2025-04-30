@@ -2017,7 +2017,107 @@ def budget_planner():
                 property_filter = ""
                 if property_id and property_id != 'all':
                     property_filter = f"AND mo.property_id = '{property_id}'"  # Using table alias for money_out table
+                
+                # Get active budgets from the budget table
+                budget_property_filter = ""
+                if property_id and property_id != 'all':
+                    budget_property_filter = f"AND b.property_id = '{property_id}'"
+                
+                status_filter = ""
+                if status and status != 'all':
+                    status_filter = f"AND LOWER(b.status) = LOWER('{status}')"
+                
+                cur.execute(f"""
+                    SELECT 
+                        b.budget_id, 
+                        b.budget_name, 
+                        b.budget_description, 
+                        b.budget_amount, 
+                        b.start_date, 
+                        b.end_date,
+                        b.wage_allocation,
+                        b.pm_allocation,
+                        b.material_allocation,
+                        b.misc_allocation,
+                        b.status,
+                        p.property_name,
+                        p.property_id
+                    FROM 
+                        propintel.budgets b
+                    JOIN 
+                        propintel.properties p ON b.property_id = p.property_id
+                    WHERE 
+                        1=1
+                        {budget_property_filter}
+                        {status_filter}
+                    ORDER BY 
+                        b.created_at DESC
+                    LIMIT 5
+                """)
+                active_budgets = cur.fetchall()
+                
+                # Process active budgets for display
+                for budget in active_budgets:
+                    # Calculate spent amount (sample calculation, replace with actual logic)
+                    # This would typically involve summing expenses from the money_out table
+                    spent_amount = 0
+                    try:
+                        cur.execute("""
+                            SELECT COALESCE(SUM(expense_amount), 0) as total_spent
+                            FROM propintel.money_out
+                            WHERE property_id = %s
+                            AND expense_date BETWEEN %s AND %s
+                        """, (
+                            budget['property_id'],
+                            budget['start_date'],
+                            budget['end_date']
+                        ))
+                        spent_result = cur.fetchone()
+                        if spent_result:
+                            spent_amount = float(spent_result['total_spent'])
+                    except Exception as e:
+                        app.logger.error(f"Error calculating spent amount: {e}")
                     
+                    # Calculate percentage spent
+                    budget_amount = float(budget['budget_amount']) if budget['budget_amount'] else 0
+                    percentage = (spent_amount / budget_amount * 100) if budget_amount > 0 else 0
+                    
+                    # Format the budget for display
+                    budget_data['active_budgets'].append({
+                        'budget_id': budget['budget_id'],
+                        'property_name': budget['property_name'],
+                        'description': budget['budget_name'],
+                        'date': budget['end_date'],
+                        'budget_amount': budget_amount,
+                        'spent_amount': spent_amount,
+                        'percentage': percentage,
+                        'status': budget['status']
+                    })
+                
+                # Calculate budget allocation totals (by category)
+                allocation_query = """
+                    SELECT 
+                        COALESCE(SUM(wage_allocation), 0) as wage,
+                        COALESCE(SUM(pm_allocation), 0) as project_manager,
+                        COALESCE(SUM(material_allocation), 0) as material,
+                        COALESCE(SUM(misc_allocation), 0) as miscellaneous
+                    FROM propintel.budgets
+                    WHERE 1=1
+                """
+                if property_id and property_id != 'all':
+                    allocation_query += f" AND property_id = '{property_id}'"
+                    
+                cur.execute(allocation_query)
+                allocation_result = cur.fetchone()
+                
+                if allocation_result:
+                    budget_data['allocation_data'] = {
+                        'wage': float(allocation_result['wage']),
+                        'project_manager': float(allocation_result['project_manager']),
+                        'material': float(allocation_result['material']),
+                        'miscellaneous': float(allocation_result['miscellaneous'])
+                    }
+                
                 # Get year start and end dates for filtering
                 year_start = f"{year}-01-01"
                 year_end = f"{year}-12-31"
@@ -2056,24 +2156,75 @@ def budget_planner():
                             'total': 0
                         }
                 
-                # Continue with the rest of the function...
-                # More code to process expenses, income, etc.
+                # Get upcoming expenses (placeholder)
+                upcoming_expenses = []
+                try:
+                    cur.execute(f"""
+                        SELECT 
+                            mo.expense_id,
+                            mo.expense_description,
+                            mo.expense_date,
+                            mo.expense_amount,
+                            mo.expense_category,
+                            p.property_name
+                        FROM propintel.money_out mo
+                        JOIN propintel.properties p ON mo.property_id = p.property_id
+                        WHERE 
+                            mo.expense_date > CURRENT_DATE
+                            AND mo.expense_date <= (CURRENT_DATE + INTERVAL '30 days')
+                            {property_filter}
+                        ORDER BY mo.expense_date ASC
+                        LIMIT 5
+                    """)
+                    expense_records = cur.fetchall()
+                    
+                    for expense in expense_records:
+                        upcoming_expenses.append({
+                            'description': expense['expense_description'],
+                            'date': expense['expense_date'],
+                            'amount': float(expense['expense_amount']),
+                            'category': expense['expense_category'].lower().replace(' ', '_'),
+                            'property': expense['property_name']
+                        })
+                except Exception as e:
+                    app.logger.error(f"Error getting upcoming expenses: {e}")
+                
+                # Create monthly budget data for the chart
+                monthly_budget = [0] * 12
+                monthly_spent = [0] * 12
+                
+                # Get monthly budget data from budgets table
+                try:
+                    cur.execute(f"""
+                        SELECT 
+                            EXTRACT(MONTH FROM start_date) as month,
+                            COALESCE(SUM(budget_amount / 
+                                GREATEST(1, EXTRACT(MONTH FROM end_date) - EXTRACT(MONTH FROM start_date) + 1)), 0) as amount
+                        FROM propintel.budgets
+                        WHERE 
+                            EXTRACT(YEAR FROM start_date) = %s OR EXTRACT(YEAR FROM end_date) = %s
+                            {budget_property_filter}
+                        GROUP BY EXTRACT(MONTH FROM start_date)
+                        ORDER BY month
+                    """, (year, year))
+                    
+                    budget_months = cur.fetchall()
+                    for bm in budget_months:
+                        if 1 <= int(bm['month']) <= 12:
+                            monthly_budget[int(bm['month'])-1] = float(bm['amount'])
+                except Exception as e:
+                    app.logger.error(f"Error getting monthly budget data: {e}")
                 
                 # Complete the budget_data dictionary with processed values
                 budget_data = {
                     'expense_data': expense_data,
                     'income_data': {},  # Process income data similarly
-                    'active_budgets': [],  # Add active budgets processing
-                    'upcoming_expenses': [],  # Add upcoming expenses processing
-                    'allocation_data': {
-                        'wage': 0,
-                        'project_manager': 0,
-                        'material': 0,
-                        'miscellaneous': 0
-                    },
-                    'total_expenses': 0,
-                    'monthly_budget': [],
-                    'monthly_spent': [],
+                    'active_budgets': budget_data['active_budgets'],
+                    'upcoming_expenses': upcoming_expenses,
+                    'allocation_data': budget_data['allocation_data'],
+                    'total_expenses': sum(monthly_spent),
+                    'monthly_budget': monthly_budget,
+                    'monthly_spent': monthly_spent,
                     'months': months
                 }
                 
@@ -2102,1216 +2253,6 @@ def budget_planner():
                             budget_data={},
                             error=str(e))
 
-@app.route('/property/<int:property_id>')
-def property_detail(property_id):
-    """Detailed view of a property"""
-    export_excel = request.args.get('export', '')
-    
-    conn = None
-    try:
-        conn = get_db_connection()
-        with conn.cursor(cursor_factory=RealDictCursor) as cur:
-            # Get property details
-            cur.execute("""
-                SELECT * FROM propintel.properties WHERE property_id = %s
-            """, (property_id,))
-            property_data = cur.fetchone()
-            
-            if not property_data:
-                flash('Property not found', 'danger')
-                return redirect(url_for('properties'))
-            
-            # Initialize variables with defaults
-            property_images = []
-            work_records = []
-            work_images = []
-            income_records = []
-            expense_records = []
-            income_total = 0
-            expense_total = 0
-            work_total = 0
-            net_total = 0
-            trend_labels = []
-            income_data = []
-            expense_data = []
-            
-            # Safe default for expense categories
-            expense_categories = {
-                'wage_total': 0,
-                'pm_total': 0,
-                'material_total': 0,
-                'misc_total': 0
-            }
-            
-            # Get property images if the table exists
-            try:
-                cur.execute("""
-                    SELECT * FROM propintel.property_images 
-                    WHERE property_id = %s AND image_type = 'property'
-                    ORDER BY upload_date DESC
-                """, (property_id,))
-                property_images = cur.fetchall() or []
-            except (psycopg2.Error, Exception):
-                # Table might not exist, continue without images
-                pass
-            
-            # Get work records
-            try:
-                cur.execute("""
-                    SELECT * FROM propintel.work 
-                    WHERE property_id = %s
-                    ORDER BY work_date DESC
-                """, (property_id,))
-                work_records = cur.fetchall() or []
-                
-                # Try to add image paths to work records
-                try:
-                    for idx, record in enumerate(work_records):
-                        work_desc = record.get('work_description', '')
-                        if work_desc:
-                            cur.execute("""
-                                SELECT image_path FROM propintel.property_images 
-                                WHERE property_id = %s AND image_type = 'work' 
-                                    AND description LIKE %s
-                                LIMIT 1
-                            """, (property_id, f"%{work_desc}%"))
-                            image_result = cur.fetchone()
-                            if image_result:
-                                work_records[idx]['image_path'] = image_result['image_path']
-                except Exception:
-                    # Ignore errors adding image paths
-                    pass
-            except Exception:
-                # Continue without work records if there's an error
-                pass
-            
-            # Get work images if possible
-            try:
-                cur.execute("""
-                    SELECT * FROM propintel.property_images 
-                    WHERE property_id = %s AND image_type = 'work'
-                    ORDER BY upload_date DESC
-                """, (property_id,))
-                work_images = cur.fetchall() or []
-            except Exception:
-                # Continue without work images
-                pass
-            
-            # Get income records
-            try:
-                cur.execute("""
-                    SELECT * FROM propintel.money_in 
-                    WHERE property_id = %s
-                    ORDER BY income_date DESC
-                """, (property_id,))
-                income_records = cur.fetchall() or []
-                
-                # Calculate income total
-                income_total = sum(record.get('income_amount', 0) or 0 for record in income_records)
-            except Exception:
-                # Continue without income records
-                pass
-            
-            # Get expense records
-            try:
-                cur.execute("""
-                    SELECT * FROM propintel.money_out 
-                    WHERE property_id = %s
-                    ORDER BY expense_date DESC
-                """, (property_id,))
-                expense_records = cur.fetchall() or []
-                
-                # Calculate expense total
-                expense_total = sum(record.get('expense_amount', 0) or 0 for record in expense_records)
-                
-                # Try to add receipt images to expense records
-                try:
-                    for idx, record in enumerate(expense_records):
-                        expense_details = record.get('expense_details', '')
-                        if expense_details:
-                            cur.execute("""
-                                SELECT image_path FROM propintel.property_images 
-                                WHERE property_id = %s AND image_type = 'receipt' 
-                                    AND description LIKE %s
-                                LIMIT 1
-                            """, (property_id, f"%{expense_details}%"))
-                            image_result = cur.fetchone()
-                            if image_result:
-                                expense_records[idx]['image_path'] = image_result['image_path']
-                except Exception:
-                    # Ignore errors adding image paths
-                    pass
-            except Exception:
-                # Continue without expense records
-                pass
-            
-            # Calculate work total
-            try:
-                work_total = sum(record.get('work_cost', 0) or 0 for record in work_records)
-            except Exception:
-                # Continue without work total
-                work_total = 0
-            
-            # Calculate net total
-            net_total = income_total - expense_total
-            
-            # Try to categorize expenses
-            try:
-                # First try SQL categorization
-                try:
-                    cur.execute("""
-                        SELECT
-                            COALESCE(SUM(CASE WHEN expense_category = 'wage' OR 
-                                                expense_details ILIKE '%wage%' OR 
-                                                expense_details ILIKE '%salary%' 
-                                        THEN expense_amount ELSE 0 END), 0) as wage_total,
-                            COALESCE(SUM(CASE WHEN expense_category = 'project_manager' OR 
-                                                expense_details ILIKE '%project manager%' OR 
-                                                expense_details ILIKE '%pm %' 
-                                        THEN expense_amount ELSE 0 END), 0) as pm_total,
-                            COALESCE(SUM(CASE WHEN expense_category = 'material' OR 
-                                                expense_details ILIKE '%material%' OR 
-                                                expense_details ILIKE '%supplies%' 
-                                        THEN expense_amount ELSE 0 END), 0) as material_total,
-                            COALESCE(SUM(CASE WHEN (expense_category IS NULL OR expense_category = 'miscellaneous') AND 
-                                                expense_details NOT ILIKE '%wage%' AND 
-                                                expense_details NOT ILIKE '%salary%' AND
-                                                expense_details NOT ILIKE '%project manager%' AND
-                                                expense_details NOT ILIKE '%pm %' AND
-                                                expense_details NOT ILIKE '%material%' AND
-                                                expense_details NOT ILIKE '%supplies%'
-                                        THEN expense_amount ELSE 0 END), 0) as misc_total
-                        FROM propintel.money_out
-                        WHERE property_id = %s
-                    """, (property_id,))
-                    
-                    category_result = cur.fetchone()
-                    if category_result:
-                        # Make sure all keys exist
-                        if all(k in category_result for k in ['wage_total', 'pm_total', 'material_total', 'misc_total']):
-                            expense_categories = category_result
-                except Exception:
-                    # SQL categorization failed, try manual categorization
-                    pass
-                
-                # Fall back to manual categorization if SQL version failed
-                if not all(k in expense_categories for k in ['wage_total', 'pm_total', 'material_total', 'misc_total']):
-                    expense_categories = {
-                        'wage_total': 0,
-                        'pm_total': 0,
-                        'material_total': 0,
-                        'misc_total': 0
-                    }
-                    
-                    for record in expense_records:
-                        try:
-                            amount = record.get('expense_amount', 0) or 0
-                            details = (record.get('expense_details', '') or '').lower()
-                            
-                            if 'wage' in details or 'salary' in details:
-                                expense_categories['wage_total'] += amount
-                            elif 'project manager' in details or 'pm ' in details:
-                                expense_categories['pm_total'] += amount
-                            elif 'material' in details or 'supplies' in details:
-                                expense_categories['material_total'] += amount
-                            else:
-                                expense_categories['misc_total'] += amount
-                        except Exception:
-                            # Skip this record on error
-                            continue
-            except Exception:
-                # If all categorization fails, use empty categories
-                expense_categories = {
-                    'wage_total': 0,
-                    'pm_total': 0,
-                    'material_total': 0,
-                    'misc_total': 0
-                }
-            
-            # Get monthly trend data for charts
-            try:
-                trend_months = {}
-                for record in income_records:
-                    try:
-                        month_key = record['income_date'].strftime('%Y-%m')
-                        if month_key not in trend_months:
-                            trend_months[month_key] = {'income': 0, 'expense': 0}
-                        trend_months[month_key]['income'] += record.get('income_amount', 0) or 0
-                    except Exception:
-                        # Skip this record on error
-                        continue
-                
-                for record in expense_records:
-                    try:
-                        month_key = record['expense_date'].strftime('%Y-%m')
-                        if month_key not in trend_months:
-                            trend_months[month_key] = {'income': 0, 'expense': 0}
-                        trend_months[month_key]['expense'] += record.get('expense_amount', 0) or 0
-                    except Exception:
-                        # Skip this record on error
-                        continue
-                
-                # Sort months for chart display
-                sorted_months = sorted(trend_months.keys())
-                trend_labels = [month for month in sorted_months]
-                income_data = [trend_months[month]['income'] for month in sorted_months]
-                expense_data = [trend_months[month]['expense'] for month in sorted_months]
-            except Exception:
-                # If trend data fails, use empty lists
-                trend_labels = []
-                income_data = []
-                expense_data = []
-            
-            # Default map coordinates if property doesn't have lat/long
-            try:
-                map_lat = property_data.get('latitude') if property_data.get('latitude') else 40.7128
-                map_lng = property_data.get('longitude') if property_data.get('longitude') else -74.0060
-            except Exception:
-                map_lat = 40.7128
-                map_lng = -74.0060
-            
-    except Exception as e:
-        flash(f"Error: {e}", "danger")
-        return redirect(url_for('properties'))
-    finally:
-        if conn:
-            conn.close()
-    
-    # Ensure all variables exist before rendering
-    wage_expense_total = expense_categories.get('wage_total', 0) or 0
-    pm_expense_total = expense_categories.get('pm_total', 0) or 0
-    material_expense_total = expense_categories.get('material_total', 0) or 0
-    misc_expense_total = expense_categories.get('misc_total', 0) or 0
-    
-    # Handle Excel export request
-    if export_excel:
-        import pandas as pd
-        from io import BytesIO
-        from flask import send_file
-        
-        # Create Excel workbook with multiple sheets
-        output = BytesIO()
-        with pd.ExcelWriter(output, engine='openpyxl') as writer:
-            # Property Details Sheet
-            property_df = pd.DataFrame([{
-                'Property Name': property_data.get('property_name', ''),
-                'Address': property_data.get('address', ''),
-                'Location': property_data.get('location', ''),
-                'Status': property_data.get('status', ''),
-                'Project Type': property_data.get('project_type', ''),
-                'Project Manager': property_data.get('project_manager', ''),
-                'Total Income': float(income_total),
-                'Total Expenses': float(expense_total),
-                'Work Costs': float(work_total),
-                'Net Profit': float(net_total)
-            }])
-            property_df.to_excel(writer, sheet_name='Property Details', index=False)
-            
-            # Income Records Sheet
-            if income_records:
-                income_df = pd.DataFrame([{
-                    'Date': record.get('income_date'),
-                    'Amount': float(record.get('income_amount', 0)) if record.get('income_amount') else 0,
-                    'Source': record.get('income_source', ''),
-                    'Details': record.get('income_details', '')
-                } for record in income_records])
-                income_df.to_excel(writer, sheet_name='Income Records', index=False)
-            
-            # Expense Records Sheet
-            if expense_records:
-                expense_df = pd.DataFrame([{
-                    'Date': record.get('expense_date'),
-                    'Amount': float(record.get('expense_amount', 0)) if record.get('expense_amount') else 0,
-                    'Category': record.get('expense_category', ''),
-                    'Details': record.get('expense_details', '')
-                } for record in expense_records])
-                expense_df.to_excel(writer, sheet_name='Expense Records', index=False)
-            
-            # Work Records Sheet
-            if work_records:
-                work_df = pd.DataFrame([{
-                    'Date': record.get('work_date'),
-                    'Cost': float(record.get('work_cost', 0)) if record.get('work_cost') else 0,
-                    'Description': record.get('work_description', ''),
-                    'Worker': record.get('worker_name', '')
-                } for record in work_records])
-                work_df.to_excel(writer, sheet_name='Work Records', index=False)
-            
-            # Auto-adjust columns width
-            for sheet_name in writer.sheets:
-                worksheet = writer.sheets[sheet_name]
-                for idx, col in enumerate(worksheet.columns):
-                    max_length = 0
-                    for cell in col:
-                        if cell.value:
-                            try:
-                                if len(str(cell.value)) > max_length:
-                                    max_length = len(str(cell.value))
-                            except:
-                                pass
-                    adjusted_width = (max_length + 2)
-                    worksheet.column_dimensions[worksheet.cell(1, idx + 1).column_letter].width = adjusted_width
-        
-        output.seek(0)
-        
-        filename = f"PropIntel_Property_{property_data.get('property_name', property_id)}.xlsx"
-        filename = filename.replace(' ', '_').replace('/', '_')
-        
-        return send_file(
-            output,
-            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            download_name=filename,
-            as_attachment=True
-        )
-    
-    # Pass all data to template
-    return render_template(
-        'property_detail.html', 
-        property=property_data,
-        property_images=property_images,
-        work_records=work_records,
-        work_images=work_images,
-        income_records=income_records, 
-        expense_records=expense_records,
-        income_total=income_total,
-        expense_total=expense_total,
-        work_total=work_total,
-        net_total=net_total,
-        trend_labels=trend_labels,
-        income_data=income_data,
-        expense_data=expense_data,
-        map_lat=map_lat,
-        map_lng=map_lng,
-        wage_expense_total=wage_expense_total,
-        pm_expense_total=pm_expense_total,
-        material_expense_total=material_expense_total,
-        misc_expense_total=misc_expense_total
-    )
-
-@app.route('/property/<int:property_id>/edit', methods=['POST'])
-@login_required
-def edit_property(property_id):
-    """Edit property details"""
-    # Check if property exists and user has permission to edit it
-    conn = None
-    try:
-        conn = get_db_connection()
-        with conn.cursor(cursor_factory=RealDictCursor) as cur:
-            # Get property details
-            cur.execute("""
-                SELECT * FROM propintel.properties WHERE property_id = %s
-            """, (property_id,))
-            property_data = cur.fetchone()
-            
-            if not property_data:
-                flash('Property not found', 'danger')
-                return redirect(url_for('properties'))
-            
-            # Check if user has permission to edit this property
-            if g.user['role'] != 'admin' and property_data['user_id'] != g.user['user_id']:
-                flash('You do not have permission to edit this property', 'danger')
-                return redirect(url_for('property_detail', property_id=property_id))
-            
-            # Get form data
-            property_name = request.form.get('property_name')
-            address = request.form.get('address')
-            location = request.form.get('location')
-            # Removing property_type since it doesn't exist in the schema
-            project_manager = request.form.get('project_manager')
-            status = request.form.get('status')
-            purchase_date = request.form.get('start_date') or None  # Map start_date from form to purchase_date
-            due_date = request.form.get('completion_date') or None  # Map completion_date from form to due_date
-            notes = request.form.get('notes')
-            
-            # Update property details
-            cur.execute("""
-                UPDATE propintel.properties 
-                SET property_name = %s, 
-                    address = %s, 
-                    location = %s,
-                    project_manager = %s,
-                    status = %s,
-                    purchase_date = %s,
-                    due_date = %s,
-                    notes = %s
-                WHERE property_id = %s
-            """, (
-                property_name, 
-                address, 
-                location,
-                project_manager,
-                status,
-                purchase_date,
-                due_date,
-                notes,
-                property_id
-            ))
-            conn.commit()
-            
-            flash('Property updated successfully', 'success')
-            return redirect(url_for('property_detail', property_id=property_id))
-    
-    except Exception as e:
-        if conn:
-            conn.rollback()
-        flash(f'Error updating property: {str(e)}', 'danger')
-        return redirect(url_for('property_detail', property_id=property_id))
-    
-    finally:
-        if conn:
-            conn.close()
-
-@app.route('/property/<int:property_id>/add_image', methods=['POST'])
-@login_required
-def add_property_image(property_id):
-    """Add a new image to a property"""
-    conn = None
-    try:
-        # Check if property exists
-        conn = get_db_connection()
-        with conn.cursor() as cur:
-            cur.execute("SELECT property_id FROM propintel.properties WHERE property_id = %s", (property_id,))
-            if not cur.fetchone():
-                flash('Property not found', 'danger')
-                return redirect(url_for('properties'))
-        
-        # Handle image upload
-        if 'property_image' not in request.files or not request.files['property_image'].filename:
-            flash('No image selected', 'warning')
-            return redirect(url_for('property_detail', property_id=property_id))
-            
-        property_image = request.files['property_image']
-        
-        # Check if the file is allowed
-        if not allowed_file(property_image.filename):
-            flash('File type not allowed', 'danger')
-            return redirect(url_for('property_detail', property_id=property_id))
-        
-        # Generate secure filename
-        filename = secure_filename(property_image.filename)
-        timestamp = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
-        unique_filename = f"{timestamp}_{filename}"
-        
-        # Save the file
-        property_image_path = os.path.join(app.config['PROPERTY_IMAGES'], unique_filename)
-        full_path = os.path.join(app.static_folder, 'images', 'properties', unique_filename)
-        
-        # Create directory if it doesn't exist
-        os.makedirs(os.path.dirname(full_path), exist_ok=True)
-        property_image.save(full_path)
-        
-        # Add image to database
-        with conn.cursor() as cur:
-            cur.execute("""
-                INSERT INTO propintel.property_images 
-                (property_id, image_path, image_type, upload_date)
-                VALUES (%s, %s, %s, CURRENT_TIMESTAMP)
-            """, (property_id, unique_filename, 'property'))
-            conn.commit()
-            
-        flash('Image added successfully', 'success')
-        
-    except Exception as e:
-        logger.error(f"Error adding property image: {e}", exc_info=True)
-        flash(f"Error adding property image: {str(e)}", 'danger')
-        if conn:
-            conn.rollback()
-    finally:
-        if conn:
-            conn.close()
-    
-    return redirect(url_for('property_detail', property_id=property_id))
-
-@app.route('/property/<int:property_id>/delete_image/<int:image_id>', methods=['POST'])
-@login_required
-def delete_property_image(property_id, image_id):
-    """Delete a property image"""
-    conn = None
-    try:
-        conn = get_db_connection()
-        with conn.cursor(cursor_factory=RealDictCursor) as cur:
-            # Get the image path before deleting
-            cur.execute("""
-                SELECT image_path FROM propintel.property_images 
-                WHERE image_id = %s AND property_id = %s
-            """, (image_id, property_id))
-            image = cur.fetchone()
-            
-            if not image:
-                flash('Image not found', 'danger')
-                return redirect(url_for('property_detail', property_id=property_id))
-            
-            # Delete the image file
-            image_path = os.path.join(app.static_folder, 'images', 'properties', image['image_path'])
-            if os.path.exists(image_path):
-                os.remove(image_path)
-            
-            # Delete from database
-            cur.execute("""
-                DELETE FROM propintel.property_images 
-                WHERE image_id = %s AND property_id = %s
-            """, (image_id, property_id))
-            conn.commit()
-            
-            flash('Image deleted successfully', 'success')
-            
-    except Exception as e:
-        logger.error(f"Error deleting property image: {e}", exc_info=True)
-        flash(f"Error deleting property image: {str(e)}", 'danger')
-        if conn:
-            conn.rollback()
-    finally:
-        if conn:
-            conn.close()
-    
-    return redirect(url_for('property_detail', property_id=property_id))
-
-
-@app.route('/map')
-def map_view():
-    """View all properties on a map with simple implementation"""
-    # Create some hardcoded sample properties for demonstration
-    # This ensures the map always has something to show
-    sample_properties = [
-        {"id": 1, "name": "Downtown Apartment", "address": "123 Main St", "lat": -37.8136, "lng": 144.9631, "budget_status": "under"},
-        {"id": 2, "name": "Suburban House", "address": "456 Oak Ave", "lat": -37.8236, "lng": 144.9731, "budget_status": "over"},
-        {"id": 3, "name": "Beach Cottage", "address": "789 Shore Dr", "lat": -37.8036, "lng": 144.9831, "budget_status": "under"},
-        {"id": 4, "name": "Mountain Retreat", "address": "101 Summit Way", "lat": -37.7936, "lng": 144.9531, "budget_status": "over"},
-        {"id": 5, "name": "City Loft", "address": "202 Urban Blvd", "lat": -37.8336, "lng": 144.9431, "budget_status": "under"}
-    ]
-    
-    # Convert to GeoJSON format
-    features = []
-    for prop in sample_properties:
-        features.append({
-            'type': 'Feature',
-            'geometry': {
-                'type': 'Point',
-                'coordinates': [prop['lng'], prop['lat']]  # GeoJSON uses [longitude, latitude]
-            },
-            'properties': {
-                'id': prop['id'],
-                'name': prop['name'],
-                'address': prop['address'],
-                'url': url_for('index'),  # Just go to dashboard for demo
-                'is_over_budget': prop['budget_status'] == 'over',
-                'work_count': 3,  # Demo values
-                'income_count': 5,
-                'expense_count': 8,
-                'income': 15000,
-                'expenses': 10000,
-                'work_cost': 3000
-            }
-        })
-    
-    geojson = {
-        'type': 'FeatureCollection',
-        'features': features
-    }
-    
-    # Set default map center coordinates (Melbourne, Australia)
-    center_lat = -37.8136
-    center_lng = 144.9631
-    
-    # Also try to get real properties from the database as a fallback
-    try:
-        conn = get_db_connection()
-        with conn.cursor(cursor_factory=RealDictCursor) as cur:
-            # Check if any properties have coordinates
-            cur.execute("""
-                SELECT property_id, property_name, address, latitude, longitude 
-                FROM propintel.properties 
-                WHERE latitude IS NOT NULL AND longitude IS NOT NULL
-            """)
-            db_properties = cur.fetchall()
-            
-            # If we found properties in the DB, use those instead
-            if db_properties and len(db_properties) > 0:
-                logger.info(f"Found {len(db_properties)} real properties with coordinates")
-                
-                # Convert DB properties to GeoJSON
-                db_features = []
-                for prop in db_properties:
-                    # Use the first property coordinates as map center if available
-                    if db_features == []:
-                        try:
-                            center_lat = float(prop['latitude'])
-                            center_lng = float(prop['longitude'])
-                        except (ValueError, TypeError):
-                            pass  # Keep default coordinates if conversion fails
-                    
-                    try:
-                        lng = float(prop['longitude']) if prop['longitude'] is not None else center_lng
-                        lat = float(prop['latitude']) if prop['latitude'] is not None else center_lat
-                    except (ValueError, TypeError):
-                        lng = center_lng
-                        lat = center_lat
-                    
-                    db_features.append({
-                        'type': 'Feature',
-                        'geometry': {
-                            'type': 'Point',
-                            'coordinates': [lng, lat]
-                        },
-                        'properties': {
-                            'id': prop['property_id'],
-                            'name': prop['property_name'] or "Unnamed Property",
-                            'address': prop['address'] or "No address",
-                            'url': url_for('property_detail', property_id=prop['property_id']),
-                            'is_over_budget': False,  # Default values
-                            'work_count': 0,
-                            'income_count': 0,
-                            'expense_count': 0,
-                            'income': 0,
-                            'expenses': 0,
-                            'work_cost': 0
-                        }
-                    })
-                
-                # Use real properties if we found them
-                if db_features:
-                    geojson['features'] = db_features
-    except Exception as e:
-        logger.error(f"Error loading DB properties: {e}", exc_info=True)
-        # Continue with sample properties if DB fails
-    finally:
-        if 'conn' in locals() and conn:
-            conn.close()
-    
-    # Convert GeoJSON to JSON string for template
-    import json
-    geojson_str = json.dumps(geojson)
-    
-    return render_template('map.html', geojson=geojson_str, center_lat=center_lat, center_lng=center_lng)
-
-@app.route('/api/property-locations')
-def property_locations_api():
-    """API endpoint for property locations"""
-    conn = get_db_connection()
-    try:
-        with conn.cursor(cursor_factory=RealDictCursor) as cur:
-            cur.execute("""
-                SELECT property_id, property_name, address, latitude, longitude
-                FROM propintel.properties
-                WHERE latitude IS NOT NULL AND longitude IS NOT NULL
-            """)
-            properties = cur.fetchall()
-            
-            # Convert to GeoJSON format
-            features = []
-            for prop in properties:
-                features.append({
-                    'type': 'Feature',
-                    'geometry': {
-                        'type': 'Point',
-                        'coordinates': [prop['longitude'], prop['latitude']]
-                    },
-                    'properties': {
-                        'id': prop['property_id'],
-                        'name': prop['property_name'],
-                        'address': prop['address'],
-                        'url': url_for('property_detail', property_id=prop['property_id'])
-                    }
-                })
-            
-            geojson = {
-                'type': 'FeatureCollection',
-                'features': features
-            }
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-    finally:
-        conn.close()
-    
-    return jsonify(geojson)
-
-# Import shapefile utilities
-from shapefile_utils import get_lga_list, get_lga_documents, get_document_statistics, generate_lga_geojson, import_vic_lgas, get_work_heatmap_data, generate_work_heatmap
-
-# Builders Hub routes
-@app.route('/builders-hub')
-@login_required
-def builders_hub():
-    """Builders Hub page showing LGA map and documents"""
-    
-    # Check if we should return only the GeoJSON data
-    if request.args.get('lga_geojson'):
-        try:
-            from shapefile_utils import generate_lga_geojson
-            lga_geojson = generate_lga_geojson()
-            return jsonify(lga_geojson)
-        except Exception as e:
-            app.logger.error(f"Error generating GeoJSON for API: {e}")
-            return jsonify({"type": "FeatureCollection", "features": []})
-    
-    # Get all LGAs
-    try:
-        lgas = get_lga_list()
-    except Exception as e:
-        app.logger.error(f"Error retrieving LGA list: {e}")
-        lgas = []
-    
-    # Get all documents for LGAs
-    try:
-        documents = get_lga_documents()
-    except Exception as e:
-        app.logger.error(f"Error retrieving LGA documents: {e}")
-        documents = []
-    
-    # Get document statistics
-    try:
-        stats = get_document_statistics()
-    except Exception as e:
-        app.logger.error(f"Error retrieving document statistics: {e}")
-        stats = {
-            'permit_count': 0,
-            'regulation_count': 0,
-            'form_count': 0,
-            'other_count': 0
-        }
-    
-    # Get GeoJSON data for LGA map directly from shapefile
-    try:
-        import json
-        import geopandas as gpd
-        import shapely.geometry
-        from shapely.validation import make_valid
-        
-        # Read directly from shapefile
-        shp_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'spatial', 'Vic_LGA.shp')
-        
-        # Default empty GeoJSON collection
-        lga_geojson = {
-            "type": "FeatureCollection",
-            "features": []
-        }
-        features = []
-        
-        if os.path.exists(shp_file):
-            app.logger.info(f"Reading shapefile from {shp_file}")
-            try:
-                gdf = gpd.read_file(shp_file)
-                app.logger.info(f"Shapefile read successfully with {len(gdf)} features")
-                
-                # Convert to WGS84 for web mapping
-                if gdf.crs and gdf.crs != "EPSG:4326":
-                    app.logger.info(f"Converting from {gdf.crs} to EPSG:4326")
-                    gdf = gdf.to_crs("EPSG:4326")
-                
-                # Get document counts from database
-                doc_counts = {}
-                try:
-                    conn = get_db_connection()
-                    with conn.cursor() as cur:
-                        cur.execute("""
-                        SELECT lga_code, COUNT(document_id) as doc_count
-                        FROM propintel.lgas
-                        LEFT JOIN propintel.documents ON propintel.lgas.lga_id = propintel.documents.lga_id
-                        GROUP BY lga_code
-                        """)
-                        for row in cur.fetchall():
-                            doc_counts[row[0]] = row[1]
-                except Exception as db_err:
-                    app.logger.error(f"Error retrieving document counts: {db_err}")
-                finally:
-                    if conn:
-                        conn.close()
-                
-                # Process each feature
-                for idx, row in gdf.iterrows():
-                    # Skip rows with None geometry
-                    if row.geometry is None:
-                        app.logger.warning(f"Skipping row {idx} with None geometry")
-                        continue
-                        
-                    try:
-                        # Ensure geometry is valid
-                        if not row.geometry.is_valid:
-                            app.logger.warning(f"Invalid geometry at row {idx}, attempting to repair")
-                            try:
-                                row.geometry = make_valid(row.geometry)
-                            except Exception as validity_error:
-                                app.logger.error(f"Failed to repair geometry: {validity_error}")
-                                continue
-                                
-                        # Get document count for this LGA
-                        lga_code = f"LGA{row['LGA_CODE24']}" if 'LGA_CODE24' in row and row['LGA_CODE24'] else ""
-                        doc_count = doc_counts.get(lga_code, 0)
-                        
-                        # Build properties with safety checks
-                        properties = {
-                            "lga_id": idx,
-                            "lga_code": lga_code,
-                            "lga_name": row['LGA_NAME24'] if 'LGA_NAME24' in row else f"LGA {idx}",
-                            "state_code": row['STE_CODE21'] if 'STE_CODE21' in row else "VIC",
-                            "state_name": row['STE_NAME21'] if 'STE_NAME21' in row else "Victoria",
-                            "area_sqkm": float(row['AREASQKM']) if 'AREASQKM' in row and row['AREASQKM'] is not None else 0,
-                            "document_count": doc_count
-                        }
-                        
-                        # Simplify geometry for better performance
-                        try:
-                            # Use a small simplification tolerance to preserve shape
-                            simplified = row.geometry.simplify(0.001)
-                            if simplified is not None and simplified.is_valid:
-                                geometry = shapely.geometry.mapping(simplified)
-                                
-                                # Create feature
-                                feature = {
-                                    "type": "Feature",
-                                    "properties": properties,
-                                    "geometry": geometry
-                                }
-                                features.append(feature)
-                            else:
-                                app.logger.warning(f"Simplified geometry is invalid for row {idx}")
-                        except Exception as geom_error:
-                            app.logger.error(f"Error simplifying geometry for row {idx}: {geom_error}")
-                    except Exception as e:
-                        app.logger.error(f"Error processing LGA geometry for row {idx}: {e}")
-                
-                # Create full GeoJSON structure
-                if len(features) > 0:
-                    app.logger.info(f"Generated {len(features)} valid GeoJSON features")
-                    lga_geojson["features"] = features
-                else:
-                    app.logger.warning("No valid GeoJSON features generated from shapefile")
-                    # Add a single fallback feature for Victoria if no features could be generated
-                    fallback_feature = {
-                        "type": "Feature",
-                        "properties": {
-                            "lga_id": 1,
-                            "lga_code": "LGA20000",
-                            "lga_name": "Victoria",
-                            "state_code": "VIC",
-                            "state_name": "Victoria",
-                            "area_sqkm": 227444,
-                            "document_count": 0
-                        },
-                        "geometry": {
-                            "type": "MultiPolygon",
-                            "coordinates": [[[
-                                [144.9, -37.8], [145.0, -37.8], [145.0, -37.9], [144.9, -37.9], [144.9, -37.8]
-                            ]]]
-                        }
-                    }
-                    lga_geojson["features"] = [fallback_feature]
-            except Exception as gdf_error:
-                app.logger.error(f"Error reading shapefile: {gdf_error}")
-                # Create fallback Victoria outline geometry
-                fallback_feature = {
-                    "type": "Feature",
-                    "properties": {
-                        "lga_id": 1,
-                        "lga_code": "LGA20000",
-                        "lga_name": "Victoria",
-                        "state_code": "VIC",
-                        "state_name": "Victoria",
-                        "area_sqkm": 227444,
-                        "document_count": 0
-                    },
-                    "geometry": {
-                        "type": "MultiPolygon",
-                        "coordinates": [[[
-                            [144.9, -37.8], [145.0, -37.8], [145.0, -37.9], [144.9, -37.9], [144.9, -37.8]
-                        ]]]
-                    }
-                }
-                lga_geojson["features"] = [fallback_feature]
-        else:
-            app.logger.error(f"Shapefile not found at {shp_file}")
-            # Create fallback Victoria outline geometry
-            fallback_feature = {
-                "type": "Feature",
-                "properties": {
-                    "lga_id": 1,
-                    "lga_code": "LGA20000",
-                    "lga_name": "Victoria",
-                    "state_code": "VIC",
-                    "state_name": "Victoria",
-                    "area_sqkm": 227444,
-                    "document_count": 0
-                },
-                "geometry": {
-                    "type": "MultiPolygon",
-                    "coordinates": [[[
-                        [144.9, -37.8], [145.0, -37.8], [145.0, -37.9], [144.9, -37.9], [144.9, -37.8]
-                    ]]]
-                }
-            }
-            lga_geojson["features"] = [fallback_feature]
-            
-        # Serialize to JSON string
-        try:
-            lga_geojson_str = json.dumps(lga_geojson)
-            app.logger.info(f"GeoJSON serialized with {len(lga_geojson['features'])} features")
-        except Exception as json_error:
-            app.logger.error(f"Error serializing GeoJSON: {json_error}")
-            lga_geojson_str = '{"type":"FeatureCollection","features":[]}'
-    except Exception as e:
-        app.logger.error(f"Error generating LGA GeoJSON: {e}")
-        lga_geojson_str = '{"type":"FeatureCollection","features":[]}'
-    
-    # Center the map on Melbourne by default
-    center_lat = -37.8136
-    center_lng = 144.9631
-    
-    return render_template('builders_hub.html',
-                          lgas=lgas,
-                          documents=documents,
-                          stats=stats,
-                          lga_geojson=lga_geojson_str)
-                          
-@app.route('/document-upload', methods=['GET', 'POST'])
-@login_required
-def document_upload():
-    """Upload document page and handler"""
-    # No role check here - all users can upload documents
-    # Documents uploaded by regular users will be set as private by default
-    
-    # Initialize error dictionary for form validation
-    errors = {}
-    
-    # Create documents directory if it doesn't exist
-    documents_dir = DOCUMENTS_FOLDER
-    try:
-        os.makedirs(documents_dir, exist_ok=True)
-        app.logger.info(f"Created or verified documents directory: {documents_dir}")
-    except Exception as e:
-        app.logger.error(f"Error creating documents directory: {e}")
-    
-    # Get all LGAs for the form
-    try:
-        lgas = get_lga_list()
-    except Exception as e:
-        app.logger.error(f"Error retrieving LGA list: {e}")
-        lgas = []
-    
-    # Handle form submission
-    if request.method == 'POST':
-        document_name = request.form.get('document_name')
-        document_type = request.form.get('document_type')
-        lga_id = request.form.get('lga_id')
-        description = request.form.get('description', '')
-        is_public = 'is_public' in request.form
-        
-        # Check if file is in request
-        if 'document_file' not in request.files:
-            errors['document_file'] = 'No file selected'
-            flash('No file selected', 'danger')
-            return render_template('upload_document.html', lgas=lgas, errors=errors)
-        
-        document_file = request.files['document_file']
-        
-        # Validate file
-        if document_file.filename == '':
-            errors['document_file'] = 'No file selected'
-            flash('No file selected', 'danger')
-            return render_template('upload_document.html', lgas=lgas, errors=errors)
-        
-        # Check file type
-        if not allowed_file(document_file.filename, app.config['ALLOWED_DOCUMENT_EXTENSIONS']):
-            errors['document_file'] = f"File type not allowed. Allowed types: {', '.join(app.config['ALLOWED_DOCUMENT_EXTENSIONS'])}"
-            flash('File type not allowed. Please upload PDF, DOC, DOCX, XLS, XLSX, or TXT file.', 'danger')
-            return render_template('upload_document.html', lgas=lgas, errors=errors)
-        
-        # Save file
-        try:
-            # Use the documents directory
-            upload_dir = DOCUMENTS_FOLDER
-            
-            # Generate a safe filename
-            filename = secure_filename(document_file.filename)
-            timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
-            new_filename = f"{timestamp}_{filename}"
-            file_path = os.path.join(upload_dir, new_filename)
-            
-            # Save the file
-            document_file.save(file_path)
-            file_size = os.path.getsize(file_path)
-            
-            # Only store the filename in database, not the full path
-            file_path_val = new_filename
-            
-            # Save to database
-            conn = get_db_connection()
-            cursor = conn.cursor()
-            
-            # Get location data from form
-            address = request.form.get('address', '')
-            latitude = request.form.get('latitude')
-            longitude = request.form.get('longitude')
-            
-            # Convert to float if provided
-            try:
-                latitude = float(latitude) if latitude else None
-                longitude = float(longitude) if longitude else None
-            except ValueError:
-                latitude = None
-                longitude = None
-            
-            # Geocode address if provided but no coordinates
-            if address and not (latitude and longitude):
-                try:
-                    # Simple geocoding with Nominatim (OpenStreetMap)
-                    import requests
-                    geocode_url = f"https://nominatim.openstreetmap.org/search?format=json&q={address}"
-                    response = requests.get(geocode_url, headers={'User-Agent': 'PropIntel/1.0'})
-                    
-                    if response.status_code == 200:
-                        results = response.json()
-                        if results and len(results) > 0:
-                            latitude = float(results[0]['lat'])
-                            longitude = float(results[0]['lon'])
-                except Exception as geocode_error:
-                    app.logger.error(f"Error geocoding address: {geocode_error}")
-            
-            cursor.execute("""
-            INSERT INTO propintel.documents (
-                lga_id, user_id, document_name, document_type, description, 
-                file_path, file_size, is_public, upload_date, address, latitude, longitude
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-            """, (
-                lga_id, g.user['user_id'], document_name, document_type, description,
-                new_filename, file_size, is_public, datetime.now().isoformat(), address, latitude, longitude
-            ))
-            
-            conn.commit()
-            cursor.close()
-            conn.close()
-            
-            flash('Document uploaded successfully', 'success')
-            return redirect(url_for('builders_hub'))
-            
-        except Exception as e:
-            import traceback
-            app.logger.error(f"Error uploading document: {e}")
-            app.logger.error(traceback.format_exc())
-            flash(f'Error uploading document: {str(e)}', 'danger')
-    
-    return render_template('upload_document.html', lgas=lgas)
-
-@app.route('/download-document/<int:document_id>')
-@login_required
-def download_document(document_id):
-    """Handle document downloads"""
-    try:
-        conn = get_db_connection()
-        cursor = conn.cursor(cursor_factory=DictCursor)
-        
-        # Get document info
-        cursor.execute("""
-        SELECT 
-            document_name, file_path, is_public 
-        FROM 
-            propintel.documents 
-        WHERE 
-            document_id = %s
-        """, (document_id,))
-        
-        document = cursor.fetchone()
-        
-        if not document:
-            flash('Document not found', 'danger')
-            return redirect(url_for('builders_hub'))
-        
-        # Check if document is public or user is admin
-        if not document['is_public'] and g.user['role'] != 'admin':
-            flash('You do not have permission to access this document', 'danger')
-            return redirect(url_for('builders_hub'))
-        
-        # Update download count
-        cursor.execute("""
-        UPDATE propintel.documents 
-        SET download_count = download_count + 1 
-        WHERE document_id = %s
-        """, (document_id,))
-        
-        conn.commit()
-        cursor.close()
-        conn.close()
-        
-        # Prepare file for download
-        file_path = os.path.join(DOCUMENTS_FOLDER, document['file_path'])
-        
-        if not os.path.exists(file_path):
-            flash('Document file not found', 'danger')
-            return redirect(url_for('builders_hub'))
-        
-        return send_file(file_path, as_attachment=True, download_name=document['document_name'])
-        
-    except Exception as e:
-        app.logger.error(f"Error downloading document: {e}")
-        flash('Error downloading document', 'danger')
-        return redirect(url_for('builders_hub'))
-
-@app.route('/api/lgas')
-@login_required
-def get_lgas_api():
-    """API endpoint to get all LGAs"""
-    lgas = get_lga_list()
-    return jsonify(lgas)
-
-@app.route('/api/lga-documents/<int:lga_id>')
-@login_required
-def get_lga_documents_api(lga_id):
-    """API endpoint to get documents for a specific LGA"""
-    documents = get_lga_documents(lga_id)
-    return jsonify(documents)
-    
-@app.route('/api/document-locations')
-@login_required
-def get_document_locations():
-    """API endpoint to get document locations for map markers"""
-    lga_id = request.args.get('lga_id')
-    
-    try:
-        conn = get_db_connection()
-        with conn.cursor(cursor_factory=DictCursor) as cur:
-            query = """
-            SELECT 
-                d.document_id, 
-                d.document_name, 
-                d.document_type, 
-                COALESCE(d.description, '') as address,
-                d.latitude, 
-                d.longitude
-            FROM 
-                propintel.documents d
-            WHERE 
-                d.latitude IS NOT NULL 
-                AND d.longitude IS NOT NULL
-            """
-            
-            if lga_id:
-                query += " AND d.lga_id = %s"
-                cur.execute(query, (lga_id,))
-            else:
-                cur.execute(query)
-                
-            documents = cur.fetchall()
-            
-            # Convert to dict for JSON serialization
-            result = []
-            for doc in documents:
-                result.append({
-                    'document_id': doc['document_id'],
-                    'document_name': doc['document_name'],
-                    'document_type': doc['document_type'],
-                    'address': doc['address'],
-                    'latitude': float(doc['latitude']) if doc['latitude'] else None,
-                    'longitude': float(doc['longitude']) if doc['longitude'] else None
-                })
-                
-            return jsonify(result)
-            
-    except Exception as e:
-        app.logger.error(f"Error retrieving document locations: {e}")
-        return jsonify([]), 500
-    finally:
-        if conn:
-            conn.close()
-
 @app.route('/import-lga-data')
 @login_required
 def import_lga_data():
@@ -3338,7 +2279,7 @@ def import_lga_data():
 @app.route('/map')
 @login_required
 def map():
-    """Property map page"""
+    """Property map page with document overlay capabilities"""
     # Initialize heatmap data
     try:
         # Generate/update work heatmap data
@@ -3443,21 +2384,36 @@ def map():
         import json
         geojson_str = json.dumps(geojson)
         
+        # Get LGA list and document statistics for additional functionality
+        lgas = get_lga_list()
+        doc_stats = get_document_statistics()
+        
         return render_template('map.html', 
-                              geojson=geojson_str,
-                              center_lat=center_lat,
-                              center_lng=center_lng)
+                            geojson=geojson_str,
+                            center_lat=center_lat,
+                            center_lng=center_lng,
+                            lgas=lgas,
+                            doc_stats=doc_stats)
     
     except Exception as e:
         app.logger.error(f"Error loading map data: {e}")
         return render_template('map.html', 
-                              geojson='{"type":"FeatureCollection","features":[]}',
-                              center_lat=-37.8136,
-                              center_lng=144.9631)
+                            geojson='{"type":"FeatureCollection","features":[]}',
+                            center_lat=-37.8136,
+                            center_lng=144.9631,
+                            lgas=[],
+                            doc_stats={})
     
     finally:
         if conn:
             conn.close()
+
+# Add alias route for map_view that redirects to map
+@app.route('/map_view')
+@login_required
+def map_view():
+    """Alias for the map route to maintain backward compatibility"""
+    return redirect(url_for('map'))
 
 @app.route('/get-lga-data')
 def get_lga_data():
@@ -5105,6 +4061,184 @@ def delete_document():
     finally:
         if conn:
             conn.close()
+
+@app.route('/api/save-budget', methods=['POST'])
+@login_required
+def save_budget():
+    """Save budget data to database"""
+    try:
+        if g.user['user_id'] == 'guest':
+            return jsonify({'status': 'error', 'message': 'Guest users cannot save budgets'}), 403
+            
+        data = request.json
+        property_id = data.get('property_id')
+        budget_amount = data.get('budget_amount')
+        budget_name = data.get('budget_name')
+        budget_description = data.get('budget_description')
+        start_date = data.get('start_date')
+        end_date = data.get('end_date')
+        
+        # Budget allocations
+        wage_amount = data.get('wage_amount', 0)
+        pm_amount = data.get('pm_amount', 0)
+        material_amount = data.get('material_amount', 0)
+        misc_amount = data.get('misc_amount', 0)
+        
+        # Validate required fields
+        if not property_id or not budget_amount or not budget_name:
+            return jsonify({'status': 'error', 'message': 'Missing required fields'}), 400
+            
+        # Validate property exists
+        conn = get_db_connection()
+        try:
+            with conn.cursor() as cur:
+                cur.execute("SELECT property_id FROM propintel.properties WHERE property_id = %s", (property_id,))
+                if not cur.fetchone():
+                    return jsonify({'status': 'error', 'message': 'Property not found'}), 404
+                
+                # Insert budget record
+                cur.execute("""
+                    INSERT INTO propintel.budgets 
+                    (property_id, user_id, budget_name, budget_description, budget_amount, 
+                     start_date, end_date, wage_allocation, pm_allocation, material_allocation, misc_allocation)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    RETURNING budget_id
+                """, (
+                    property_id, g.user['user_id'], budget_name, budget_description, budget_amount,
+                    start_date, end_date, wage_amount, pm_amount, material_amount, misc_amount
+                ))
+                budget_id = cur.fetchone()[0]
+                conn.commit()
+                
+                return jsonify({
+                    'status': 'success', 
+                    'message': 'Budget saved successfully',
+                    'budget_id': budget_id
+                })
+                
+        except Exception as e:
+            conn.rollback()
+            app.logger.error(f"Database error saving budget: {str(e)}")
+            return jsonify({'status': 'error', 'message': f'Error saving budget: {str(e)}'}), 500
+        finally:
+            conn.close()
+            
+    except Exception as e:
+        app.logger.error(f"Unexpected error saving budget: {str(e)}")
+        return jsonify({'status': 'error', 'message': f'An unexpected error occurred: {str(e)}'}), 500
+
+@app.route('/download-document/<int:document_id>')
+@login_required
+def download_document(document_id):
+    """Download a document file"""
+    try:
+        conn = get_db_connection()
+        with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+            cursor.execute("""
+            SELECT * FROM propintel.documents WHERE document_id = %s
+            """, (document_id,))
+            
+            document = cursor.fetchone()
+            
+            if not document:
+                flash('Document not found', 'danger')
+                return redirect(url_for('builders_hub'))
+            
+            # Check if document is public or user is admin
+            if not document['is_public'] and g.user['role'] != 'admin':
+                flash('You do not have permission to access this document', 'danger')
+                return redirect(url_for('builders_hub'))
+            
+            # Update download count
+            cursor.execute("""
+            UPDATE propintel.documents 
+            SET download_count = download_count + 1 
+            WHERE document_id = %s
+            """, (document_id,))
+            
+            conn.commit()
+            
+            # Prepare file for download
+            file_path = os.path.join(DOCUMENTS_FOLDER, document['file_path'])
+            
+            if not os.path.exists(file_path):
+                flash('Document file not found', 'danger')
+                return redirect(url_for('builders_hub'))
+            
+            return send_file(file_path, as_attachment=True, download_name=document['document_name'])
+            
+    except Exception as e:
+        app.logger.error(f"Error downloading document: {e}")
+        flash('Error downloading document', 'danger')
+        return redirect(url_for('builders_hub'))
+
+@app.route('/api/lgas')
+@login_required
+def get_lgas_api():
+    """API endpoint to get all LGAs"""
+    lgas = get_lga_list()
+    return jsonify(lgas)
+
+@app.route('/api/lga-documents/<int:lga_id>')
+@login_required
+def get_lga_documents_api(lga_id):
+    """API endpoint to get documents for a specific LGA"""
+    documents = get_lga_documents(lga_id)
+    return jsonify(documents)
+    
+@app.route('/api/document-locations')
+@login_required
+def get_document_locations():
+    """API endpoint to get document locations for map markers"""
+    lga_id = request.args.get('lga_id')
+    
+    try:
+        conn = get_db_connection()
+        with conn.cursor(cursor_factory=DictCursor) as cur:
+            query = """
+                SELECT 
+                    d.document_id, 
+                    d.document_name, 
+                    d.document_type, 
+                    COALESCE(d.description, '') as address,
+                    d.latitude, 
+                    d.longitude
+                FROM 
+                    propintel.documents d
+                WHERE 
+                    d.latitude IS NOT NULL 
+                    AND d.longitude IS NOT NULL
+            """
+            
+            if lga_id:
+                query += " AND d.lga_id = %s"
+                cur.execute(query, (lga_id,))
+            else:
+                cur.execute(query)
+                
+            documents = cur.fetchall()
+            
+            # Convert to dict for JSON serialization
+            result = []
+            for doc in documents:
+                result.append({
+                    'document_id': doc['document_id'],
+                    'document_name': doc['document_name'],
+                    'document_type': doc['document_type'],
+                    'address': doc['address'],
+                    'latitude': float(doc['latitude']) if doc['latitude'] else None,
+                    'longitude': float(doc['longitude']) if doc['longitude'] else None
+                })
+                
+            return jsonify(result)
+            
+    except Exception as e:
+        app.logger.error(f"Error retrieving document locations: {e}")
+        return jsonify([]), 500
+    finally:
+        if conn:
+            conn.close()
+
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5002)) 

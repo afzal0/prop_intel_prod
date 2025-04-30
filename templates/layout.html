@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>{% block title %}PropIntel - Property Investment Tracker{% endblock %}</title>
     
     <!-- Bootstrap CSS -->
@@ -35,6 +35,9 @@
             background-color: var(--body-bg);
             color: var(--dark-color);
             padding-top: 56px; /* For fixed navbar */
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
         
         .navbar {
@@ -49,6 +52,7 @@
         .navbar-brand {
             font-weight: 700;
             letter-spacing: 0.5px;
+            color: var(--primary-color) !important;
         }
         
         .nav-link {
@@ -339,6 +343,106 @@
         
         .shadow-hover:hover {
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+        }
+        
+        /* Custom styles */
+        body {
+            color: var(--dark-color);
+            padding-top: 56px; /* For fixed navbar */
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        main {
+            flex: 1;
+            padding-bottom: 2rem;
+        }
+        
+        .sidebar-icon {
+            width: 24px;
+            text-align: center;
+            margin-right: 10px;
+        }
+        
+        .card-dash {
+            height: 100%;
+            transition: all 0.2s ease-in-out;
+        }
+        
+        .card-dash:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        
+        /* Mobile-specific styles */
+        @media (max-width: 768px) {
+            body {
+                padding-top: 56px;
+            }
+            
+            .container, .container-fluid {
+                padding-left: 10px;
+                padding-right: 10px;
+            }
+            
+            .row {
+                margin-left: -5px;
+                margin-right: -5px;
+            }
+            
+            .col, .col-1, .col-2, .col-3, .col-4, .col-5, .col-6, 
+            .col-7, .col-8, .col-9, .col-10, .col-11, .col-12,
+            .col-sm, .col-md, .col-lg, .col-xl {
+                padding-left: 5px;
+                padding-right: 5px;
+            }
+            
+            .table-responsive {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+            
+            .card {
+                margin-bottom: 10px;
+            }
+            
+            .btn {
+                padding: 0.375rem 0.75rem;
+                font-size: 0.9rem;
+            }
+            
+            /* Fix for input zoom on iOS */
+            input[type="text"], 
+            input[type="email"], 
+            input[type="password"],
+            input[type="number"],
+            input[type="date"],
+            select.form-select,
+            textarea.form-control {
+                font-size: 16px !important;
+            }
+            
+            /* Adjust chart heights */
+            .chart-container {
+                height: 300px !important;
+            }
+            
+            /* Adjust map heights */
+            .map-container {
+                height: 350px !important;
+            }
+            
+            /* Hide certain elements on mobile */
+            .d-xs-none {
+                display: none !important;
+            }
+            
+            /* Make modal content more visible on mobile */
+            .modal-dialog {
+                max-width: 95% !important;
+                margin: 0.5rem auto;
+            }
         }
     </style>
     

@@ -320,56 +320,57 @@
 <div class="modal fade" id="newBudgetModal" tabindex="-1" aria-labelledby="newBudgetModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="newBudgetModalLabel">Create New Budget</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">Create New Budget</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <form id="newBudgetForm">
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label for="budgetTitle" class="form-label">Budget Title</label>
-                            <input type="text" class="form-control" id="budgetTitle" placeholder="e.g. Q2 Renovation" required>
+                <form id="newBudgetForm" class="needs-validation" novalidate>
+                    <div class="mb-3">
+                        <label for="propertySelect" class="form-label">Property</label>
+                        <select class="form-select" id="propertySelect" required>
+                            <option value="" selected disabled>Select property</option>
+                            {% for property in properties %}
+                            <option value="{{ property.property_id }}">{{ property.property_name }} ({{ property.address }})</option>
+                            {% endfor %}
+                        </select>
+                        <div class="invalid-feedback">Please select a property</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="budgetName" class="form-label">Budget Name</label>
+                        <input type="text" class="form-control" id="budgetName" placeholder="e.g., Q1 2023 Renovation" required>
+                        <div class="invalid-feedback">Please enter a budget name</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="budgetDescription" class="form-label">Description</label>
+                        <textarea class="form-control" id="budgetDescription" rows="2" placeholder="Optional budget description"></textarea>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="startDate" class="form-label">Start Date</label>
+                            <input type="date" class="form-control" id="startDate" required>
+                            <div class="invalid-feedback">Please select a start date</div>
                         </div>
-                        <div class="col-md-6">
-                            <label for="budgetProperty" class="form-label">Property</label>
-                            <select class="form-select" id="budgetProperty" required>
-                                <option value="" selected disabled>Select a property</option>
-                                {% for property in properties %}
-                                <option value="{{ property.property_id }}">{{ property.property_name }}</option>
-                                {% endfor %}
-                            </select>
+                        <div class="col-md-6 mb-3">
+                            <label for="endDate" class="form-label">End Date</label>
+                            <input type="date" class="form-control" id="endDate" required>
+                            <div class="invalid-feedback">Please select an end date</div>
                         </div>
                     </div>
-                    
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label for="budgetStartDate" class="form-label">Start Date</label>
-                            <input type="date" class="form-control" id="budgetStartDate" required>
-                        </div>
-                        <div class="col-md-6">
-                            <label for="budgetEndDate" class="form-label">End Date</label>
-                            <input type="date" class="form-control" id="budgetEndDate" required>
+                    <div class="mb-3">
+                        <label for="budgetAmount" class="form-label">Total Budget Amount</label>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            <input type="number" class="form-control" id="budgetAmount" placeholder="0.00" min="0" step="0.01" required>
                         </div>
                     </div>
-                    
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label for="budgetAmount" class="form-label">Total Budget Amount</label>
-                            <div class="input-group">
-                                <span class="input-group-text">$</span>
-                                <input type="number" class="form-control" id="budgetAmount" placeholder="0.00" min="0" step="0.01" required>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <label for="budgetStatus" class="form-label">Status</label>
-                            <select class="form-select" id="budgetStatus" required>
-                                <option value="active" selected>Active</option>
-                                <option value="draft">Draft</option>
-                            </select>
-                        </div>
+                    <div class="mb-3">
+                        <label for="budgetStatus" class="form-label">Status</label>
+                        <select class="form-select" id="budgetStatus" required>
+                            <option value="active" selected>Active</option>
+                            <option value="draft">Draft</option>
+                        </select>
                     </div>
-                    
                     <div class="mb-3">
                         <label class="form-label">Budget Allocation</label>
                         <div class="card">
@@ -663,12 +664,52 @@
                 return;
             }
             
-            // Demo just shows success message
-            alert('Budget created successfully!');
+            // Get form data
+            const propertyId = document.getElementById('propertySelect').value;
+            const budgetName = document.getElementById('budgetName').value;
+            const budgetDescription = document.getElementById('budgetDescription').value;
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
             
-            // Close modal
-            const modal = bootstrap.Modal.getInstance(document.getElementById('newBudgetModal'));
-            modal.hide();
+            // Send data to server
+            fetch('/api/save-budget', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    property_id: propertyId,
+                    budget_name: budgetName,
+                    budget_description: budgetDescription,
+                    budget_amount: totalBudget,
+                    start_date: startDate,
+                    end_date: endDate,
+                    wage_amount: wageAmount,
+                    pm_amount: pmAmount,
+                    material_amount: materialAmount,
+                    misc_amount: miscAmount
+                })
+            })
+            .then(function(response) {
+                return response.json();
+            })
+            .then(function(data) {
+                if (data.status === 'success') {
+                    alert('Budget created successfully!');
+                    // Close modal
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('newBudgetModal'));
+                    modal.hide();
+                    
+                    // Refresh the page to show new budget
+                    window.location.reload();
+                } else {
+                    alert('Error saving budget: ' + data.message);
+                }
+            })
+            .catch(function(error) {
+                console.error('Error saving budget:', error);
+                alert('Failed to save budget. Please try again.');
+            });
         });
         
         // Filter change events
